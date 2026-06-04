@@ -29,6 +29,7 @@ export const hasFirebaseConfig = Boolean(
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let googleSignInPromise: ReturnType<typeof signInWithPopup> | null = null;
 
 if (hasFirebaseConfig) {
   app = initializeApp(firebaseConfig);
@@ -42,7 +43,13 @@ export async function signInWithGoogle() {
   if (!auth) {
     throw new Error("尚未設定 Firebase，請先填入 .env.local。");
   }
+  if (googleSignInPromise) {
+    return googleSignInPromise;
+  }
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithPopup(auth, provider);
+  googleSignInPromise = signInWithPopup(auth, provider).finally(() => {
+    googleSignInPromise = null;
+  });
+  return googleSignInPromise;
 }
