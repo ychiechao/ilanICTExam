@@ -61,6 +61,7 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
+  const [adminBusy, setAdminBusy] = useState(false);
 
   const selectedProblem = useMemo(
     () => problems.find((problem) => problem.id === selectedProblemId) || problems[0],
@@ -124,14 +125,34 @@ export default function App() {
       setStatusMessage("請先登入 Gmail 再初始化管理者。");
       return;
     }
+    setAdminBusy(true);
+    setStatusMessage("");
     const demoUser = user || {
       uid: "demo-admin",
       displayName: "本機管理者",
       email: "",
     };
-    const success = await initializeFirstAdmin(demoUser);
-    setAdmin(success || isDemoAdmin());
-    setStatusMessage(success ? "已啟用管理模式。" : "管理者已存在，無法重複初始化。");
+    try {
+      const status = await initializeFirstAdmin(demoUser);
+      if (status === "created" || status === "already-admin" || status === "local-demo") {
+        setAdmin(true);
+      }
+      if (status === "created") {
+        setStatusMessage("已啟用管理模式，你現在是第一位管理者。");
+      } else if (status === "already-admin") {
+        setStatusMessage("你已經是管理者。");
+      } else if (status === "bootstrap-exists") {
+        setAdmin(false);
+        setStatusMessage("管理者已存在，請使用已授權的管理者帳號登入。");
+      } else {
+        setStatusMessage("已啟用本機管理模式。");
+      }
+    } catch (error) {
+      setAdmin(isDemoAdmin());
+      setStatusMessage(getFirebaseAdminErrorMessage(error));
+    } finally {
+      setAdminBusy(false);
+    }
   }
 
   async function handleCustomTest() {
@@ -330,6 +351,7 @@ export default function App() {
                 onImport={handleImportProblems}
                 firebaseReady={hasFirebaseConfig}
                 busy={busy}
+                adminBusy={adminBusy}
               />
             )}
           </div>
@@ -342,9 +364,7 @@ export default function App() {
 }
 
 function getLoginErrorMessage(error: unknown) {
-  const code = typeof error === "object" && error && "code" in error
-    ? String((error as { code?: unknown }).code)
-    : "";
+  const code = getErrorCode(error);
 
   if (code === "auth/cancelled-popup-request") {
     return "登入視窗已被新的登入要求取消，請稍等一下再按一次。";
@@ -357,6 +377,34 @@ function getLoginErrorMessage(error: unknown) {
   }
 
   return error instanceof Error ? error.message : "登入失敗。";
+}
+
+function getFirebaseAdminErrorMessage(error: unknown) {
+  const code = getErrorCode(error);
+  const message = error instanceof Error ? error.message : "";
+  const combined = `${code} ${message}`.toLowerCase();
+
+  if (combined.includes("permission-denied") || combined.includes("insufficient permissions")) {
+    return "Firestore Rules 尚未發布或權限不足。請到 Firebase Console 的 Firestore Rules 貼上 firestore.rules 並發布。";
+  }
+  if (
+    combined.includes("連線逾時") ||
+    combined.includes("deadline-exceeded") ||
+    combined.includes("unavailable")
+  ) {
+    return "Firestore 連線逾時，請確認 Firestore Database 已建立，並稍後再試。";
+  }
+  if (combined.includes("failed-precondition") || combined.includes("not-found")) {
+    return "Firestore Database 可能尚未建立，請先到 Firebase Console 建立 Firestore Database。";
+  }
+
+  return message || "初始化管理者失敗，請確認 Firebase Firestore 已建立且 Rules 已發布。";
+}
+
+function getErrorCode(error: unknown) {
+  return typeof error === "object" && error && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : "";
 }
 
 function StatementPanel({
@@ -539,6 +587,7 @@ function AdminPanel({
   importJson,
   firebaseReady,
   busy,
+  adminBusy,
   onImportJsonChange,
   onInitializeAdmin,
   onImport,
@@ -547,6 +596,7 @@ function AdminPanel({
   importJson: string;
   firebaseReady: boolean;
   busy: boolean;
+  adminBusy: boolean;
   onImportJsonChange: (value: string) => void;
   onInitializeAdmin: () => void;
   onImport: () => void;
@@ -561,9 +611,9 @@ function AdminPanel({
         <p className="warning-text">目前未設定 Firebase，管理資料會保存於本機 localStorage。</p>
       )}
       {!admin ? (
-        <button className="primary-button wide" onClick={onInitializeAdmin}>
+        <button className="primary-button wide" onClick={onInitializeAdmin} disabled={adminBusy}>
           <Upload size={17} />
-          初始化管理者
+          {adminBusy ? "初始化中..." : "初始化管理者"}
         </button>
       ) : (
         <>
