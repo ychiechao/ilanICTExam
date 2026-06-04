@@ -10,6 +10,12 @@ import { auth, db, onAuthStateChanged, signInWithGoogle, signOut, type User } fr
 import type { AppUser } from "../types";
 import { withRemoteTimeout } from "./remote";
 
+export type AdminInitializationStatus =
+  | "created"
+  | "already-admin"
+  | "bootstrap-exists"
+  | "local-demo";
+
 export function subscribeToAuth(callback: (user: AppUser | null) => void) {
   if (!auth) {
     callback(null);
@@ -52,16 +58,20 @@ export async function isAdmin(uid?: string) {
   }
 }
 
-export async function initializeFirstAdmin(user: AppUser) {
+export async function initializeFirstAdmin(user: AppUser): Promise<AdminInitializationStatus> {
   if (!db) {
     localStorage.setItem("yilan-demo-admin", "true");
-    return true;
+    return "local-demo";
+  }
+
+  if (await isAdmin(user.uid)) {
+    return "already-admin";
   }
 
   const bootstrapRef = doc(db, "settings", "adminBootstrap");
   const bootstrap = await withRemoteTimeout(getDoc(bootstrapRef), "Firestore 管理者初始化檢查");
   if (bootstrap.exists()) {
-    return false;
+    return "bootstrap-exists";
   }
 
   const batch = writeBatch(db);
@@ -76,7 +86,7 @@ export async function initializeFirstAdmin(user: AppUser) {
     createdAt: serverTimestamp(),
   });
   await withRemoteTimeout(batch.commit(), "Firestore 管理者初始化");
-  return true;
+  return "created";
 }
 
 export function isDemoAdmin() {
