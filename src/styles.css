@@ -197,6 +197,42 @@ button {
   font-weight: 900;
 }
 
+.rail-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid #d7dee8;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 10px;
+}
+
+.rail-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #51647c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.rail-filters select {
+  width: 100%;
+  border: 1px solid #c8d3df;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  min-height: 34px;
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.rail-filters span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .problem-item {
   display: flex;
   flex-direction: column;
@@ -422,7 +458,7 @@ button {
 .example-box,
 .output-box,
 .score-card,
-.history-row,
+history-row,
 .leader-row,
 .case-row {
   border: 1px solid #d7dee8;
@@ -644,6 +680,10 @@ pre {
     overflow-x: auto;
   }
 
+  .rail-filters {
+    min-width: 190px;
+  }
+
   .problem-item {
     min-width: 160px;
   }
@@ -710,6 +750,10 @@ pre {
   .rail-title {
     min-width: 42px;
     writing-mode: vertical-rl;
+  }
+
+  .rail-filters {
+    min-width: 180px;
   }
 
   .editor-panel {
