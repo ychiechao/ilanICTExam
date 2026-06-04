@@ -10,6 +10,8 @@ import { auth, db, onAuthStateChanged, signInWithGoogle, signOut, type User } fr
 import type { AppUser } from "../types";
 import { withRemoteTimeout } from "./remote";
 
+const ADMIN_INITIALIZATION_TIMEOUT_MS = 25000;
+
 export type AdminInitializationStatus =
   | "created"
   | "already-admin"
@@ -69,7 +71,11 @@ export async function initializeFirstAdmin(user: AppUser): Promise<AdminInitiali
   }
 
   const bootstrapRef = doc(db, "settings", "adminBootstrap");
-  const bootstrap = await withRemoteTimeout(getDoc(bootstrapRef), "Firestore 管理者初始化檢查");
+  const bootstrap = await withRemoteTimeout(
+    getDoc(bootstrapRef),
+    "Firestore 管理者初始化檢查",
+    ADMIN_INITIALIZATION_TIMEOUT_MS,
+  );
   if (bootstrap.exists()) {
     return "bootstrap-exists";
   }
@@ -85,7 +91,11 @@ export async function initializeFirstAdmin(user: AppUser): Promise<AdminInitiali
     uid: user.uid,
     createdAt: serverTimestamp(),
   });
-  await withRemoteTimeout(batch.commit(), "Firestore 管理者初始化");
+  await withRemoteTimeout(
+    batch.commit(),
+    "Firestore 管理者初始化",
+    ADMIN_INITIALIZATION_TIMEOUT_MS,
+  );
   return "created";
 }
 
