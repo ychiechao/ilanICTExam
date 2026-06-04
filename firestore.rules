@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) || isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn();
+      allow create: if isOwner(uid) &&
+        !exists(/databases/$(database)/documents/settings/adminBootstrap);
+      allow update, delete: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && docId == "adminBootstrap" &&
+        request.resource.data.uid == request.auth.uid &&
+        !exists(/databases/$(database)/documents/settings/adminBootstrap);
+      allow update, delete: if isAdmin();
+    }
+
+    match /problems/{problemId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn() &&
+        request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /userProblemStats/{statId} {
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isAdmin());
+      allow create, update: if signedIn() &&
+        request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /leaderboards/{problemId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+  }
+}
