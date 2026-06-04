@@ -8,6 +8,7 @@ import {
 import { db } from "../firebase";
 import { sampleProblems } from "../data/sampleProblems";
 import type { Problem } from "../types";
+import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
 
 const LOCAL_PROBLEMS_KEY = "yilan-contest-problems";
@@ -15,7 +16,10 @@ const LOCAL_PROBLEMS_KEY = "yilan-contest-problems";
 export async function loadProblems(): Promise<Problem[]> {
   if (db) {
     try {
-      const snapshot = await getDocs(collection(db, "problems"));
+      const snapshot = await withRemoteTimeout(
+        getDocs(collection(db, "problems")),
+        "Firestore 題庫讀取",
+      );
       const remoteProblems = snapshot.docs
         .map((item) => item.data() as Problem)
         .filter((problem) => problem.status === "published")
@@ -42,7 +46,7 @@ export async function importProblemsFromJson(rawJson: string): Promise<Problem[]
     for (const problem of problems) {
       batch.set(doc(collection(db, "problems"), problem.id), problem);
     }
-    await batch.commit();
+    await withRemoteTimeout(batch.commit(), "Firestore 題目匯入");
   } else {
     const current = readJson<Problem[]>(LOCAL_PROBLEMS_KEY, sampleProblems);
     const merged = [...current.filter((item) => !problems.some((p) => p.id === item.id)), ...problems];
@@ -54,7 +58,7 @@ export async function importProblemsFromJson(rawJson: string): Promise<Problem[]
 
 export async function saveProblem(problem: Problem) {
   if (db) {
-    await setDoc(doc(db, "problems", problem.id), problem);
+    await withRemoteTimeout(setDoc(doc(db, "problems", problem.id), problem), "Firestore 題目儲存");
     return;
   }
 
