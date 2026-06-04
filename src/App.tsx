@@ -62,10 +62,42 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
   const [adminBusy, setAdminBusy] = useState(false);
+  const [yearFilter, setYearFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const years = useMemo(
+    () =>
+      Array.from(new Set(problems.map((problem) => problem.year).filter(Boolean) as string[])).sort((a, b) =>
+        b.localeCompare(a, "zh-Hant", { numeric: true }),
+      ),
+    [problems],
+  );
+
+  const categories = useMemo(() => {
+    const categorySource =
+      yearFilter === "all" ? problems : problems.filter((problem) => problem.year === yearFilter);
+    return Array.from(new Set(categorySource.map((problem) => problem.category))).sort((a, b) =>
+      a.localeCompare(b, "zh-Hant", { numeric: true }),
+    );
+  }, [problems, yearFilter]);
+
+  const visibleProblems = useMemo(
+    () =>
+      problems.filter(
+        (problem) =>
+          (yearFilter === "all" || problem.year === yearFilter) &&
+          (categoryFilter === "all" || problem.category === categoryFilter),
+      ),
+    [categoryFilter, problems, yearFilter],
+  );
 
   const selectedProblem = useMemo(
-    () => problems.find((problem) => problem.id === selectedProblemId) || problems[0],
-    [problems, selectedProblemId],
+    () =>
+      visibleProblems.find((problem) => problem.id === selectedProblemId) ||
+      visibleProblems[0] ||
+      problems.find((problem) => problem.id === selectedProblemId) ||
+      problems[0],
+    [problems, selectedProblemId, visibleProblems],
   );
 
   const workspaceStorageKey = selectedProblem
@@ -87,6 +119,15 @@ export default function App() {
       setAdmin(nextUser ? await isAdmin(nextUser.uid) : isDemoAdmin());
     });
   }, []);
+
+  useEffect(() => {
+    if (visibleProblems.length === 0) {
+      return;
+    }
+    if (!visibleProblems.some((problem) => problem.id === selectedProblemId)) {
+      setSelectedProblemId(visibleProblems[0].id);
+    }
+  }, [selectedProblemId, visibleProblems]);
 
   useEffect(() => {
     if (!selectedProblem) {
@@ -199,6 +240,10 @@ export default function App() {
       const imported = await importProblemsFromJson(importJson);
       const loaded = await loadProblems();
       setProblems(loaded);
+      if (imported[0]?.year) {
+        setYearFilter(imported[0].year);
+      }
+      setCategoryFilter("all");
       setSelectedProblemId(imported[0]?.id || loaded[0]?.id || "");
       setStatusMessage(`已匯入 ${imported.length} 題。`);
     } catch (error) {
@@ -259,14 +304,45 @@ export default function App() {
       <main className="workspace-layout">
         <aside className="problem-rail">
           <button className="rail-title">題目列表</button>
-          {problems.map((problem) => (
+          <div className="rail-filters">
+            <label>
+              年份
+              <select
+                value={yearFilter}
+                onChange={(event) => {
+                  setYearFilter(event.target.value);
+                  setCategoryFilter("all");
+                }}
+              >
+                <option value="all">全部年份</option>
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year} 年度
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              分類
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                <option value="all">全部分類</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span>{visibleProblems.length} 題</span>
+          </div>
+          {visibleProblems.map((problem) => (
             <button
               key={problem.id}
               className={problem.id === selectedProblem.id ? "problem-item active" : "problem-item"}
               onClick={() => setSelectedProblemId(problem.id)}
             >
               <span>{problem.title}</span>
-              <small>{problem.category}</small>
+              <small>{problem.year ? `${problem.year} 年度 / ${problem.category}` : problem.category}</small>
             </button>
           ))}
         </aside>
@@ -276,7 +352,8 @@ export default function App() {
             <div>
               <strong>{selectedProblem.title}</strong>
               <span>
-                {selectedProblem.cases.length} 筆測資 / {totalScore} 分
+                {selectedProblem.year ? `${selectedProblem.year} 年度 / ` : ""}
+                {selectedProblem.category} / {selectedProblem.cases.length} 筆測資 / {totalScore} 分
               </span>
             </div>
             <div className="segmented">
@@ -426,6 +503,8 @@ function StatementPanel({
       <InfoBlock title="輸入格式" body={problem.inputFormat} />
       <InfoBlock title="輸出格式" body={problem.outputFormat} />
       <div className="metric-grid">
+        <Metric label="年份" value={problem.year ? `${problem.year} 年度` : "未設定"} />
+        <Metric label="分類" value={problem.category} />
         <Metric label="公開測資" value={`${publicCases} 筆`} />
         <Metric label="總分" value={`${totalScore} 分`} />
       </div>
