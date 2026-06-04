@@ -60,6 +60,7 @@ export default function App() {
   const [importJson, setImportJson] = useState(defaultImportJson);
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loginBusy, setLoginBusy] = useState(false);
 
   const selectedProblem = useMemo(
     () => problems.find((problem) => problem.id === selectedProblemId) || problems[0],
@@ -104,11 +105,17 @@ export default function App() {
   }, []);
 
   async function handleLogin() {
+    if (loginBusy) {
+      return;
+    }
+    setLoginBusy(true);
     try {
       setStatusMessage("");
       await loginWithGoogle();
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "登入失敗。");
+      setStatusMessage(getLoginErrorMessage(error));
+    } finally {
+      setLoginBusy(false);
     }
   }
 
@@ -215,9 +222,9 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <button className="primary-button" onClick={handleLogin}>
+            <button className="primary-button" onClick={handleLogin} disabled={loginBusy}>
               <LogIn size={17} />
-              Gmail 登入
+              {loginBusy ? "登入中" : "Gmail 登入"}
             </button>
           )}
         </div>
@@ -332,6 +339,24 @@ export default function App() {
       {statusMessage && <div className="toast">{statusMessage}</div>}
     </div>
   );
+}
+
+function getLoginErrorMessage(error: unknown) {
+  const code = typeof error === "object" && error && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : "";
+
+  if (code === "auth/cancelled-popup-request") {
+    return "登入視窗已被新的登入要求取消，請稍等一下再按一次。";
+  }
+  if (code === "auth/popup-closed-by-user") {
+    return "你已關閉登入視窗，若要登入請再按一次 Gmail 登入。";
+  }
+  if (code === "auth/popup-blocked") {
+    return "瀏覽器封鎖了登入視窗，請允許彈出視窗後再試一次。";
+  }
+
+  return error instanceof Error ? error.message : "登入失敗。";
 }
 
 function StatementPanel({
