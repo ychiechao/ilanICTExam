@@ -83,7 +83,7 @@ function normalizeProblem(value: unknown): Problem {
   const cases = Array.isArray(input.cases) ? input.cases : [];
   const examples = Array.isArray(input.examples) ? input.examples : [];
 
-  return {
+  const problem: Problem = {
     id,
     title: input.title,
     description: input.description,
@@ -101,10 +101,15 @@ function normalizeProblem(value: unknown): Problem {
       score: Number(item.score || 0),
       visibility: item.visibility === "hidden" ? "hidden" : "public",
     })),
-    toolboxConfig: input.toolboxConfig,
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+
+  if (input.toolboxConfig !== undefined) {
+    problem.toolboxConfig = input.toolboxConfig;
+  }
+
+  return problem;
 }
 
 function slugify(value: string) {
