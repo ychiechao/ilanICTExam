@@ -20,15 +20,21 @@ export interface ProblemCase {
 
 export interface Problem {
   id: string;
+  year?: string;
   title: string;
   description: string;
   inputFormat: string;
   outputFormat: string;
   difficulty: "easy" | "medium" | "hard";
   category: string;
+  categories?: string[];
   status: ProblemStatus;
   examples: ExampleCase[];
   cases: ProblemCase[];
+  source?: string;
+  sourceId?: string;
+  sourceUrls?: Record<string, string>;
+  imageSources?: string[];
   toolboxConfig?: unknown;
   createdAt?: string;
   updatedAt?: string;
