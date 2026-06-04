@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import type { AppUser, GradeResult, LeaderboardEntry, Problem } from "../types";
+import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
 
 const LOCAL_LEADERBOARD_KEY = "yilan-contest-leaderboards";
@@ -10,7 +11,10 @@ type LeaderboardMap = Record<string, LeaderboardEntry[]>;
 export async function loadLeaderboard(problemId: string): Promise<LeaderboardEntry[]> {
   if (db) {
     try {
-      const snapshot = await getDoc(doc(db, "leaderboards", problemId));
+      const snapshot = await withRemoteTimeout(
+        getDoc(doc(db, "leaderboards", problemId)),
+        "Firestore 排行榜讀取",
+      );
       if (snapshot.exists()) {
         return sortEntries((snapshot.data().entries || []) as LeaderboardEntry[]);
       }
@@ -47,12 +51,15 @@ export async function updateLeaderboard(
   ]).slice(0, 50);
 
   if (db) {
-    await setDoc(doc(db, "leaderboards", problem.id), {
-      problemId: problem.id,
-      problemTitle: problem.title,
-      entries: merged,
-      updatedAt: result.createdAt,
-    });
+    await withRemoteTimeout(
+      setDoc(doc(db, "leaderboards", problem.id), {
+        problemId: problem.id,
+        problemTitle: problem.title,
+        entries: merged,
+        updatedAt: result.createdAt,
+      }),
+      "Firestore 排行榜更新",
+    );
   } else {
     const all = readJson<LeaderboardMap>(LOCAL_LEADERBOARD_KEY, {});
     writeJson(LOCAL_LEADERBOARD_KEY, { ...all, [problem.id]: merged });
