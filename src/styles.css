@@ -966,7 +966,16 @@ pre {
   border-bottom: 1px solid #d9eef2;
 }
 
+.progress-table-item {
+  min-width: 1100px;
+  border-bottom: 1px solid #d9eef2;
+}
+
 .problem-table-item:last-child {
+  border-bottom: 0;
+}
+
+.progress-table-item:last-child {
   border-bottom: 0;
 }
 
@@ -974,13 +983,26 @@ pre {
   border-bottom: 0;
 }
 
-.problem-table-row.clickable {
+.progress-table-item .progress-table-row {
+  border-bottom: 0;
+}
+
+.problem-table-row.clickable,
+.progress-table-row.clickable {
   cursor: pointer;
 }
 
 .problem-table-row.clickable:hover,
-.problem-table-row.clickable.active {
+.problem-table-row.clickable.active,
+.progress-table-row.clickable:hover,
+.progress-table-row.clickable.active {
   background: #f0fbfd;
+}
+
+.user-progress-detail {
+  border-top: 1px solid #d9eef2;
+  background: #fbfeff;
+  padding: 10px 14px 12px;
 }
 
 .problem-edit-row {

@@ -1396,9 +1396,9 @@ function AdminPanel({
   onDeleteUser: (user: ManagedUser) => void;
 }) {
   const progressRows = buildUserProgressRows(users, problems, adminSubmissions, adminUids);
-  const recentSubmissions = adminSubmissions.slice(0, 24);
   const userSubmissionCounts = countSubmissionsByUser(adminSubmissions);
   const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>("problems");
+  const [expandedProgressUserId, setExpandedProgressUserId] = useState("");
   const adminSections: Array<{ key: AdminSectionKey; label: string }> = [
     { key: "problems", label: "題目管理" },
     { key: "users", label: "使用者管理" },
@@ -1690,8 +1690,25 @@ function AdminPanel({
                 <span>題目完成狀況</span>
               </div>
               {progressRows.length === 0 && <p className="muted table-empty">尚無答題紀錄。</p>}
-              {progressRows.map((row) => (
-                <div className="progress-table-row" key={row.uid}>
+              {progressRows.map((row) => {
+                const expanded = expandedProgressUserId === row.uid;
+                const userSubmissions = adminSubmissions.filter(
+                  (item) => (item.uid || "guest") === row.uid,
+                );
+                return (
+                  <div className="progress-table-item" key={row.uid}>
+                    <div
+                      className={expanded ? "progress-table-row clickable active" : "progress-table-row clickable"}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setExpandedProgressUserId(expanded ? "" : row.uid)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setExpandedProgressUserId(expanded ? "" : row.uid);
+                        }
+                      }}
+                    >
                   <span>{row.displayName}</span>
                   <span>{row.role}</span>
                   <span>{row.lastLoginAt}</span>
@@ -1700,27 +1717,33 @@ function AdminPanel({
                   <span>{row.submitCount} 次</span>
                   <span>{row.lastSubmittedAt ? new Date(row.lastSubmittedAt).toLocaleString("zh-TW") : "-"}</span>
                   <span>{row.problemStatusText}</span>
-                </div>
-              ))}
-            </div>
-            <div className="admin-table">
-              <div className="admin-table-head submission-table-row">
-                <span>時間</span>
-                <span>使用者</span>
-                <span>題目</span>
-                <span>答題率</span>
-                <span>分數</span>
-              </div>
-              {recentSubmissions.length === 0 && <p className="muted table-empty">尚無最近提交。</p>}
-              {recentSubmissions.map((item) => (
-                <div className="submission-table-row" key={item.id}>
-                  <span>{new Date(item.createdAt).toLocaleString("zh-TW")}</span>
-                  <span>{item.displayName}</span>
-                  <span>{item.problemTitle}</span>
-                  <span>{Math.round(item.passRate * 100)}%</span>
-                  <span>{item.score}/{item.maxScore}</span>
-                </div>
-              ))}
+                    </div>
+                    {expanded && (
+                      <div className="user-progress-detail">
+                        <div className="admin-table-head submission-table-row">
+                          <span>{"\u6642\u9593"}</span>
+                          <span>{"\u984c\u76ee"}</span>
+                          <span>{"\u7b54\u984c\u7387"}</span>
+                          <span>{"\u5206\u6578"}</span>
+                          <span>{"\u72c0\u614b"}</span>
+                        </div>
+                        {userSubmissions.length === 0 && (
+                          <p className="muted table-empty">{"\u5c1a\u7121\u63d0\u4ea4\u7d00\u9304\u3002"}</p>
+                        )}
+                        {userSubmissions.map((item) => (
+                          <div className="submission-table-row" key={item.id}>
+                            <span>{new Date(item.createdAt).toLocaleString("zh-TW")}</span>
+                            <span>{item.problemTitle}</span>
+                            <span>{Math.round(item.passRate * 100)}%</span>
+                            <span>{item.score}/{item.maxScore}</span>
+                            <span>{isFullScoreSubmission(item) ? "\u5df2\u5b8c\u6210" : item.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
           )}
