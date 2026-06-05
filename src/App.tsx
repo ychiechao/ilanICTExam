@@ -1645,7 +1645,7 @@ function buildUserProgressRows(
       const bestRecords = Array.from(bestByProblem.values());
       const completedProblems = problems.filter((problem) => {
         const best = bestByProblem.get(problem.id);
-        return best && (best.isFullScore || best.score >= getProblemMaxScore(problem));
+        return best && isFullScoreSubmission(best);
       });
       const attemptedProblems = problems.filter(
         (problem) => bestByProblem.has(problem.id) && !completedProblems.some((item) => item.id === problem.id),
@@ -1743,7 +1743,7 @@ function buildPracticeStatsByProblem(
       const bestPassRate = bestRecord?.passRate || 0;
       const hasDraft = hasSavedWorkspace(problem.id);
       const status: PracticeStatus =
-        bestScore >= maxScore && maxScore > 0
+        bestRecord && isFullScoreSubmission(bestRecord)
           ? "completed"
           : problemRecords.length > 0 || hasDraft
             ? "in-progress"
@@ -1784,6 +1784,16 @@ function getBetterSubmission(current: SubmissionRecord | undefined, incoming: Su
 
 function getProblemMaxScore(problem: Problem) {
   return problem.cases.reduce((sum, item) => sum + item.score, 0);
+}
+
+function isFullScoreSubmission(record: SubmissionRecord) {
+  return (
+    record.maxScore > 0 &&
+    record.status === "accepted" &&
+    record.totalCases > 0 &&
+    record.passedCases === record.totalCases &&
+    record.score >= record.maxScore
+  );
 }
 
 function getProblemCaseSummary(problem: Problem) {

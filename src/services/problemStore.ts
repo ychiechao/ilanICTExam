@@ -341,7 +341,7 @@ function normalizeProblem(value: unknown, bundleYear = ""): Problem {
     ...(categories.length > 0 ? { categories } : {}),
     status: readStatus(input.status),
     examples: normalizeExamples(input.examples),
-    cases: normalizeImportedCases(input),
+    cases: normalizeImportedCases(input, "測資", normalizeExamples(input.examples)),
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -397,7 +397,7 @@ function normalizeBDesignerProblem(value: Record<string, unknown>, bundleYear = 
     ...(categories.length > 0 ? { categories } : {}),
     status: "published",
     examples: normalizeExamples(value.examples),
-    cases: normalizeImportedCases(value, "測資"),
+    cases: normalizeImportedCases(value, "測資", normalizeExamples(value.examples)),
     source: "bDesigner",
     sourceId,
     ...(Object.keys(sourceUrls).length > 0 ? { sourceUrls } : {}),
@@ -436,7 +436,7 @@ function normalizeExamples(value: unknown): ExampleCase[] {
   });
 }
 
-function normalizeCases(value: unknown, groupTitle = "測資"): ProblemCase[] {
+function normalizeCases(value: unknown, groupTitle = "測資", defaultVisibility: ProblemCase["visibility"] = "public"): ProblemCase[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -451,18 +451,18 @@ function normalizeCases(value: unknown, groupTitle = "測資"): ProblemCase[] {
       input: readText(record.input, readText(record.input_text, readPrompts(record.prompts))),
       output: readText(record.output, readText(record.expected)),
       score: Number.isFinite(score) ? score : 10,
-      visibility: record.visibility === "hidden" ? "hidden" : "public",
+      visibility: readVisibility(record.visibility, defaultVisibility),
     };
   });
 }
 
-function normalizeImportedCases(value: unknown, groupTitle = "測資"): ProblemCase[] {
+function normalizeImportedCases(value: unknown, groupTitle = "測資", examples: ExampleCase[] = []): ProblemCase[] {
   const record = isRecord(value) ? value : {};
-  const explicitCases = normalizeCases(record.cases, groupTitle);
+  const explicitCases = normalizeCases(record.cases, groupTitle, "hidden");
   const aliasedCases = [
-    ...normalizeCases(record.test_cases, groupTitle),
-    ...normalizeCases(record.testCases, groupTitle),
-    ...normalizeCases(record.testcases, groupTitle),
+    ...normalizeCases(record.test_cases, groupTitle, "hidden"),
+    ...normalizeCases(record.testCases, groupTitle, "hidden"),
+    ...normalizeCases(record.testcases, groupTitle, "hidden"),
   ];
 
   const [primary, secondary] =
@@ -480,11 +480,24 @@ function normalizeImportedCases(value: unknown, groupTitle = "測資"): ProblemC
     ].join("\u0000");
     if (!seen.has(key)) {
       seen.add(key);
-      output.push(testCase);
+      output.push(markExampleCasePublic(testCase, examples));
     }
   }
 
   return output;
+}
+
+function markExampleCasePublic(testCase: ProblemCase, examples: ExampleCase[]): ProblemCase {
+  const matchesExample = examples.some(
+    (example) =>
+      normalizeComparableText(example.input) === normalizeComparableText(testCase.input) &&
+      normalizeComparableText(example.output) === normalizeComparableText(testCase.output),
+  );
+  return matchesExample ? { ...testCase, visibility: "public" } : testCase;
+}
+
+function readVisibility(value: unknown, fallback: ProblemCase["visibility"]): ProblemCase["visibility"] {
+  return value === "public" || value === "hidden" ? value : fallback;
 }
 
 function normalizeComparableText(value: string) {
