@@ -11,19 +11,37 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return signedIn() &&
+      return signedIn() && accountEnabled() &&
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function accountEnabled() {
+      return signedIn() &&
+        (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.disabled != true);
+    }
+
+    function isActiveOwner(uid) {
+      return isOwner(uid) && accountEnabled();
     }
 
     match /users/{uid} {
       allow read: if signedIn();
-      allow create, update: if isOwner(uid) || isAdmin();
+      allow create: if isAdmin() ||
+        (isActiveOwner(uid) &&
+          !request.resource.data.keys().hasAny(["disabled", "disabledAt", "disabledBy"]));
+      allow update: if isAdmin() ||
+        (isActiveOwner(uid) &&
+          !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(["disabled", "disabledAt", "disabledBy"]));
+      allow delete: if isAdmin();
     }
 
     match /admins/{uid} {
       allow read: if signedIn();
-      allow create: if isOwner(uid) &&
-        !exists(/databases/$(database)/documents/settings/adminBootstrap);
+      allow create: if isAdmin() ||
+        (isOwner(uid) &&
+          !exists(/databases/$(database)/documents/settings/adminBootstrap));
       allow update, delete: if isAdmin();
     }
 
@@ -43,7 +61,7 @@ service cloud.firestore {
     match /submissions/{submissionId} {
       allow read: if signedIn() &&
         (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if signedIn() &&
+      allow create: if accountEnabled() &&
         request.resource.data.uid == request.auth.uid;
       allow update, delete: if isAdmin();
     }
@@ -51,14 +69,14 @@ service cloud.firestore {
     match /userProblemStats/{statId} {
       allow read: if signedIn() &&
         (resource.data.uid == request.auth.uid || isAdmin());
-      allow create, update: if signedIn() &&
+      allow create, update: if accountEnabled() &&
         request.resource.data.uid == request.auth.uid;
       allow delete: if isAdmin();
     }
 
     match /leaderboards/{problemId} {
       allow read: if true;
-      allow create, update: if signedIn();
+      allow create, update: if accountEnabled();
       allow delete: if isAdmin();
     }
   }

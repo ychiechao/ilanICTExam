@@ -14,7 +14,9 @@ Blockly.setLocale(zhHantMessages);
 interface BlocklyWorkspaceProps {
   mode: WorkspaceMode;
   storageKey: string;
+  fallbackStorageKeys?: string[];
   recordXml: string;
+  zoomScale?: number;
   onChange: (payload: { code: string; xml: string }) => void;
 }
 
@@ -25,11 +27,14 @@ let customBlocksRegistered = false;
 export default function BlocklyWorkspace({
   mode,
   storageKey,
+  fallbackStorageKeys = [],
   recordXml,
+  zoomScale = 1,
   onChange,
 }: BlocklyWorkspaceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const fallbackKeySignature = fallbackStorageKeys.join("\u0000");
 
   useEffect(() => {
     registerCustomBlocks();
@@ -49,7 +54,7 @@ export default function BlocklyWorkspace({
       zoom: {
         controls: true,
         wheel: true,
-        startScale: 0.9,
+        startScale: zoomScale,
         maxScale: 1.5,
         minScale: 0.45,
         scaleSpeed: 1.08,
@@ -57,7 +62,7 @@ export default function BlocklyWorkspace({
     });
 
     workspaceRef.current = workspace;
-    loadXml(workspace, localStorage.getItem(storageKey) || DEFAULT_XML);
+    loadXml(workspace, readInitialWorkspaceXml(storageKey, fallbackStorageKeys));
     emitWorkspace(workspace, onChange, storageKey);
 
     const listener = () => emitWorkspace(workspace, onChange, storageKey);
@@ -73,7 +78,7 @@ export default function BlocklyWorkspace({
       workspace.dispose();
       workspaceRef.current = null;
     };
-  }, [mode, onChange, storageKey]);
+  }, [fallbackKeySignature, mode, onChange, storageKey]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -90,6 +95,15 @@ export default function BlocklyWorkspace({
       workspace.updateToolbox(createToolbox());
     }
   }, [mode]);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+    if (!workspace) {
+      return;
+    }
+    (workspace as Blockly.WorkspaceSvg & { setScale?: (scale: number) => void }).setScale?.(zoomScale);
+    Blockly.svgResize(workspace);
+  }, [zoomScale]);
 
   return <div className="blockly-host" ref={containerRef} />;
 }
@@ -125,6 +139,28 @@ function loadXml(workspace: Blockly.WorkspaceSvg, xmlText: string) {
 function parseXml(xmlText: string) {
   const document = new DOMParser().parseFromString(xmlText, "text/xml");
   return document.documentElement;
+}
+
+function readInitialWorkspaceXml(storageKey: string, fallbackStorageKeys: string[]) {
+  const primaryXml = localStorage.getItem(storageKey);
+  if (isMeaningfulXml(primaryXml)) {
+    return primaryXml;
+  }
+
+  const fallbackXml = fallbackStorageKeys
+    .map((key) => localStorage.getItem(key))
+    .find((xml) => isMeaningfulXml(xml));
+
+  if (fallbackXml) {
+    localStorage.setItem(storageKey, fallbackXml);
+    return fallbackXml;
+  }
+
+  return primaryXml || DEFAULT_XML;
+}
+
+function isMeaningfulXml(xml: string | null): xml is string {
+  return Boolean(xml && (xml.includes("<block") || xml.includes("<variables")));
 }
 
 function createToolbox(): Blockly.utils.toolbox.ToolboxDefinition {

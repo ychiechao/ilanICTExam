@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import type { AppUser, GradeResult, LeaderboardEntry, Problem, SubmissionRecord } from "../types";
 import { withRemoteTimeout } from "./remote";
@@ -159,6 +159,40 @@ export async function updateGlobalLeaderboard(
   }
 
   return merged;
+}
+
+export async function removeUserFromLeaderboards(uid: string) {
+  if (db) {
+    const snapshot = await withRemoteTimeout(
+      getDocs(collection(db, "leaderboards")),
+      "Firestore 排行榜清理",
+    );
+    const updatedAt = new Date().toISOString();
+    await Promise.all(
+      snapshot.docs.map((item) => {
+        const data = item.data();
+        const entries = ((data.entries || []) as LeaderboardEntry[]).filter(
+          (entry) => entry.uid !== uid,
+        );
+        return withRemoteTimeout(
+          setDoc(item.ref, { ...data, entries, updatedAt }, { merge: true }),
+          "Firestore 排行榜更新",
+        );
+      }),
+    );
+    return;
+  }
+
+  const all = readJson<LeaderboardMap>(LOCAL_LEADERBOARD_KEY, {});
+  writeJson(
+    LOCAL_LEADERBOARD_KEY,
+    Object.fromEntries(
+      Object.entries(all).map(([key, entries]) => [
+        key,
+        entries.filter((entry) => entry.uid !== uid),
+      ]),
+    ),
+  );
 }
 
 function betterEntry(current: LeaderboardEntry | undefined, incoming: LeaderboardEntry) {

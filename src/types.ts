@@ -104,6 +104,7 @@ export interface AppUser {
   email?: string | null;
   photoURL?: string | null;
   isAnonymous?: boolean;
+  disabled?: boolean;
 }
 
 export interface ManagedUser {
@@ -112,4 +113,7 @@ export interface ManagedUser {
   email?: string | null;
   photoURL?: string | null;
   lastLoginAt?: unknown;
+  disabled?: boolean;
+  disabledAt?: unknown;
+  disabledBy?: string;
 }

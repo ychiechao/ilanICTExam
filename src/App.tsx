@@ -14,20 +14,34 @@ import {
 } from "lucide-react";
 import BlocklyWorkspace from "./components/BlocklyWorkspace";
 import { hasFirebaseConfig } from "./firebase";
-import { loadAdminUids, loadManagedUsers, setManagedUserAdmin } from "./services/adminService";
+import {
+  deleteManagedUserProfile,
+  loadAdminUids,
+  loadManagedUsers,
+  setManagedUserAdmin,
+  setManagedUserDisabled,
+} from "./services/adminService";
 import { isAdmin, isDemoAdmin, initializeFirstAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
-import { loadGlobalLeaderboard, updateGlobalLeaderboard } from "./services/leaderboardService";
 import {
+  loadGlobalLeaderboard,
+  removeUserFromLeaderboards,
+  updateGlobalLeaderboard,
+} from "./services/leaderboardService";
+import {
+  deleteProblemIfUnused,
   exportProblemsToCsv,
   getProblemCsvTemplate,
   importProblemsFromCsv,
   importProblemsFromJson,
+  loadAllProblemsForAdmin,
   loadProblems,
+  saveProblem,
   type ProblemImportResult,
   type ProblemImportMode,
 } from "./services/problemStore";
 import {
+  deleteSubmissionsForUser,
   loadAllSubmissions,
   loadSubmissions,
   loadUserSubmissions,
@@ -86,12 +100,13 @@ export default function App() {
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [practiceSubmissions, setPracticeSubmissions] = useState<SubmissionRecord[]>([]);
   const [adminSubmissions, setAdminSubmissions] = useState<SubmissionRecord[]>([]);
+  const [adminProblems, setAdminProblems] = useState<Problem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [importJson, setImportJson] = useState(defaultImportJson);
   const [importCsv, setImportCsv] = useState(getProblemCsvTemplate());
   const [problemImportMode, setProblemImportMode] = useState<ProblemImportMode>("append");
   const [editingProblemId, setEditingProblemId] = useState("");
-  const [editingProblemJson, setEditingProblemJson] = useState("");
+  const [editingProblemDraft, setEditingProblemDraft] = useState<Problem | null>(null);
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
   const [managedAdminUids, setManagedAdminUids] = useState<Set<string>>(new Set());
   const [statusMessage, setStatusMessage] = useState("");
@@ -245,14 +260,16 @@ export default function App() {
 
     setAdminDataBusy(true);
     try {
-      const [nextUsers, nextAdminUids, nextSubmissions] = await Promise.all([
+      const [nextUsers, nextAdminUids, nextSubmissions, nextAdminProblems] = await Promise.all([
         loadManagedUsers(),
         loadAdminUids(),
         loadAllSubmissions(),
+        loadAllProblemsForAdmin(),
       ]);
       setManagedUsers(nextUsers);
       setManagedAdminUids(nextAdminUids);
       setAdminSubmissions(nextSubmissions);
+      setAdminProblems(nextAdminProblems);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "管理資料讀取失敗。");
     } finally {
@@ -265,6 +282,29 @@ export default function App() {
       loadAdminData();
     }
   }, [activeTab, admin, loadAdminData]);
+
+  const refreshProblemLists = useCallback(
+    async (preferredProblemId?: string) => {
+      const [publishedProblems, allProblems] = await Promise.all([
+        loadProblems(),
+        admin ? loadAllProblemsForAdmin() : Promise.resolve<Problem[]>([]),
+      ]);
+      setProblems(publishedProblems);
+      if (admin) {
+        setAdminProblems(allProblems);
+      }
+
+      const nextSelected =
+        (preferredProblemId && publishedProblems.some((problem) => problem.id === preferredProblemId)
+          ? preferredProblemId
+          : undefined) ||
+        publishedProblems[0]?.id ||
+        "";
+      setSelectedProblemId(nextSelected);
+      return { publishedProblems, allProblems };
+    },
+    [admin],
+  );
 
   function handleModeChange(nextMode: WorkspaceMode) {
     if (nextMode === mode) {
@@ -417,13 +457,12 @@ export default function App() {
     setStatusMessage("");
     try {
       const result = await importProblemsFromJson(importJson, problemImportMode);
-      const loaded = await loadProblems();
-      setProblems(loaded);
+      const { publishedProblems } = await refreshProblemLists(result.imported[0]?.id);
       if (result.imported[0]?.year) {
         setYearFilter(result.imported[0].year);
       }
       setCategoryFilter("all");
-      setSelectedProblemId(result.imported[0]?.id || loaded[0]?.id || "");
+      setSelectedProblemId(result.imported[0]?.id || publishedProblems[0]?.id || "");
       setStatusMessage(formatImportStatus("JSON", result));
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "題目匯入失敗。");
@@ -443,13 +482,12 @@ export default function App() {
       const rawJson = await file.text();
       setImportJson(rawJson);
       const result = await importProblemsFromJson(rawJson, problemImportMode);
-      const loaded = await loadProblems();
-      setProblems(loaded);
+      const { publishedProblems } = await refreshProblemLists(result.imported[0]?.id);
       if (result.imported[0]?.year) {
         setYearFilter(result.imported[0].year);
       }
       setCategoryFilter("all");
-      setSelectedProblemId(result.imported[0]?.id || loaded[0]?.id || "");
+      setSelectedProblemId(result.imported[0]?.id || publishedProblems[0]?.id || "");
       setStatusMessage(formatImportStatus("JSON 檔案", result));
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "JSON 檔案題目匯入失敗。");
@@ -466,13 +504,12 @@ export default function App() {
     setStatusMessage("");
     try {
       const result = await importProblemsFromCsv(importCsv, problemImportMode);
-      const loaded = await loadProblems();
-      setProblems(loaded);
+      const { publishedProblems } = await refreshProblemLists(result.imported[0]?.id);
       if (result.imported[0]?.year) {
         setYearFilter(result.imported[0].year);
       }
       setCategoryFilter("all");
-      setSelectedProblemId(result.imported[0]?.id || loaded[0]?.id || "");
+      setSelectedProblemId(result.imported[0]?.id || publishedProblems[0]?.id || "");
       setStatusMessage(formatImportStatus("CSV", result));
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "CSV 題目匯入失敗。");
@@ -482,7 +519,7 @@ export default function App() {
   }
 
   function handleExportCsvProblems() {
-    const csv = exportProblemsToCsv(problems);
+    const csv = exportProblemsToCsv(admin ? adminProblems : problems);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -493,28 +530,66 @@ export default function App() {
   }
 
   function handleSelectProblemForEdit(problemId: string) {
-    const problem = problems.find((item) => item.id === problemId);
+    if (editingProblemId === problemId) {
+      setEditingProblemId("");
+      setEditingProblemDraft(null);
+      return;
+    }
+
+    const problem = (adminProblems.length > 0 ? adminProblems : problems).find(
+      (item) => item.id === problemId,
+    );
     setEditingProblemId(problemId);
-    setEditingProblemJson(problem ? JSON.stringify(problem, null, 2) : "");
+    setEditingProblemDraft(problem ? cloneProblem(problem) : null);
   }
 
-  async function handleSaveEditedProblem() {
-    if (!editingProblemJson.trim()) {
-      setStatusMessage("請先選擇題目或貼上單題 JSON。");
+  function handleCancelProblemEdit() {
+    setEditingProblemId("");
+    setEditingProblemDraft(null);
+  }
+
+  async function handleSaveEditedProblem(problem: Problem) {
+    if (!problem.title.trim() || !problem.description.trim()) {
+      setStatusMessage("題目標題與說明不可空白。");
       return;
     }
 
     setBusy(true);
     setStatusMessage("");
     try {
-      const result = await importProblemsFromJson(editingProblemJson, "overwrite");
-      const loaded = await loadProblems();
-      setProblems(loaded);
-      setSelectedProblemId(result.imported[0]?.id || selectedProblemId);
-      setEditingProblemId(result.imported[0]?.id || editingProblemId);
-      setStatusMessage(`已更新 ${result.imported.length} 題。`);
+      const savedProblem = sanitizeProblemDraft(problem);
+      await saveProblem(savedProblem);
+      await refreshProblemLists(savedProblem.id);
+      setEditingProblemId(savedProblem.id);
+      setEditingProblemDraft(cloneProblem(savedProblem));
+      setStatusMessage("題目已儲存。");
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "題目 JSON 儲存失敗。");
+      setStatusMessage(error instanceof Error ? error.message : "題目儲存失敗。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteProblem(problemId: string) {
+    if (!window.confirm("確定要刪除這題嗎？只有完全沒有提交紀錄的題目才能刪除。")) {
+      return;
+    }
+
+    setBusy(true);
+    setStatusMessage("");
+    try {
+      await deleteProblemIfUnused(problemId);
+      const { publishedProblems } = await refreshProblemLists(
+        selectedProblemId === problemId ? undefined : selectedProblemId,
+      );
+      if (selectedProblemId === problemId) {
+        setSelectedProblemId(publishedProblems[0]?.id || "");
+      }
+      setEditingProblemId("");
+      setEditingProblemDraft(null);
+      setStatusMessage("題目已刪除。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "題目刪除失敗。");
     } finally {
       setBusy(false);
     }
@@ -579,6 +654,78 @@ export default function App() {
       setStatusMessage(makeAdmin ? "已設為管理者。" : "已改為一般使用者。");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "使用者權限更新失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleSetManagedUserDisabled(target: ManagedUser, disabled: boolean) {
+    if (target.uid === user?.uid) {
+      setStatusMessage("不能停用目前登入中的管理者帳號。");
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      await setManagedUserDisabled(target, disabled, user);
+      await loadAdminData();
+      setStatusMessage(disabled ? "使用者已停用。" : "使用者已啟用。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "使用者停用狀態更新失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleClearManagedUserSubmissions(target: ManagedUser) {
+    if (!window.confirm(`確定要清除「${target.displayName || target.email || target.uid}」的所有答題紀錄嗎？`)) {
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const result = await deleteSubmissionsForUser(target.uid);
+      await removeUserFromLeaderboards(target.uid);
+      await loadAdminData();
+      if (target.uid === user?.uid) {
+        setPracticeSubmissions([]);
+        setSubmissions([]);
+      }
+      setLeaderboard(await loadGlobalLeaderboard());
+      setStatusMessage(`已清除 ${result.submissionsDeleted} 筆答題紀錄。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "答題紀錄清除失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleDeleteManagedUser(target: ManagedUser) {
+    if (target.uid === user?.uid) {
+      setStatusMessage("不能刪除目前登入中的管理者帳號。");
+      return;
+    }
+    if (
+      !window.confirm(
+        `確定要刪除「${target.displayName || target.email || target.uid}」嗎？這會連同答題紀錄與排行榜資料一起清除。`,
+      )
+    ) {
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const result = await deleteSubmissionsForUser(target.uid);
+      await removeUserFromLeaderboards(target.uid);
+      await deleteManagedUserProfile(target);
+      await loadAdminData();
+      setLeaderboard(await loadGlobalLeaderboard());
+      setStatusMessage(`使用者已刪除，並清除 ${result.submissionsDeleted} 筆答題紀錄。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "使用者刪除失敗。");
     } finally {
       setAdminBusy(false);
     }
@@ -802,17 +949,18 @@ export default function App() {
                 adminSubmissions={adminSubmissions}
                 adminUids={managedAdminUids}
                 currentUser={user}
-                problems={problems}
+                problems={adminProblems.length > 0 ? adminProblems : problems}
                 users={managedUsers}
                 importJson={importJson}
                 importCsv={importCsv}
                 importMode={problemImportMode}
                 editingProblemId={editingProblemId}
-                editingProblemJson={editingProblemJson}
+                editingProblemDraft={editingProblemDraft}
+                problemSubmissionCounts={countSubmissionsByProblem(adminSubmissions)}
                 onImportJsonChange={setImportJson}
                 onImportCsvChange={setImportCsv}
                 onImportModeChange={setProblemImportMode}
-                onEditingProblemJsonChange={setEditingProblemJson}
+                onEditingProblemDraftChange={setEditingProblemDraft}
                 onInitializeAdmin={handleInitializeAdmin}
                 onImport={handleImportProblems}
                 onUploadJsonFile={handleUploadProblemJsonFile}
@@ -821,8 +969,13 @@ export default function App() {
                 onExportCsv={handleExportCsvProblems}
                 onSelectProblemForEdit={handleSelectProblemForEdit}
                 onSaveEditedProblem={handleSaveEditedProblem}
+                onCancelProblemEdit={handleCancelProblemEdit}
+                onDeleteProblem={handleDeleteProblem}
                 onRefreshAdminData={loadAdminData}
                 onSetUserAdmin={handleSetManagedUserAdmin}
+                onSetUserDisabled={handleSetManagedUserDisabled}
+                onClearUserSubmissions={handleClearManagedUserSubmissions}
+                onDeleteUser={handleDeleteManagedUser}
                 firebaseReady={hasFirebaseConfig}
                 busy={busy}
                 adminBusy={adminBusy}
@@ -1179,7 +1332,8 @@ function AdminPanel({
   importCsv,
   importMode,
   editingProblemId,
-  editingProblemJson,
+  editingProblemDraft,
+  problemSubmissionCounts,
   problems,
   users,
   firebaseReady,
@@ -1190,15 +1344,20 @@ function AdminPanel({
   onImportCsvChange,
   onImportJsonChange,
   onImportModeChange,
-  onEditingProblemJsonChange,
+  onEditingProblemDraftChange,
   onInitializeAdmin,
   onImport,
   onUploadJsonFile,
   jsonFileInputRef,
   onSelectProblemForEdit,
   onSaveEditedProblem,
+  onCancelProblemEdit,
+  onDeleteProblem,
   onRefreshAdminData,
   onSetUserAdmin,
+  onSetUserDisabled,
+  onClearUserSubmissions,
+  onDeleteUser,
 }: {
   admin: boolean;
   adminDataBusy: boolean;
@@ -1209,7 +1368,8 @@ function AdminPanel({
   importCsv: string;
   importMode: ProblemImportMode;
   editingProblemId: string;
-  editingProblemJson: string;
+  editingProblemDraft: Problem | null;
+  problemSubmissionCounts: Record<string, number>;
   problems: Problem[];
   users: ManagedUser[];
   firebaseReady: boolean;
@@ -1220,18 +1380,24 @@ function AdminPanel({
   onImportCsvChange: (value: string) => void;
   onImportJsonChange: (value: string) => void;
   onImportModeChange: (value: ProblemImportMode) => void;
-  onEditingProblemJsonChange: (value: string) => void;
+  onEditingProblemDraftChange: (value: Problem | null) => void;
   onInitializeAdmin: () => void;
   onImport: () => void;
   onUploadJsonFile: (file: File | undefined) => void;
   jsonFileInputRef: RefObject<HTMLInputElement | null>;
   onSelectProblemForEdit: (problemId: string) => void;
-  onSaveEditedProblem: () => void;
+  onSaveEditedProblem: (problem: Problem) => void;
+  onCancelProblemEdit: () => void;
+  onDeleteProblem: (problemId: string) => void;
   onRefreshAdminData: () => void;
   onSetUserAdmin: (user: ManagedUser, makeAdmin: boolean) => void;
+  onSetUserDisabled: (user: ManagedUser, disabled: boolean) => void;
+  onClearUserSubmissions: (user: ManagedUser) => void;
+  onDeleteUser: (user: ManagedUser) => void;
 }) {
   const progressRows = buildUserProgressRows(users, problems, adminSubmissions, adminUids);
   const recentSubmissions = adminSubmissions.slice(0, 24);
+  const userSubmissionCounts = countSubmissionsByUser(adminSubmissions);
   const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>("problems");
   const adminSections: Array<{ key: AdminSectionKey; label: string }> = [
     { key: "problems", label: "題目管理" },
@@ -1351,7 +1517,7 @@ function AdminPanel({
             <div className="section-title-row">
               <div>
                 <h3>編輯題庫</h3>
-                <p>選擇題目後可直接編輯單題 JSON；儲存時會覆蓋相同 ID 題目。</p>
+                <p>點選題目列可展開或收合編輯表單；已有提交紀錄的題目不可刪除，請改為草稿或封存。</p>
               </div>
               <span className="section-pill">{problems.length} 題</span>
             </div>
@@ -1366,49 +1532,67 @@ function AdminPanel({
                   <span>測資</span>
                   <span>隱藏</span>
                   <span>非範例</span>
+                  <span>提交</span>
                   <span>狀態</span>
                   <span>操作</span>
                 </div>
                 {problems.length === 0 && <p className="muted table-empty">尚無題目。</p>}
                 {problems.map((problem) => {
                   const caseSummary = getProblemCaseSummary(problem);
+                  const submissionCount = problemSubmissionCounts[problem.id] || 0;
+                  const expanded = editingProblemId === problem.id;
                   return (
-                    <div className="problem-table-row" key={problem.id}>
-                      <span>{problem.id}</span>
-                      <span>{problem.year || "-"}</span>
-                      <span>{problem.category}</span>
-                      <span>{problem.title}</span>
-                      <span>{caseSummary.exampleCount}</span>
-                      <span>{caseSummary.caseCount}</span>
-                      <span>{caseSummary.hiddenCount}</span>
-                      <span className={caseSummary.nonExampleCount > 0 ? "ok-text" : "danger-text"}>
-                        {caseSummary.nonExampleCount}
-                      </span>
-                      <span>{problem.status}</span>
-                      <button className="ghost-button" onClick={() => onSelectProblemForEdit(problem.id)}>
-                        編輯
-                      </button>
+                    <div className="problem-table-item" key={problem.id}>
+                      <div
+                        className={expanded ? "problem-table-row clickable active" : "problem-table-row clickable"}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onSelectProblemForEdit(problem.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onSelectProblemForEdit(problem.id);
+                          }
+                        }}
+                      >
+                        <span>{problem.id}</span>
+                        <span>{problem.year || "-"}</span>
+                        <span>{problem.category}</span>
+                        <span>{problem.title}</span>
+                        <span>{caseSummary.exampleCount}</span>
+                        <span>{caseSummary.caseCount}</span>
+                        <span>{caseSummary.hiddenCount}</span>
+                        <span className={caseSummary.nonExampleCount > 0 ? "ok-text" : "danger-text"}>
+                          {caseSummary.nonExampleCount}
+                        </span>
+                        <span>{submissionCount}</span>
+                        <span>{problem.status}</span>
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectProblemForEdit(problem.id);
+                          }}
+                        >
+                          {expanded ? "收合" : "編輯"}
+                        </button>
+                      </div>
+                      {expanded && editingProblemDraft && (
+                        <ProblemEditorForm
+                          problem={editingProblemDraft}
+                          submissionCount={submissionCount}
+                          busy={busy}
+                          onChange={onEditingProblemDraftChange}
+                          onSave={() => onSaveEditedProblem(editingProblemDraft)}
+                          onCancel={onCancelProblemEdit}
+                          onDelete={() => onDeleteProblem(problem.id)}
+                        />
+                      )}
                     </div>
                   );
                 })}
               </div>
-              <label className="admin-field">
-                單題 JSON 編輯
-                <textarea
-                  className="json-input"
-                  value={editingProblemJson}
-                  onChange={(event) => onEditingProblemJsonChange(event.target.value)}
-                  placeholder="請從左側題目列表選擇題目，或貼上單題 JSON。"
-                />
-              </label>
-              <button
-                className="primary-button wide"
-                onClick={onSaveEditedProblem}
-                disabled={busy || (!editingProblemId && !editingProblemJson.trim())}
-              >
-                <Save size={17} />
-                儲存題目 JSON
-              </button>
             </div>
           </section>
             </>
@@ -1431,25 +1615,53 @@ function AdminPanel({
                 <span>Email</span>
                 <span>最近登入</span>
                 <span>權限</span>
+                <span>狀態</span>
                 <span>操作</span>
               </div>
               {users.length === 0 && <p className="muted table-empty">尚無使用者資料。</p>}
               {users.map((item) => {
                 const itemIsAdmin = adminUids.has(item.uid);
                 const isSelf = item.uid === currentUser?.uid;
+                const itemSubmissionCount = userSubmissionCounts[item.uid] || 0;
                 return (
                   <div className="user-table-row" key={item.uid}>
                     <span>{item.displayName || "未命名使用者"}</span>
                     <span>{item.email || "-"}</span>
                     <span>{formatManagedTimestamp(item.lastLoginAt)}</span>
                     <span>{itemIsAdmin ? "管理者" : "一般使用者"}</span>
-                    <button
-                      className="ghost-button"
-                      onClick={() => onSetUserAdmin(item, !itemIsAdmin)}
-                      disabled={adminBusy || isSelf}
-                    >
-                      {itemIsAdmin ? "改為一般" : "設為管理者"}
-                    </button>
+                    <span className={item.disabled ? "status-pill disabled" : "status-pill"}>
+                      {item.disabled ? "停用" : "啟用"} / {itemSubmissionCount} 筆
+                    </span>
+                    <div className="user-actions">
+                      <button
+                        className="ghost-button"
+                        onClick={() => onSetUserAdmin(item, !itemIsAdmin)}
+                        disabled={adminBusy || isSelf}
+                      >
+                        {itemIsAdmin ? "改為一般" : "設為管理者"}
+                      </button>
+                      <button
+                        className="ghost-button"
+                        onClick={() => onSetUserDisabled(item, !item.disabled)}
+                        disabled={adminBusy || isSelf}
+                      >
+                        {item.disabled ? "啟用" : "停用"}
+                      </button>
+                      <button
+                        className="ghost-button"
+                        onClick={() => onClearUserSubmissions(item)}
+                        disabled={adminBusy || itemSubmissionCount === 0}
+                      >
+                        清除答題
+                      </button>
+                      <button
+                        className="danger-button"
+                        onClick={() => onDeleteUser(item)}
+                        disabled={adminBusy || isSelf}
+                      >
+                        刪除使用者
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -1514,6 +1726,246 @@ function AdminPanel({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function ProblemEditorForm({
+  problem,
+  submissionCount,
+  busy,
+  onChange,
+  onSave,
+  onCancel,
+  onDelete,
+}: {
+  problem: Problem;
+  submissionCount: number;
+  busy: boolean;
+  onChange: (problem: Problem) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  const updateProblem = <K extends keyof Problem>(key: K, value: Problem[K]) => {
+    onChange({ ...problem, [key]: value });
+  };
+  const updateExample = (index: number, patch: Partial<Problem["examples"][number]>) => {
+    onChange({
+      ...problem,
+      examples: problem.examples.map((example, itemIndex) =>
+        itemIndex === index ? { ...example, ...patch } : example,
+      ),
+    });
+  };
+  const updateCase = (index: number, patch: Partial<Problem["cases"][number]>) => {
+    onChange({
+      ...problem,
+      cases: problem.cases.map((testCase, itemIndex) =>
+        itemIndex === index ? { ...testCase, ...patch } : testCase,
+      ),
+    });
+  };
+
+  return (
+    <div className="problem-edit-row">
+      <div className="problem-form-grid">
+        <label className="problem-form-field">
+          ID
+          <input value={problem.id} readOnly />
+        </label>
+        <label className="problem-form-field">
+          年份
+          <input value={problem.year || ""} onChange={(event) => updateProblem("year", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          分類
+          <input value={problem.category} onChange={(event) => updateProblem("category", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          題目
+          <input value={problem.title} onChange={(event) => updateProblem("title", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          難度
+          <select
+            value={problem.difficulty}
+            onChange={(event) => updateProblem("difficulty", event.target.value as Problem["difficulty"])}
+          >
+            <option value="easy">easy</option>
+            <option value="medium">medium</option>
+            <option value="hard">hard</option>
+          </select>
+        </label>
+        <label className="problem-form-field">
+          狀態
+          <select
+            value={problem.status}
+            onChange={(event) => updateProblem("status", event.target.value as Problem["status"])}
+          >
+            <option value="published">published</option>
+            <option value="draft">draft</option>
+            <option value="archived">archived</option>
+          </select>
+        </label>
+      </div>
+
+      <label className="problem-form-field">
+        題目說明
+        <textarea value={problem.description} onChange={(event) => updateProblem("description", event.target.value)} />
+      </label>
+      <label className="problem-form-field">
+        輸入格式
+        <textarea value={problem.inputFormat} onChange={(event) => updateProblem("inputFormat", event.target.value)} />
+      </label>
+      <label className="problem-form-field">
+        輸出格式
+        <textarea value={problem.outputFormat} onChange={(event) => updateProblem("outputFormat", event.target.value)} />
+      </label>
+
+      <div className="problem-array-editor">
+        <div className="array-title-row">
+          <h4>範例</h4>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() =>
+              onChange({
+                ...problem,
+                examples: [...problem.examples, { title: `範例 ${problem.examples.length + 1}`, input: "", output: "" }],
+              })
+            }
+          >
+            新增範例
+          </button>
+        </div>
+        {problem.examples.length === 0 && <p className="muted">尚無範例。</p>}
+        {problem.examples.map((example, index) => (
+          <div className="problem-array-row example-array-row" key={`example-${index}`}>
+            <input
+              value={example.title}
+              onChange={(event) => updateExample(index, { title: event.target.value })}
+              placeholder="範例標題"
+            />
+            <textarea
+              value={example.input}
+              onChange={(event) => updateExample(index, { input: event.target.value })}
+              placeholder="輸入"
+            />
+            <textarea
+              value={example.output}
+              onChange={(event) => updateExample(index, { output: event.target.value })}
+              placeholder="輸出"
+            />
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() =>
+                onChange({ ...problem, examples: problem.examples.filter((_, itemIndex) => itemIndex !== index) })
+              }
+            >
+              刪除列
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="problem-array-editor">
+        <div className="array-title-row">
+          <h4>測資</h4>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() =>
+              onChange({
+                ...problem,
+                cases: [
+                  ...problem.cases,
+                  {
+                    groupTitle: "測資",
+                    caseTitle: `C${problem.cases.length + 1}`,
+                    input: "",
+                    output: "",
+                    score: 10,
+                    visibility: "hidden",
+                  },
+                ],
+              })
+            }
+          >
+            新增測資
+          </button>
+        </div>
+        {problem.cases.length === 0 && <p className="warning-text">沒有測資時無法正式評分滿分。</p>}
+        {problem.cases.map((testCase, index) => (
+          <div className="problem-array-row case-array-row" key={`case-${index}`}>
+            <input
+              value={testCase.groupTitle}
+              onChange={(event) => updateCase(index, { groupTitle: event.target.value })}
+              placeholder="群組"
+            />
+            <input
+              value={testCase.caseTitle}
+              onChange={(event) => updateCase(index, { caseTitle: event.target.value })}
+              placeholder="編號"
+            />
+            <textarea
+              value={testCase.input}
+              onChange={(event) => updateCase(index, { input: event.target.value })}
+              placeholder="輸入"
+            />
+            <textarea
+              value={testCase.output}
+              onChange={(event) => updateCase(index, { output: event.target.value })}
+              placeholder="輸出"
+            />
+            <input
+              type="number"
+              min="0"
+              value={testCase.score}
+              onChange={(event) => updateCase(index, { score: Math.max(0, Number(event.target.value) || 0) })}
+              placeholder="分數"
+            />
+            <select
+              value={testCase.visibility}
+              onChange={(event) => updateCase(index, { visibility: event.target.value as Problem["cases"][number]["visibility"] })}
+            >
+              <option value="public">public</option>
+              <option value="hidden">hidden</option>
+            </select>
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() =>
+                onChange({ ...problem, cases: problem.cases.filter((_, itemIndex) => itemIndex !== index) })
+              }
+            >
+              刪除列
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {submissionCount > 0 && (
+        <p className="warning-text">已有 {submissionCount} 筆解題紀錄，不能刪除，請改為 draft 或 archived。</p>
+      )}
+      <div className="problem-form-actions">
+        <button className="primary-button" type="button" onClick={onSave} disabled={busy}>
+          <Save size={17} />
+          儲存
+        </button>
+        <button className="ghost-button" type="button" onClick={onCancel} disabled={busy}>
+          取消
+        </button>
+        <button
+          className="danger-button"
+          type="button"
+          onClick={onDelete}
+          disabled={busy || submissionCount > 0}
+        >
+          刪除題目
+        </button>
+      </div>
     </div>
   );
 }
@@ -1616,6 +2068,78 @@ function formatProblemStatusSummary(completedTitles: string[], attemptedTitles: 
 function summarizeTitles(titles: string[]) {
   const preview = titles.slice(0, 3).join("、");
   return titles.length > 3 ? `${preview} 等 ${titles.length} 題` : preview;
+}
+
+function cloneProblem(problem: Problem): Problem {
+  return JSON.parse(JSON.stringify(problem)) as Problem;
+}
+
+function sanitizeProblemDraft(problem: Problem): Problem {
+  const now = new Date().toISOString();
+  const output: Problem = {
+    id: problem.id,
+    title: problem.title.trim() || "未命名題目",
+    description: problem.description.trim(),
+    inputFormat: problem.inputFormat.trim(),
+    outputFormat: problem.outputFormat.trim(),
+    difficulty: problem.difficulty,
+    category: problem.category.trim() || "未分類",
+    status: problem.status,
+    examples: (problem.examples || []).map((example, index) => ({
+      title: example.title.trim() || `範例 ${index + 1}`,
+      input: example.input,
+      output: example.output,
+      ...(example.description?.trim() ? { description: example.description.trim() } : {}),
+    })),
+    cases: (problem.cases || []).map((testCase, index) => ({
+      groupTitle: testCase.groupTitle.trim() || "測資",
+      caseTitle: testCase.caseTitle.trim() || `C${index + 1}`,
+      input: testCase.input,
+      output: testCase.output,
+      score: Math.max(0, Number(testCase.score) || 0),
+      visibility: testCase.visibility === "public" ? "public" : "hidden",
+    })),
+    createdAt: problem.createdAt || now,
+    updatedAt: now,
+  };
+
+  if (problem.year?.trim()) {
+    output.year = problem.year.trim();
+  }
+  if (problem.categories?.length) {
+    output.categories = problem.categories.map((item) => item.trim()).filter(Boolean);
+  }
+  if (problem.source) {
+    output.source = problem.source;
+  }
+  if (problem.sourceId) {
+    output.sourceId = problem.sourceId;
+  }
+  if (problem.sourceUrls && Object.keys(problem.sourceUrls).length > 0) {
+    output.sourceUrls = problem.sourceUrls;
+  }
+  if (problem.imageSources && problem.imageSources.length > 0) {
+    output.imageSources = problem.imageSources;
+  }
+  if (problem.toolboxConfig !== undefined) {
+    output.toolboxConfig = problem.toolboxConfig;
+  }
+  return output;
+}
+
+function countSubmissionsByProblem(records: SubmissionRecord[]) {
+  return records.reduce<Record<string, number>>((counts, record) => {
+    counts[record.problemId] = (counts[record.problemId] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function countSubmissionsByUser(records: SubmissionRecord[]) {
+  return records.reduce<Record<string, number>>((counts, record) => {
+    const uid = record.uid || "guest";
+    counts[uid] = (counts[uid] || 0) + 1;
+    return counts;
+  }, {});
 }
 
 function buildUserProgressRows(

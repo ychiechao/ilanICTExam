@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   setDoc,
@@ -10,6 +11,7 @@ import { sampleProblems } from "../data/sampleProblems";
 import type { ExampleCase, Problem, ProblemCase, ProblemStatus } from "../types";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
+import { getProblemSubmissionCount } from "./submissionService";
 
 const LOCAL_PROBLEMS_KEY = "yilan-contest-problems";
 
@@ -41,7 +43,31 @@ export async function loadProblems(): Promise<Problem[]> {
     }
   }
 
-  return readJson<Problem[]>(LOCAL_PROBLEMS_KEY, sampleProblems);
+  return readJson<Problem[]>(LOCAL_PROBLEMS_KEY, sampleProblems)
+    .filter((problem) => problem.status === "published")
+    .sort(compareProblems);
+}
+
+export async function loadAllProblemsForAdmin(): Promise<Problem[]> {
+  if (db) {
+    try {
+      const snapshot = await withRemoteTimeout(
+        getDocs(collection(db, "problems")),
+        "Firestore 題目管理讀取",
+      );
+      const remoteProblems = snapshot.docs
+        .map((item) => item.data() as Problem)
+        .sort(compareProblems);
+
+      if (remoteProblems.length > 0) {
+        return remoteProblems;
+      }
+    } catch {
+      console.info("Firestore 題目管理讀取失敗，改用本機題庫。");
+    }
+  }
+
+  return readJson<Problem[]>(LOCAL_PROBLEMS_KEY, sampleProblems).sort(compareProblems);
 }
 
 export async function importProblemsFromJson(
@@ -213,6 +239,25 @@ export async function saveProblem(problem: Problem) {
       : [...current, problem]
     ).sort(compareProblems),
   );
+}
+
+export async function deleteProblemIfUnused(problemId: string) {
+  const submissionCount = await getProblemSubmissionCount(problemId);
+  if (submissionCount > 0) {
+    throw new Error("已有解題紀錄，不能刪除，請改為草稿或封存。");
+  }
+
+  if (db) {
+    await withRemoteTimeout(deleteDoc(doc(db, "problems", problemId)), "Firestore 題目刪除");
+    return { deleted: true, submissionCount };
+  }
+
+  const current = readJson<Problem[]>(LOCAL_PROBLEMS_KEY, sampleProblems);
+  writeJson(
+    LOCAL_PROBLEMS_KEY,
+    current.filter((item) => item.id !== problemId).sort(compareProblems),
+  );
+  return { deleted: true, submissionCount };
 }
 
 function getProblemImportSource(parsed: unknown): { items: unknown[]; year?: string } {

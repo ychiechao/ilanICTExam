@@ -30,15 +30,33 @@ export function subscribeToAuth(callback: (user: AppUser | null) => void) {
       return;
     }
 
+    if (await isUserDisabled(firebaseUser.uid)) {
+      if (auth) {
+        await signOut(auth);
+      }
+      callback(null);
+      return;
+    }
+
+    const appUser = toAppUser(firebaseUser);
     await upsertUser(firebaseUser);
-    callback(toAppUser(firebaseUser));
+    await autoInitializeFirstAdmin(appUser);
+    callback(appUser);
   });
 }
 
 export async function loginWithGoogle() {
   const credential = await signInWithGoogle();
+  if (await isUserDisabled(credential.user.uid)) {
+    if (auth) {
+      await signOut(auth);
+    }
+    throw new Error("此帳號已停用，請聯絡管理者。");
+  }
   await upsertUser(credential.user);
-  return toAppUser(credential.user);
+  const appUser = toAppUser(credential.user);
+  await autoInitializeFirstAdmin(appUser);
+  return appUser;
 }
 
 export async function logout() {
@@ -56,6 +74,20 @@ export async function isAdmin(uid?: string) {
     return snapshot.exists();
   } catch (error) {
     console.warn("Firestore 管理者讀取失敗。", error);
+    return false;
+  }
+}
+
+async function isUserDisabled(uid: string) {
+  if (!db || !uid) {
+    return false;
+  }
+
+  try {
+    const snapshot = await withRemoteTimeout(getDoc(doc(db, "users", uid)), "Firestore 使用者狀態讀取");
+    return snapshot.exists() && snapshot.data().disabled === true;
+  } catch (error) {
+    console.warn("Firestore 使用者狀態讀取失敗", error);
     return false;
   }
 }
@@ -101,6 +133,14 @@ export async function initializeFirstAdmin(user: AppUser): Promise<AdminInitiali
 
 export function isDemoAdmin() {
   return localStorage.getItem("yilan-demo-admin") === "true";
+}
+
+async function autoInitializeFirstAdmin(user: AppUser) {
+  try {
+    await initializeFirstAdmin(user);
+  } catch {
+    console.info("管理者自動初始化未完成，將維持目前權限。");
+  }
 }
 
 async function upsertUser(user: User) {
