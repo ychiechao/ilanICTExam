@@ -48,21 +48,26 @@ async function gradeCase(code: string, testCase: ProblemCase): Promise<CaseResul
   try {
     const response = await runWorker(code, testCase.input, 3000);
     const passed = normalizeOutput(response.output) === normalizeOutput(testCase.output);
-    return {
+    const result: CaseResult = {
       caseTitle: testCase.caseTitle,
       groupTitle: testCase.groupTitle,
+      visibility: testCase.visibility,
       input: testCase.input,
       expected: testCase.output,
       actual: response.output,
       score: testCase.score,
       earnedScore: passed ? testCase.score : 0,
       passed,
-      error: response.error,
     };
+    if (response.error) {
+      result.error = response.error;
+    }
+    return result;
   } catch (error) {
     return {
       caseTitle: testCase.caseTitle,
       groupTitle: testCase.groupTitle,
+      visibility: testCase.visibility,
       input: testCase.input,
       expected: testCase.output,
       actual: "",
