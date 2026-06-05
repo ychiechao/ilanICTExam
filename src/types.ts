@@ -43,6 +43,7 @@ export interface Problem {
 export interface CaseResult {
   caseTitle: string;
   groupTitle: string;
+  visibility: ProblemVisibility;
   input: string;
   expected: string;
   actual: string;
@@ -62,6 +63,7 @@ export interface GradeResult {
   elapsedMs: number;
   cases: CaseResult[];
   createdAt: string;
+  message?: string;
 }
 
 export interface SubmissionRecord extends GradeResult {
@@ -73,6 +75,10 @@ export interface SubmissionRecord extends GradeResult {
   mode: WorkspaceMode;
   blocklyXml: string;
   generatedCode: string;
+  solveStartedAt?: string;
+  solveCompletedAt?: string;
+  solveDurationMs?: number;
+  isFullScore?: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -84,6 +90,12 @@ export interface LeaderboardEntry {
   elapsedMs: number;
   submitCount: number;
   updatedAt: string;
+  completedCount?: number;
+  totalProblems?: number;
+  totalScore?: number;
+  totalMaxScore?: number;
+  completedAt?: string;
+  lastSubmittedAt?: string;
 }
 
 export interface AppUser {
@@ -92,4 +104,12 @@ export interface AppUser {
   email?: string | null;
   photoURL?: string | null;
   isAnonymous?: boolean;
+}
+
+export interface ManagedUser {
+  uid: string;
+  displayName: string;
+  email?: string | null;
+  photoURL?: string | null;
+  lastLoginAt?: unknown;
 }
