@@ -102,7 +102,7 @@ export async function deleteManagedUserProfile(target: ManagedUser) {
   }
 
   await withRemoteTimeout(
-    Promise.allSettled([
+    Promise.all([
       deleteDoc(doc(db, "users", target.uid)),
       deleteDoc(doc(db, "admins", target.uid)),
     ]),
