@@ -1,4 +1,4 @@
 # 複製為 .dev.vars（已在 .gitignore）
 ALLOWED_ORIGINS=http://localhost:5173,https://ilanictexam.pages.dev
-# 服務帳號 JSON 全文，單行（階段 1 才需要）
-FIREBASE_SERVICE_ACCOUNT=
+# 服務帳號 JSON 的 base64（單行）。產生：base64 -w0 sa.json
+FIREBASE_SERVICE_ACCOUNT_B64=

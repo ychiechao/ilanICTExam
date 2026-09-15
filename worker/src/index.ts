@@ -1,10 +1,13 @@
+import { HttpError, RequestContext } from "./context";
+import { AuthError } from "./auth/verifyIdToken";
+import { handleLogin, handleRefresh } from "./routes/login";
 import { handleTime } from "./routes/time";
 
 /**
  * ilanictexam-grader
  *
  * 競賽模式的後端：競賽帳號登入、題庫與帳號匯入、伺服器端評分。
- * 路由在階段 1、2 逐一加入；階段 0 只有 /time 供前端校正倒數。
+ * 所有回應都是 JSON：成功 { ok: true, ... }，失敗 { ok: false, code, message }。
  */
 export default {
   async fetch(request, env): Promise<Response> {
@@ -20,8 +23,7 @@ export default {
     try {
       response = await route(request, url, env);
     } catch (error) {
-      console.error("unhandled", error);
-      response = json({ ok: false, code: "internal", message: "伺服器發生錯誤" }, 500);
+      response = errorResponse(error);
     }
 
     for (const [key, value] of Object.entries(cors)) {
@@ -31,11 +33,36 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-async function route(request: Request, url: URL, _env: Env): Promise<Response> {
-  if (request.method === "GET" && url.pathname === "/time") {
+async function route(request: Request, url: URL, env: Env): Promise<Response> {
+  const { method } = request;
+  const path = url.pathname.replace(/\/+$/, "") || "/";
+
+  if (method === "GET" && path === "/time") {
     return handleTime();
   }
-  return json({ ok: false, code: "not_found", message: "找不到此路徑" }, 404);
+
+  // 以下路由都需要 Firestore；RequestContext 建構時才解析服務帳號，/time 不需要 secret。
+  const ctx = new RequestContext(env);
+
+  if (method === "POST" && path === "/login") {
+    return handleLogin(request, ctx);
+  }
+  if (method === "POST" && path === "/refresh") {
+    return handleRefresh(request, ctx);
+  }
+
+  throw new HttpError(404, "not_found", "找不到此路徑");
+}
+
+function errorResponse(error: unknown): Response {
+  if (error instanceof HttpError) {
+    return json({ ok: false, code: error.code, message: error.message }, error.status);
+  }
+  if (error instanceof AuthError) {
+    return json({ ok: false, code: error.code, message: error.message }, 401);
+  }
+  console.error("unhandled", error);
+  return json({ ok: false, code: "internal", message: "伺服器發生錯誤" }, 500);
 }
 
 export function json(body: unknown, status = 200): Response {

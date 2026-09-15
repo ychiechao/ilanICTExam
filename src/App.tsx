@@ -187,17 +187,24 @@ export default function App() {
 
   useEffect(() => {
     document.title = APP_TITLE;
+  }, []);
+
+  // 練習資料在模式切換時重新讀取：競賽期間開著頁面的人，切回練習模式後不必重新整理。
+  useEffect(() => {
+    if (!platformReady || (platform.mode !== "practice" && !superAdmin)) {
+      return;
+    }
     loadProblems()
       .then((loaded) => {
         setProblems(loaded);
         setSelectedProblemId((current) => current || loaded[0]?.id || "");
-        setCustomInput(getDefaultTestInput(loaded[0]));
+        setCustomInput((current) => current || getDefaultTestInput(loaded[0]));
       })
-      .catch((error) => console.info("題目讀取失敗（競賽模式下非超管屬正常）", error));
+      .catch((error) => console.info("題目讀取失敗", error));
     loadGlobalLeaderboard()
       .then(setLeaderboard)
       .catch(() => setLeaderboard([]));
-  }, []);
+  }, [platform.mode, platformReady, superAdmin]);
 
   useEffect(() => {
     return subscribeToAuth(async (nextUser) => {
