@@ -29,3 +29,9 @@ bdesigner_*
 c3-branch-work/
 deploy-main-work/
 ilanICTExam-ready/
+
+# Cloudflare Worker
+worker/node_modules/
+worker/.dev.vars
+worker/worker-configuration.d.ts
+worker/.wrangler/
