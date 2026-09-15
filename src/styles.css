@@ -247,6 +247,12 @@ button {
   border-color: #8fd4df;
 }
 
+.ghost-button.compact {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
 .icon-button {
   width: 32px;
   min-height: 32px;
@@ -801,10 +807,19 @@ pre {
   gap: 12px;
 }
 
-.section-title-row h3 {
+.section-title-row.compact {
+  align-items: center;
+}
+
+.section-title-row h3,
+.section-title-row h4 {
   margin: 0;
   color: var(--ink);
   font-size: 17px;
+}
+
+.section-title-row h4 {
+  font-size: 15px;
 }
 
 .section-title-row p {
@@ -822,6 +837,128 @@ pre {
   font-size: 12px;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.account-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  border: 1px solid #cfe9ef;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8feff, #ffffff);
+  padding: 14px;
+  box-shadow: 0 8px 22px rgba(12, 83, 96, 0.08);
+}
+
+.account-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.account-card strong {
+  color: var(--ink);
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.account-card small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.account-label {
+  color: #3d6370;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.account-school-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.join-code-form,
+.class-create-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.class-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #cfe9ef;
+  border-radius: 12px;
+  background: #fbfeff;
+  padding: 12px;
+}
+
+.class-card-head,
+.class-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.class-card-head h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.class-card-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.class-code-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #b9dce5;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 9px 12px;
+  text-align: right;
+}
+
+.class-code-box span {
+  color: #3d6370;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.class-code-box strong {
+  color: #176a77;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+}
+
+.class-card-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  color: #315764;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.class-management-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #d9eef2;
+  padding-top: 12px;
 }
 
 .admin-field {
@@ -874,7 +1011,7 @@ pre {
   top: 0;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 8px;
   border: 1px solid #cfe9ef;
   border-radius: 10px;
@@ -937,6 +1074,7 @@ pre {
 .user-table-row,
 .progress-table-row,
 .problem-table-row,
+.contest-table-row,
 .submission-table-row {
   display: grid;
   align-items: center;
@@ -951,6 +1089,40 @@ pre {
   min-width: 1080px;
 }
 
+.user-directory-filters {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.6fr) minmax(220px, 0.9fr) minmax(360px, 1.8fr);
+  gap: 12px;
+  align-items: end;
+  border-bottom: 1px solid #d9eef2;
+  background: #f8feff;
+  padding: 12px;
+  min-width: 1080px;
+}
+
+.user-directory-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(86px, 1fr));
+  gap: 8px;
+}
+
+.table-role-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.table-role-stack strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.table-role-stack small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .progress-table-row {
   grid-template-columns: minmax(130px, 1fr) 80px 150px 90px 95px 80px 150px minmax(260px, 1.4fr);
   min-width: 1100px;
@@ -961,8 +1133,18 @@ pre {
   min-width: 1140px;
 }
 
+.contest-table-row {
+  grid-template-columns: 72px minmax(180px, 1.2fr) 126px 96px 150px 150px 70px 74px 70px minmax(330px, 1.4fr);
+  min-width: 1280px;
+}
+
 .problem-table-item {
   min-width: 1140px;
+  border-bottom: 1px solid #d9eef2;
+}
+
+.contest-table-item {
+  min-width: 1280px;
   border-bottom: 1px solid #d9eef2;
 }
 
@@ -975,6 +1157,10 @@ pre {
   border-bottom: 0;
 }
 
+.contest-table-item:last-child {
+  border-bottom: 0;
+}
+
 .progress-table-item:last-child {
   border-bottom: 0;
 }
@@ -983,20 +1169,286 @@ pre {
   border-bottom: 0;
 }
 
+.contest-table-item .contest-table-row {
+  border-bottom: 0;
+}
+
 .progress-table-item .progress-table-row {
   border-bottom: 0;
 }
 
 .problem-table-row.clickable,
+.contest-table-row.clickable,
 .progress-table-row.clickable {
   cursor: pointer;
 }
 
 .problem-table-row.clickable:hover,
 .problem-table-row.clickable.active,
+.contest-table-row.clickable:hover,
+.contest-table-row.clickable.active,
 .progress-table-row.clickable:hover,
 .progress-table-row.clickable.active {
   background: #f0fbfd;
+}
+
+.contest-lifecycle-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid #cfe9ef;
+  border-radius: 10px;
+  background: #f8feff;
+  padding: 10px;
+}
+
+.contest-status-step {
+  border-radius: 999px;
+  background: #eef7fa;
+  color: #315764;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.contest-status-step.ready {
+  background: #eafaff;
+  color: #176a77;
+}
+
+.contest-status-step.active {
+  background: #e9fff7;
+  color: #197041;
+}
+
+.contest-status-step.warning {
+  background: #fff7dc;
+  color: #7b5600;
+}
+
+.contest-status-step.done {
+  background: #eef6ff;
+  color: #245da8;
+}
+
+.contest-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #eef7fa;
+  color: #315764;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.contest-status-badge.active {
+  background: #e9fff7;
+  color: #197041;
+}
+
+.contest-status-badge.paused,
+.contest-status-badge.ended {
+  background: #fff7dc;
+  color: #7b5600;
+}
+
+.contest-status-badge.review,
+.contest-status-badge.roster,
+.contest-status-badge.waiting {
+  background: #eafaff;
+  color: #176a77;
+}
+
+.contest-status-badge.published {
+  background: #eef6ff;
+  color: #245da8;
+}
+
+.contest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.contest-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid #d9eef2;
+  background: #fbfeff;
+  padding: 14px;
+}
+
+.contest-form-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 100px minmax(240px, 1.2fr) 150px 150px;
+  gap: 10px;
+}
+
+.contest-form-grid.secondary {
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+}
+
+.contest-note-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.contest-editor-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid #cfe9ef;
+  border-radius: 9px;
+  background: #f4fdff;
+  padding: 10px;
+}
+
+.contest-editor-summary span {
+  border-radius: 999px;
+  background: #ffffff;
+  color: #315764;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.admin-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #d9eef2;
+  border-radius: 10px;
+  background: #fbfeff;
+  padding: 12px;
+}
+
+.school-table-row,
+.roster-table-row,
+.school-account-table-row,
+.student-class-table-row,
+.class-member-table-row,
+.class-submission-table-row {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  min-width: 760px;
+  border-bottom: 1px solid #d9eef2;
+  padding: 9px 10px;
+}
+
+.school-table-row {
+  grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.4fr) 90px 110px;
+}
+
+.roster-table-row {
+  grid-template-columns: 54px minmax(210px, 1.1fr) minmax(120px, 0.8fr) minmax(160px, 1fr) minmax(170px, 1fr) minmax(220px, 1.2fr);
+  min-width: 980px;
+}
+
+.school-account-table-row {
+  grid-template-columns: minmax(170px, 1fr) minmax(220px, 1.1fr) minmax(120px, 0.7fr) minmax(150px, 0.8fr) 90px 150px;
+  min-width: 980px;
+}
+
+.student-class-table-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(160px, 1fr) minmax(130px, 0.8fr) 150px 90px;
+  min-width: 820px;
+}
+
+.class-member-table-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(220px, 1.2fr) 150px 90px 90px;
+  min-width: 820px;
+}
+
+.class-submission-table-row {
+  grid-template-columns: 150px minmax(130px, 0.8fr) minmax(220px, 1.4fr) 80px 90px 90px;
+  min-width: 900px;
+}
+
+.school-table-item {
+  min-width: 760px;
+  border-bottom: 1px solid #d9eef2;
+}
+
+.school-table-item:last-child {
+  border-bottom: 0;
+}
+
+.school-table-item .school-table-row {
+  border-bottom: 0;
+}
+
+.school-table-row.clickable {
+  cursor: pointer;
+}
+
+.school-table-row.clickable:hover,
+.school-table-row.clickable.active {
+  background: #f0fbfd;
+}
+
+.school-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid #d9eef2;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.school-form-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(240px, 1.2fr) 130px;
+  gap: 10px;
+}
+
+.roster-import-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(360px, 1.4fr);
+  gap: 12px;
+}
+
+.school-account-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(240px, 1fr) minmax(160px, 0.8fr) auto;
+  align-items: end;
+  gap: 12px;
+  border: 1px solid #cfe9ef;
+  border-radius: 10px;
+  background: #f8feff;
+  padding: 12px;
+}
+
+.inline-admin-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #315764;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.inline-admin-select select {
+  min-width: 180px;
+  border: 1px solid #b9dce5;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #243b42;
+  padding: 9px 10px;
+}
+
+.roster-csv-field textarea {
+  min-height: 130px;
+}
+
+.roster-preview-table {
+  max-height: 360px;
+  overflow: auto;
 }
 
 .user-progress-detail {
@@ -1135,6 +1587,11 @@ pre {
 .status-pill.disabled {
   background: #fff4f1;
   color: #a72d1f;
+}
+
+.status-pill.warning {
+  background: #fff8db;
+  color: #8a5b00;
 }
 
 .user-actions .ghost-button,

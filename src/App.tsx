@@ -11,17 +11,40 @@ import {
   Save,
   Trophy,
   Upload,
+  UserCircle,
+  Users,
 } from "lucide-react";
 import BlocklyWorkspace from "./components/BlocklyWorkspace";
 import { hasFirebaseConfig } from "./firebase";
 import {
   deleteManagedUserProfile,
-  loadAdminUids,
+  loadAdminProfile,
+  loadAdminProfiles,
   loadManagedUsers,
   setManagedUserAdmin,
+  setManagedUserTeacherSchool,
   setManagedUserDisabled,
 } from "./services/adminService";
-import { isAdmin, isDemoAdmin, initializeFirstAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
+import {
+  getAccountStatusLabel,
+  getEffectiveRole,
+  getRoleLabel,
+  inferUserRoleFromEmail,
+  loadUserProfile,
+  saveAccountSchoolSelection,
+} from "./services/accountService";
+import { isDemoAdmin, initializeFirstAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
+import {
+  createLearningClass,
+  joinClassByCode,
+  loadClassMembers,
+  loadClassSubmissionViews,
+  loadStudentClassMembers,
+  loadTeacherClasses,
+  setClassJoinEnabled,
+  setClassMemberStatus,
+} from "./services/classStore";
+import { createContestDraft, loadContests, saveContest } from "./services/contestStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
 import {
   loadGlobalLeaderboard,
@@ -48,21 +71,43 @@ import {
   saveSubmission,
   MAX_SUBMISSIONS_PER_PROBLEM,
 } from "./services/submissionService";
+import {
+  createSchoolAccount,
+  createSchoolDraft,
+  loadSchoolAccounts,
+  loadSchools,
+  loadSchoolsByIds,
+  parseDomainText,
+  previewRosterImport,
+  saveRosterEntries,
+  saveSchool,
+  type RosterImportPreview,
+} from "./services/schoolStore";
 import type {
+  AdminProfile,
   AppUser,
+  ClassMember,
+  ClassSubmissionView,
+  ContestEvent,
+  ContestStatus,
   GradeResult,
+  LearningClass,
   LeaderboardEntry,
   ManagedUser,
   Problem,
+  School,
+  SchoolAccount,
   SubmissionRecord,
+  UserRole,
   WorkspaceMode,
 } from "./types";
 
 const APP_TITLE = "宜蘭縣資訊科技創意實作競賽";
 
-type TabKey = "statement" | "test" | "score" | "history" | "leaderboard" | "admin";
+type TabKey = "statement" | "test" | "score" | "history" | "leaderboard" | "account" | "classes" | "admin";
 type PracticeStatus = "completed" | "in-progress" | "not-started";
-type AdminSectionKey = "problems" | "users" | "progress";
+type AdminSectionKey = "contests" | "schoolAccounts" | "problems" | "users" | "progress";
+type UserDirectoryRoleFilter = "all" | "teacher" | "student";
 
 interface PracticeStats {
   status: PracticeStatus;
@@ -75,12 +120,26 @@ interface PracticeStats {
   lastMode?: WorkspaceMode;
 }
 
+const contestStatusFlow: Array<{ key: ContestStatus; label: string; tone: "idle" | "ready" | "active" | "warning" | "done" }> = [
+  { key: "draft", label: "草稿", tone: "idle" },
+  { key: "roster", label: "報名／名單匯入", tone: "ready" },
+  { key: "waiting", label: "等候開始", tone: "ready" },
+  { key: "active", label: "競賽中", tone: "active" },
+  { key: "paused", label: "暫停", tone: "warning" },
+  { key: "ended", label: "結束", tone: "warning" },
+  { key: "review", label: "成績審核", tone: "ready" },
+  { key: "published", label: "正式公布", tone: "done" },
+  { key: "archived", label: "封存", tone: "idle" },
+];
+
 const tabs: Array<{ key: TabKey; label: string; icon: typeof Play }> = [
   { key: "statement", label: "題目說明", icon: FileJson },
   { key: "test", label: "自行測試", icon: Play },
   { key: "score", label: "評分", icon: CheckCircle2 },
   { key: "history", label: "評分紀錄", icon: History },
   { key: "leaderboard", label: "排行榜", icon: Trophy },
+  { key: "account", label: "我的帳號", icon: UserCircle },
+  { key: "classes", label: "我的班級", icon: Users },
   { key: "admin", label: "管理", icon: Upload },
 ];
 
@@ -94,6 +153,16 @@ export default function App() {
   const [recordXml, setRecordXml] = useState("");
   const [user, setUser] = useState<AppUser | null>(null);
   const [admin, setAdmin] = useState(false);
+  const [superAdmin, setSuperAdmin] = useState(false);
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const [accountProfile, setAccountProfile] = useState<ManagedUser | null>(null);
+  const [accountSchoolId, setAccountSchoolId] = useState("");
+  const [teacherClasses, setTeacherClasses] = useState<LearningClass[]>([]);
+  const [classMembers, setClassMembers] = useState<ClassMember[]>([]);
+  const [classSubmissionViews, setClassSubmissionViews] = useState<ClassSubmissionView[]>([]);
+  const [studentClassMembers, setStudentClassMembers] = useState<ClassMember[]>([]);
+  const [classNameDraft, setClassNameDraft] = useState("");
+  const [studentJoinCode, setStudentJoinCode] = useState("");
   const [customInput, setCustomInput] = useState("");
   const [customOutput, setCustomOutput] = useState("");
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
@@ -101,19 +170,32 @@ export default function App() {
   const [practiceSubmissions, setPracticeSubmissions] = useState<SubmissionRecord[]>([]);
   const [adminSubmissions, setAdminSubmissions] = useState<SubmissionRecord[]>([]);
   const [adminProblems, setAdminProblems] = useState<Problem[]>([]);
+  const [contests, setContests] = useState<ContestEvent[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [schoolAccounts, setSchoolAccounts] = useState<SchoolAccount[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [importJson, setImportJson] = useState(defaultImportJson);
   const [importCsv, setImportCsv] = useState(getProblemCsvTemplate());
+  const [rosterCsv, setRosterCsv] = useState(defaultRosterCsv);
+  const [rosterPreview, setRosterPreview] = useState<RosterImportPreview | null>(null);
+  const [rosterContestId, setRosterContestId] = useState("");
   const [problemImportMode, setProblemImportMode] = useState<ProblemImportMode>("append");
   const [editingProblemId, setEditingProblemId] = useState("");
   const [editingProblemDraft, setEditingProblemDraft] = useState<Problem | null>(null);
+  const [editingContestId, setEditingContestId] = useState("");
+  const [editingContestDraft, setEditingContestDraft] = useState<ContestEvent | null>(null);
+  const [editingSchoolId, setEditingSchoolId] = useState("");
+  const [editingSchoolDraft, setEditingSchoolDraft] = useState<School | null>(null);
   const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
+  const [adminProfiles, setAdminProfiles] = useState<AdminProfile[]>([]);
   const [managedAdminUids, setManagedAdminUids] = useState<Set<string>>(new Set());
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
   const [adminBusy, setAdminBusy] = useState(false);
   const [adminDataBusy, setAdminDataBusy] = useState(false);
+  const [accountBusy, setAccountBusy] = useState(false);
+  const [classBusy, setClassBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const xmlFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -175,11 +257,29 @@ export default function App() {
   const selectedPracticeStats = selectedProblem
     ? practiceStatsByProblemId[selectedProblem.id]
     : undefined;
-  const adminMaximized = activeTab === "admin" && admin;
+  const effectiveRole = useMemo(
+    () => getEffectiveRole(user, accountProfile, adminProfile),
+    [accountProfile, adminProfile, user],
+  );
+  const managementMaximized =
+    (activeTab === "admin" && admin) ||
+    (activeTab === "classes" && effectiveRole === "teacher");
 
   const availableTabs = useMemo(
-    () => (admin ? tabs : tabs.filter((tab) => tab.key !== "admin")),
-    [admin],
+    () =>
+      tabs.filter((tab) => {
+        if (tab.key === "admin") {
+          return superAdmin;
+        }
+        if (tab.key === "account") {
+          return Boolean(user);
+        }
+        if (tab.key === "classes") {
+          return effectiveRole === "teacher";
+        }
+        return true;
+      }),
+    [effectiveRole, superAdmin, user],
   );
 
   useEffect(() => {
@@ -195,7 +295,28 @@ export default function App() {
   useEffect(() => {
     return subscribeToAuth(async (nextUser) => {
       setUser(nextUser);
-      setAdmin(nextUser ? await isAdmin(nextUser.uid) : isDemoAdmin());
+      if (nextUser) {
+        const nextAdminProfile = await loadAdminProfile(nextUser.uid);
+        const nextSuperAdmin = nextAdminProfile?.role === "super";
+        setAdminProfile(nextAdminProfile);
+        setAdmin(nextSuperAdmin);
+        setSuperAdmin(nextSuperAdmin);
+        return;
+      }
+      const demoAdmin = isDemoAdmin();
+      setAdmin(demoAdmin);
+      setSuperAdmin(demoAdmin);
+      setAccountProfile(null);
+      setAdminProfile(
+        demoAdmin
+          ? {
+              uid: "demo-admin",
+              displayName: "Demo Admin",
+              role: "super",
+              schoolIds: [],
+            }
+          : null,
+      );
     });
   }, []);
 
@@ -219,6 +340,37 @@ export default function App() {
   }, [user?.uid]);
 
   useEffect(() => {
+    let active = true;
+    if (!user) {
+      setAccountProfile(null);
+      setAccountSchoolId("");
+      return () => {
+        active = false;
+      };
+    }
+
+    Promise.all([loadUserProfile(user.uid), loadSchools()])
+      .then(([nextProfile, nextSchools]) => {
+        if (!active) {
+          return;
+        }
+        setAccountProfile(nextProfile);
+        setSchools((current) => (current.length > 0 ? current : nextSchools));
+        const currentSchoolId = adminProfile?.schoolId || adminProfile?.schoolIds?.[0] || nextProfile?.schoolId || "";
+        setAccountSchoolId(currentSchoolId);
+      })
+      .catch(() => {
+        if (active) {
+          setAccountProfile(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [adminProfile?.schoolId, adminProfile?.schoolIds, user]);
+
+  useEffect(() => {
     if (visibleProblems.length === 0) {
       return;
     }
@@ -240,10 +392,14 @@ export default function App() {
   }, [selectedProblem, user?.uid]);
 
   useEffect(() => {
-    if (!admin && activeTab === "admin") {
+    if (
+      (!admin && activeTab === "admin") ||
+      (!user && activeTab === "account") ||
+      (activeTab === "classes" && effectiveRole !== "teacher")
+    ) {
       setActiveTab("statement");
     }
-  }, [activeTab, admin]);
+  }, [activeTab, admin, effectiveRole, user]);
 
   const handleWorkspaceChange = useCallback((payload: { code: string; xml: string }) => {
     setGeneratedCode(payload.code);
@@ -260,28 +416,102 @@ export default function App() {
 
     setAdminDataBusy(true);
     try {
-      const [nextUsers, nextAdminUids, nextSubmissions, nextAdminProblems] = await Promise.all([
-        loadManagedUsers(),
-        loadAdminUids(),
-        loadAllSubmissions(),
-        loadAllProblemsForAdmin(),
+      if (superAdmin) {
+        const nextUsers = await loadAdminDataset("使用者資料", loadManagedUsers);
+        const nextAdminProfiles = await loadAdminDataset("管理者權限資料", loadAdminProfiles);
+        const nextSubmissions = await loadAdminDataset("答題紀錄", loadAllSubmissions);
+        const nextAdminProblems = await loadAdminDataset("題目管理資料", loadAllProblemsForAdmin);
+        const nextContests = await loadAdminDataset("賽事資料", loadContests);
+        const nextSchools = await loadAdminDataset("學校資料", loadSchools);
+        const nextSchoolAccounts = await loadAdminDataset("學校帳號資料", loadSchoolAccounts);
+        setManagedUsers(nextUsers);
+        setAdminProfiles(nextAdminProfiles);
+        setManagedAdminUids(new Set(nextAdminProfiles.map((item) => item.uid)));
+        setAdminSubmissions(nextSubmissions);
+        setAdminProblems(nextAdminProblems);
+        setContests(nextContests);
+        setSchools(nextSchools);
+        setSchoolAccounts(nextSchoolAccounts);
+        return;
+      }
+
+      const assignedSchoolIds = adminProfile?.role === "teacher" ? adminProfile.schoolIds || [] : [];
+      const [nextSchools, nextSchoolAccounts] = await Promise.all([
+        loadSchoolsByIds(assignedSchoolIds),
+        loadSchoolAccounts(assignedSchoolIds),
       ]);
-      setManagedUsers(nextUsers);
-      setManagedAdminUids(nextAdminUids);
-      setAdminSubmissions(nextSubmissions);
-      setAdminProblems(nextAdminProblems);
+      setManagedUsers([]);
+      setAdminProfiles(adminProfile ? [adminProfile] : []);
+      setManagedAdminUids(adminProfile ? new Set([adminProfile.uid]) : new Set());
+      setAdminSubmissions([]);
+      setAdminProblems([]);
+      setContests([]);
+      setSchools(nextSchools);
+      setSchoolAccounts(nextSchoolAccounts);
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "管理資料讀取失敗。");
+      setStatusMessage(error instanceof Error ? error.message : "後台資料讀取失敗。");
     } finally {
       setAdminDataBusy(false);
     }
-  }, [admin]);
+  }, [admin, adminProfile, superAdmin]);
+
+  const loadClassData = useCallback(async () => {
+    if (!user) {
+      setTeacherClasses([]);
+      setClassMembers([]);
+      setClassSubmissionViews([]);
+      setStudentClassMembers([]);
+      return;
+    }
+
+    try {
+      if (effectiveRole === "teacher") {
+        const nextClasses = await loadTeacherClasses(user.uid);
+        const classIds = nextClasses.map((item) => item.id);
+        const [nextMembers, nextSubmissionViews] = await Promise.all([
+          loadClassMembers(classIds),
+          loadClassSubmissionViews(classIds),
+        ]);
+        setTeacherClasses(nextClasses);
+        setClassMembers(nextMembers);
+        setClassSubmissionViews(nextSubmissionViews);
+        setStudentClassMembers([]);
+        return;
+      }
+
+      const nextStudentMembers = await loadStudentClassMembers(user.uid);
+      setTeacherClasses([]);
+      setClassMembers([]);
+      setClassSubmissionViews([]);
+      setStudentClassMembers(nextStudentMembers);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "班級資料讀取失敗。");
+    }
+  }, [effectiveRole, user]);
 
   useEffect(() => {
     if (activeTab === "admin" && admin) {
       loadAdminData();
     }
   }, [activeTab, admin, loadAdminData]);
+
+  useEffect(() => {
+    if (activeTab === "classes" || activeTab === "account") {
+      loadClassData();
+    }
+  }, [activeTab, loadClassData]);
+
+  useEffect(() => {
+    if (!superAdmin) {
+      setRosterContestId("");
+      setRosterPreview(null);
+      return;
+    }
+    if (contests.length > 0 && !contests.some((contest) => contest.id === rosterContestId)) {
+      setRosterContestId(contests[0].id);
+      setRosterPreview(null);
+    }
+  }, [contests, rosterContestId, superAdmin]);
 
   const refreshProblemLists = useCallback(
     async (preferredProblemId?: string) => {
@@ -348,6 +578,7 @@ export default function App() {
       const status = await initializeFirstAdmin(demoUser);
       if (status === "created" || status === "already-admin" || status === "local-demo") {
         setAdmin(true);
+        setSuperAdmin(true);
       }
       if (status === "created") {
         setStatusMessage("已啟用管理模式，你現在是第一位管理者。");
@@ -355,12 +586,15 @@ export default function App() {
         setStatusMessage("你已經是管理者。");
       } else if (status === "bootstrap-exists") {
         setAdmin(false);
+        setSuperAdmin(false);
         setStatusMessage("管理者已存在，請使用已授權的管理者帳號登入。");
       } else {
         setStatusMessage("已啟用本機管理模式。");
       }
     } catch (error) {
-      setAdmin(isDemoAdmin());
+      const demoAdmin = isDemoAdmin();
+      setAdmin(demoAdmin);
+      setSuperAdmin(demoAdmin);
       setStatusMessage(getFirebaseAdminErrorMessage(error));
     } finally {
       setAdminBusy(false);
@@ -595,6 +829,234 @@ export default function App() {
     }
   }
 
+  async function refreshContestList(preferredContestId?: string) {
+    if (!superAdmin) {
+      setContests([]);
+      setEditingContestId("");
+      setEditingContestDraft(null);
+      return [];
+    }
+    const nextContests = await loadContests();
+    setContests(nextContests);
+    if (preferredContestId) {
+      const selected = nextContests.find((item) => item.id === preferredContestId);
+      if (selected) {
+        setEditingContestId(selected.id);
+        setEditingContestDraft(cloneContest(selected));
+      }
+    }
+    return nextContests;
+  }
+
+  function handleSelectContestForEdit(contestId: string) {
+    if (editingContestId === contestId) {
+      setEditingContestId("");
+      setEditingContestDraft(null);
+      return;
+    }
+    const contest = contests.find((item) => item.id === contestId);
+    setEditingContestId(contestId);
+    setEditingContestDraft(contest ? cloneContest(contest) : null);
+  }
+
+  async function handleCreateContestDraft(previous?: ContestEvent) {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以建立賽事。");
+      return;
+    }
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const saved = await saveContest(createContestDraft(previous));
+      await refreshContestList(saved.id);
+      setStatusMessage(previous ? "已複製為下一年度賽事草稿。" : "已建立年度賽事草稿。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "賽事草稿建立失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleSaveEditedContest(contest: ContestEvent) {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以儲存賽事設定。");
+      return;
+    }
+    if (!contest.title.trim() || !contest.year.trim()) {
+      setStatusMessage("賽事名稱與年度不可空白。");
+      return;
+    }
+    if (contest.startAt && contest.endAt && contest.startAt > contest.endAt) {
+      setStatusMessage("賽事結束時間不可早於開始時間。");
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const saved = await saveContest(sanitizeContestDraft(contest));
+      await refreshContestList(saved.id);
+      setStatusMessage("賽事設定已儲存。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "賽事設定儲存失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleMoveContestStatus(contest: ContestEvent, nextStatus: ContestStatus) {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以切換賽事狀態。");
+      return;
+    }
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const saved = await saveContest({ ...contest, status: nextStatus });
+      await refreshContestList(saved.id);
+      setStatusMessage(`賽事狀態已切換為「${getContestStatusLabel(nextStatus)}」。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "賽事狀態切換失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function refreshSchoolList(preferredSchoolId?: string) {
+    if (!superAdmin) {
+      setSchools([]);
+      setEditingSchoolId("");
+      setEditingSchoolDraft(null);
+      return [];
+    }
+    const nextSchools = await loadSchools();
+    setSchools(nextSchools);
+    if (preferredSchoolId) {
+      const selected = nextSchools.find((item) => item.id === preferredSchoolId);
+      if (selected) {
+        setEditingSchoolId(selected.id);
+        setEditingSchoolDraft(cloneSchool(selected));
+      }
+    }
+    return nextSchools;
+  }
+
+  async function handleCreateSchoolDraft() {
+    if (hasFirebaseConfig && !user) {
+      setStatusMessage("請先登入已授權的超級管理者帳號，再新增學校。");
+      return;
+    }
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以建立學校網域。");
+      return;
+    }
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const saved = await saveSchool(createSchoolDraft());
+      await refreshSchoolList(saved.id);
+      setStatusMessage("已建立學校網域草稿。");
+    } catch (error) {
+      setStatusMessage(getSchoolWriteErrorMessage(error, "學校網域草稿建立失敗。"));
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  function handleSelectSchoolForEdit(schoolId: string) {
+    if (editingSchoolId === schoolId) {
+      setEditingSchoolId("");
+      setEditingSchoolDraft(null);
+      return;
+    }
+    const school = schools.find((item) => item.id === schoolId);
+    setEditingSchoolId(schoolId);
+    setEditingSchoolDraft(school ? cloneSchool(school) : null);
+  }
+
+  async function handleSaveEditedSchool(school: School) {
+    if (hasFirebaseConfig && !user) {
+      setStatusMessage("請先登入已授權的超級管理者帳號，再儲存學校。");
+      return;
+    }
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以儲存學校網域。");
+      return;
+    }
+    if (!school.name.trim()) {
+      setStatusMessage("學校名稱不可空白。");
+      return;
+    }
+    if (school.domains.length === 0) {
+      setStatusMessage("請至少設定一個 Email 網域。");
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const saved = await saveSchool(sanitizeSchoolDraft(school));
+      await refreshSchoolList(saved.id);
+      setRosterPreview(null);
+      setStatusMessage("學校網域已儲存。");
+    } catch (error) {
+      setStatusMessage(getSchoolWriteErrorMessage(error, "學校網域儲存失敗。"));
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  function handlePreviewRosterImport() {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以預覽賽事名單。");
+      return;
+    }
+    if (!rosterContestId) {
+      setStatusMessage("請先選擇要匯入的賽事。");
+      return;
+    }
+    if (schools.length === 0) {
+      setStatusMessage("請先建立學校網域，系統才能用 Email 自動歸校。");
+      return;
+    }
+    const preview = previewRosterImport(rosterCsv, rosterContestId, schools);
+    setRosterPreview(preview);
+    setStatusMessage(
+      `名單預覽完成：可匯入 ${preview.validRows.length} 筆，需修正 ${preview.invalidRows.length} 筆。`,
+    );
+  }
+
+  async function handleSaveRosterImport() {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以匯入賽事名單。");
+      return;
+    }
+    if (!rosterPreview || rosterPreview.validRows.length === 0) {
+      setStatusMessage("沒有可匯入的有效名單，請先預覽並修正錯誤。");
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const result = await saveRosterEntries(rosterPreview.contestId, rosterPreview.validRows);
+      const targetContest = contests.find((contest) => contest.id === rosterPreview.contestId);
+      if (targetContest) {
+        await saveContest({
+          ...targetContest,
+          participantCount: rosterPreview.validRows.length,
+          schoolCount: new Set(rosterPreview.validRows.map((row) => row.schoolId)).size,
+        });
+        await refreshContestList(targetContest.id);
+      }
+      setStatusMessage(`已匯入 ${result.importedCount} 筆賽事名單。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "賽事名單匯入失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
   function handleDownloadXml() {
     const xml = blocklyXml || localStorage.getItem(workspaceStorageKey) || "";
     if (!xml.trim()) {
@@ -659,6 +1121,187 @@ export default function App() {
     }
   }
 
+  async function handleSetManagedUserSchoolAdmin(target: ManagedUser, schoolId: string) {
+    if (target.uid === user?.uid) {
+      setStatusMessage("為避免誤鎖管理權限，不能在這裡變更自己的管理者身分。");
+      return;
+    }
+    const school = schools.find((item) => item.id === schoolId);
+    if (!school) {
+      setStatusMessage("請先選擇要指派給教師的學校。");
+      return;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      await setManagedUserTeacherSchool(target, school, user);
+      await loadAdminData();
+      setStatusMessage(`已將 ${target.displayName || target.email || target.uid} 設為「${school.name}」教師。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "教師權限更新失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleCreateSchoolAccount(schoolId: string, email: string, name: string) {
+    const school = schools.find((item) => item.id === schoolId);
+    if (!school) {
+      setStatusMessage("請先選擇要新增帳號的學校。");
+      return false;
+    }
+
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      await createSchoolAccount(school, email, name, user?.uid || adminProfile?.uid || "");
+      await loadAdminData();
+      setStatusMessage(`已新增 ${name.trim()} 的本校帳號。`);
+      return true;
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "本校帳號新增失敗。");
+      return false;
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleSaveAccountSchool() {
+    if (!user) {
+      setStatusMessage("請先登入後再設定學校。");
+      return;
+    }
+    if (effectiveRole !== "teacher") {
+      setStatusMessage("目前只有教師帳號需要設定任教學校。");
+      return;
+    }
+    const school = schools.find((item) => item.id === accountSchoolId);
+    if (!school) {
+      setStatusMessage("請先選擇任教學校。");
+      return;
+    }
+
+    setAccountBusy(true);
+    setStatusMessage("");
+    try {
+      await saveAccountSchoolSelection({
+        user,
+        school,
+        role: "teacher",
+        actorUid: user.uid,
+        source: "self",
+        verified: false,
+      });
+      const [nextProfile, nextAdminProfile] = await Promise.all([
+        loadUserProfile(user.uid),
+        loadAdminProfile(user.uid),
+      ]);
+      setAccountProfile(nextProfile);
+      setAdminProfile(nextAdminProfile);
+      setStatusMessage("已儲存任教學校，超管仍可在後台調整或確認。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "任教學校儲存失敗。");
+    } finally {
+      setAccountBusy(false);
+    }
+  }
+
+  function getTeacherSchoolForClass() {
+    const schoolId =
+      adminProfile?.schoolId ||
+      adminProfile?.schoolIds?.[0] ||
+      accountProfile?.schoolId ||
+      accountSchoolId;
+    return schools.find((item) => item.id === schoolId);
+  }
+
+  async function handleCreateLearningClass() {
+    if (!user) {
+      setStatusMessage("請先登入後再建立班級。");
+      return;
+    }
+    if (effectiveRole !== "teacher") {
+      setStatusMessage("只有教師可以建立班級。");
+      return;
+    }
+
+    const teacherSchool = getTeacherSchoolForClass();
+    if (!teacherSchool) {
+      setStatusMessage("請先到「我的帳號」設定任教學校，再建立班級。");
+      return;
+    }
+
+    setClassBusy(true);
+    setStatusMessage("");
+    try {
+      const createdClass = await createLearningClass({
+        name: classNameDraft,
+        teacher: user,
+        school: teacherSchool,
+      });
+      setClassNameDraft("");
+      await loadClassData();
+      setStatusMessage(`已建立班級「${createdClass.name}」，班級代碼：${createdClass.joinCode}`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "班級建立失敗。");
+    } finally {
+      setClassBusy(false);
+    }
+  }
+
+  async function handleToggleClassJoin(learningClass: LearningClass, joinEnabled: boolean) {
+    setClassBusy(true);
+    setStatusMessage("");
+    try {
+      await setClassJoinEnabled(learningClass, joinEnabled);
+      await loadClassData();
+      setStatusMessage(joinEnabled ? "已開放學生加入班級。" : "已關閉學生加入班級。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "班級加入狀態更新失敗。");
+    } finally {
+      setClassBusy(false);
+    }
+  }
+
+  async function handleSetClassMemberStatus(member: ClassMember, status: ClassMember["status"]) {
+    setClassBusy(true);
+    setStatusMessage("");
+    try {
+      await setClassMemberStatus(member, status);
+      await loadClassData();
+      setStatusMessage(status === "removed" ? "已將學生從班級移除。" : "已恢復學生班級成員狀態。");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "班級學生狀態更新失敗。");
+    } finally {
+      setClassBusy(false);
+    }
+  }
+
+  async function handleJoinClassByCode() {
+    if (!user) {
+      setStatusMessage("請先登入後再加入班級。");
+      return;
+    }
+    if (effectiveRole !== "student") {
+      setStatusMessage("目前只有學生帳號可以用班級代碼加入班級。");
+      return;
+    }
+
+    setAccountBusy(true);
+    setStatusMessage("");
+    try {
+      const member = await joinClassByCode(studentJoinCode, user);
+      setStudentJoinCode("");
+      await loadClassData();
+      setStatusMessage(`已加入班級「${member.className}」。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "加入班級失敗。");
+    } finally {
+      setAccountBusy(false);
+    }
+  }
+
   async function handleSetManagedUserDisabled(target: ManagedUser, disabled: boolean) {
     if (target.uid === user?.uid) {
       setStatusMessage("不能停用目前登入中的管理者帳號。");
@@ -686,14 +1329,14 @@ export default function App() {
     setAdminBusy(true);
     setStatusMessage("");
     try {
-      const result = await deleteSubmissionsForUser(target.uid);
-      await removeUserFromLeaderboards(target.uid);
-      await loadAdminData();
+      const result = await runAdminMutationStep("清除答題紀錄", () => deleteSubmissionsForUser(target.uid));
+      await runAdminMutationStep("更新排行榜", () => removeUserFromLeaderboards(target.uid));
+      await runAdminMutationStep("重新讀取後台資料", loadAdminData);
       if (target.uid === user?.uid) {
         setPracticeSubmissions([]);
         setSubmissions([]);
       }
-      setLeaderboard(await loadGlobalLeaderboard());
+      setLeaderboard(await runAdminMutationStep("重新讀取排行榜", loadGlobalLeaderboard));
       setStatusMessage(`已清除 ${result.submissionsDeleted} 筆答題紀錄。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "答題紀錄清除失敗。");
@@ -718,11 +1361,11 @@ export default function App() {
     setAdminBusy(true);
     setStatusMessage("");
     try {
-      const result = await deleteSubmissionsForUser(target.uid);
-      await removeUserFromLeaderboards(target.uid);
-      await deleteManagedUserProfile(target);
-      await loadAdminData();
-      setLeaderboard(await loadGlobalLeaderboard());
+      const result = await runAdminMutationStep("清除答題紀錄", () => deleteSubmissionsForUser(target.uid));
+      await runAdminMutationStep("更新排行榜", () => removeUserFromLeaderboards(target.uid));
+      await runAdminMutationStep("刪除使用者資料", () => deleteManagedUserProfile(target));
+      await runAdminMutationStep("重新讀取後台資料", loadAdminData);
+      setLeaderboard(await runAdminMutationStep("重新讀取排行榜", loadGlobalLeaderboard));
       setStatusMessage(`使用者已刪除，並清除 ${result.submissionsDeleted} 筆答題紀錄。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "使用者刪除失敗。");
@@ -777,7 +1420,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className={adminMaximized ? "workspace-layout admin-maximized" : "workspace-layout"}>
+      <main className={managementMaximized ? "workspace-layout admin-maximized" : "workspace-layout"}>
         <aside className="problem-rail">
           <button className="rail-title">題目列表</button>
           <div className="rail-filters">
@@ -942,37 +1585,101 @@ export default function App() {
               />
             )}
             {activeTab === "leaderboard" && <LeaderboardPanel leaderboard={leaderboard} />}
+            {activeTab === "account" && (
+              <AccountPanel
+                user={user}
+                profile={accountProfile}
+                adminProfile={adminProfile}
+                effectiveRole={effectiveRole}
+                schools={schools}
+                selectedSchoolId={accountSchoolId}
+                studentJoinCode={studentJoinCode}
+                studentClassMembers={studentClassMembers}
+                busy={accountBusy}
+                onSchoolChange={setAccountSchoolId}
+                onSaveSchool={handleSaveAccountSchool}
+                onStudentJoinCodeChange={setStudentJoinCode}
+                onJoinClass={handleJoinClassByCode}
+              />
+            )}
+            {activeTab === "classes" && (
+              <ClassesPanel
+                classes={teacherClasses}
+                members={classMembers}
+                submissionViews={classSubmissionViews}
+                classNameDraft={classNameDraft}
+                busy={classBusy}
+                onClassNameChange={setClassNameDraft}
+                onCreateClass={handleCreateLearningClass}
+                onToggleJoin={handleToggleClassJoin}
+                onSetMemberStatus={handleSetClassMemberStatus}
+              />
+            )}
             {activeTab === "admin" && (
               <AdminPanel
                 admin={admin}
+                superAdmin={superAdmin}
+                adminProfile={adminProfile}
+                adminProfiles={adminProfiles}
                 adminDataBusy={adminDataBusy}
                 adminSubmissions={adminSubmissions}
                 adminUids={managedAdminUids}
+                contests={contests}
                 currentUser={user}
+                schools={schools}
+                schoolAccounts={schoolAccounts}
                 problems={adminProblems.length > 0 ? adminProblems : problems}
                 users={managedUsers}
                 importJson={importJson}
                 importCsv={importCsv}
                 importMode={problemImportMode}
+                rosterCsv={rosterCsv}
+                rosterContestId={rosterContestId}
+                rosterPreview={rosterPreview}
                 editingProblemId={editingProblemId}
                 editingProblemDraft={editingProblemDraft}
+                editingContestId={editingContestId}
+                editingContestDraft={editingContestDraft}
+                editingSchoolId={editingSchoolId}
+                editingSchoolDraft={editingSchoolDraft}
                 problemSubmissionCounts={countSubmissionsByProblem(adminSubmissions)}
                 onImportJsonChange={setImportJson}
                 onImportCsvChange={setImportCsv}
                 onImportModeChange={setProblemImportMode}
+                onRosterCsvChange={(value) => {
+                  setRosterCsv(value);
+                  setRosterPreview(null);
+                }}
+                onRosterContestChange={(value) => {
+                  setRosterContestId(value);
+                  setRosterPreview(null);
+                }}
                 onEditingProblemDraftChange={setEditingProblemDraft}
                 onInitializeAdmin={handleInitializeAdmin}
+                onCreateContest={handleCreateContestDraft}
                 onImport={handleImportProblems}
                 onUploadJsonFile={handleUploadProblemJsonFile}
                 jsonFileInputRef={problemJsonFileInputRef}
                 onImportCsv={handleImportCsvProblems}
                 onExportCsv={handleExportCsvProblems}
+                onSelectContestForEdit={handleSelectContestForEdit}
+                onEditingContestDraftChange={setEditingContestDraft}
+                onSaveEditedContest={handleSaveEditedContest}
+                onMoveContestStatus={handleMoveContestStatus}
+                onCreateSchool={handleCreateSchoolDraft}
+                onSelectSchoolForEdit={handleSelectSchoolForEdit}
+                onEditingSchoolDraftChange={setEditingSchoolDraft}
+                onSaveEditedSchool={handleSaveEditedSchool}
+                onPreviewRosterImport={handlePreviewRosterImport}
+                onSaveRosterImport={handleSaveRosterImport}
                 onSelectProblemForEdit={handleSelectProblemForEdit}
                 onSaveEditedProblem={handleSaveEditedProblem}
                 onCancelProblemEdit={handleCancelProblemEdit}
                 onDeleteProblem={handleDeleteProblem}
                 onRefreshAdminData={loadAdminData}
                 onSetUserAdmin={handleSetManagedUserAdmin}
+                onSetUserSchoolAdmin={handleSetManagedUserSchoolAdmin}
+                onCreateSchoolAccount={handleCreateSchoolAccount}
                 onSetUserDisabled={handleSetManagedUserDisabled}
                 onClearUserSubmissions={handleClearManagedUserSubmissions}
                 onDeleteUser={handleDeleteManagedUser}
@@ -1026,6 +1733,58 @@ function getFirebaseAdminErrorMessage(error: unknown) {
   }
 
   return message || "初始化管理者失敗，請確認 Firebase Firestore 已建立且 Rules 已發布。";
+}
+
+async function loadAdminDataset<T>(label: string, loader: () => Promise<T>): Promise<T> {
+  try {
+    return await loader();
+  } catch (error) {
+    throw new Error(`後台資料讀取失敗：${label}：${getBackendReadErrorMessage(error)}`);
+  }
+}
+
+async function runAdminMutationStep<T>(label: string, action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    throw new Error(`${label}失敗：${getBackendWriteErrorMessage(error)}`);
+  }
+}
+
+function getBackendReadErrorMessage(error: unknown) {
+  const code = getErrorCode(error);
+  const message = error instanceof Error ? error.message : "";
+  const combined = `${code} ${message}`.toLowerCase();
+
+  if (combined.includes("permission-denied") || combined.includes("insufficient permissions")) {
+    return "權限不足。系統目前尚未把此登入帳號辨識為正式超級管理者。";
+  }
+
+  return message || "讀取失敗。";
+}
+
+function getBackendWriteErrorMessage(error: unknown) {
+  const code = getErrorCode(error);
+  const message = error instanceof Error ? error.message : "";
+  const combined = `${code} ${message}`.toLowerCase();
+
+  if (combined.includes("permission-denied") || combined.includes("insufficient permissions")) {
+    return "權限不足。請確認目前登入帳號仍是正式超級管理者；若剛調整過權限，請重新整理後再試。";
+  }
+
+  return message || "寫入失敗。";
+}
+
+function getSchoolWriteErrorMessage(error: unknown, fallback: string) {
+  const code = getErrorCode(error);
+  const message = error instanceof Error ? error.message : "";
+  const combined = `${code} ${message}`.toLowerCase();
+
+  if (combined.includes("permission-denied") || combined.includes("insufficient permissions")) {
+    return "新增/儲存學校需要正式登入的超級管理者權限。請先登出再用超級管理者帳號登入；若仍失敗，請確認此帳號在後台管理者清單中為「超級管理者」。";
+  }
+
+  return message || fallback;
 }
 
 function getErrorCode(error: unknown) {
@@ -1322,15 +2081,422 @@ function LeaderboardPanel({ leaderboard }: { leaderboard: LeaderboardEntry[] }) 
   );
 }
 
+function AccountPanel({
+  user,
+  profile,
+  adminProfile,
+  effectiveRole,
+  schools,
+  selectedSchoolId,
+  studentJoinCode,
+  studentClassMembers,
+  busy,
+  onSchoolChange,
+  onSaveSchool,
+  onStudentJoinCodeChange,
+  onJoinClass,
+}: {
+  user: AppUser | null;
+  profile: ManagedUser | null;
+  adminProfile: AdminProfile | null;
+  effectiveRole: UserRole;
+  schools: School[];
+  selectedSchoolId: string;
+  studentJoinCode: string;
+  studentClassMembers: ClassMember[];
+  busy: boolean;
+  onSchoolChange: (schoolId: string) => void;
+  onSaveSchool: () => void;
+  onStudentJoinCodeChange: (value: string) => void;
+  onJoinClass: () => void;
+}) {
+  const roleLabel = getRoleLabel(effectiveRole);
+  const schoolName = adminProfile?.schoolName || profile?.schoolName || "尚未設定";
+  const schoolVerified = adminProfile?.schoolVerified || profile?.schoolVerified;
+  const accountStatus = getAccountStatusLabel(profile?.status || adminProfile?.status, profile?.disabled);
+  const emailDomain = profile?.emailDomain || (user?.email ? user.email.split("@")[1] : "");
+
+  return (
+    <div className="panel-stack">
+      <div className="panel-heading">
+        <h2>我的帳號</h2>
+        <span>{roleLabel}</span>
+      </div>
+
+      {!user ? (
+        <p className="warning-text">請先登入後查看帳號資訊。</p>
+      ) : (
+        <>
+          <section className="account-card">
+            <div>
+              <span className="account-label">姓名</span>
+              <strong>{profile?.displayName || user.displayName || "未命名使用者"}</strong>
+            </div>
+            <div>
+              <span className="account-label">Email</span>
+              <strong>{user.email || "-"}</strong>
+            </div>
+            <div>
+              <span className="account-label">身份</span>
+              <strong>{roleLabel}</strong>
+            </div>
+            <div>
+              <span className="account-label">帳號狀態</span>
+              <strong>{accountStatus}</strong>
+            </div>
+            <div>
+              <span className="account-label">Email 網域</span>
+              <strong>{emailDomain || "-"}</strong>
+            </div>
+            <div>
+              <span className="account-label">所屬學校</span>
+              <strong>{schoolName}</strong>
+              {effectiveRole === "teacher" && (
+                <small>{schoolVerified ? "超管已確認" : "教師自填，待超管確認"}</small>
+              )}
+            </div>
+          </section>
+
+          {effectiveRole === "teacher" && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>任教學校設定</h3>
+                  <p>教師可以先自行設定任教學校；超管仍可在後台調整與確認。這個設定會作為未來建立班級時的預設學校。</p>
+                </div>
+              </div>
+              {schools.length === 0 ? (
+                <p className="warning-text">目前尚無可選學校，請先由超管建立學校資料。</p>
+              ) : (
+                <div className="account-school-form">
+                  <label className="problem-form-field">
+                    任教學校
+                    <select value={selectedSchoolId} onChange={(event) => onSchoolChange(event.target.value)}>
+                      <option value="">請選擇學校</option>
+                      {schools
+                        .filter((school) => school.enabled !== false)
+                        .map((school) => (
+                          <option key={school.id} value={school.id}>
+                            {school.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <button className="primary-button" type="button" onClick={onSaveSchool} disabled={busy || !selectedSchoolId}>
+                    儲存學校設定
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+
+          {effectiveRole === "student" && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>班級代碼</h3>
+                  <p>輸入教師提供的班級代碼，就能加入班級；加入後教師會在「我的班級」看到你的名單。</p>
+                </div>
+              </div>
+              <div className="join-code-form">
+                <label className="problem-form-field">
+                  班級代碼
+                  <input
+                    value={studentJoinCode}
+                    placeholder="例如 ILC-8K3Q"
+                    onChange={(event) => onStudentJoinCodeChange(event.target.value.toUpperCase())}
+                  />
+                </label>
+                <button className="primary-button" type="button" onClick={onJoinClass} disabled={busy || !studentJoinCode.trim()}>
+                  加入班級
+                </button>
+              </div>
+
+              <div className="admin-table">
+                <div className="admin-table-head student-class-table-row">
+                  <span>班級</span>
+                  <span>學校</span>
+                  <span>授課教師</span>
+                  <span>加入時間</span>
+                  <span>狀態</span>
+                </div>
+                {studentClassMembers.length === 0 && <p className="muted table-empty">尚未加入任何班級。</p>}
+                {studentClassMembers.map((member) => (
+                  <div className="student-class-table-row" key={member.id}>
+                    <span>{member.className}</span>
+                    <span>{member.schoolName || "-"}</span>
+                    <span>{member.teacherName || "-"}</span>
+                    <span>{formatContestDateTime(member.joinedAt)}</span>
+                    <span className={member.status === "removed" ? "status-pill disabled" : "status-pill"}>
+                      {member.status === "removed" ? "已移除" : "已加入"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ClassesPanel({
+  classes,
+  members,
+  submissionViews,
+  classNameDraft,
+  busy,
+  onClassNameChange,
+  onCreateClass,
+  onToggleJoin,
+  onSetMemberStatus,
+}: {
+  classes: LearningClass[];
+  members: ClassMember[];
+  submissionViews: ClassSubmissionView[];
+  classNameDraft: string;
+  busy: boolean;
+  onClassNameChange: (value: string) => void;
+  onCreateClass: () => void;
+  onToggleJoin: (learningClass: LearningClass, joinEnabled: boolean) => void;
+  onSetMemberStatus: (member: ClassMember, status: ClassMember["status"]) => void;
+}) {
+  const membersByClassId = useMemo(() => {
+    const grouped = new Map<string, ClassMember[]>();
+    for (const member of members) {
+      grouped.set(member.classId, [...(grouped.get(member.classId) || []), member]);
+    }
+    return grouped;
+  }, [members]);
+
+  const submissionsByClassId = useMemo(() => {
+    const grouped = new Map<string, ClassSubmissionView[]>();
+    for (const item of submissionViews) {
+      grouped.set(item.classId, [...(grouped.get(item.classId) || []), item]);
+    }
+    return grouped;
+  }, [submissionViews]);
+
+  const [activeClassSection, setActiveClassSection] =
+    useState<"classes" | "students" | "submissions">("classes");
+  const activeMemberCount = members.filter((member) => member.status !== "removed").length;
+  const classSectionTitle =
+    activeClassSection === "classes"
+      ? "班級管理"
+      : activeClassSection === "students"
+        ? "學生名單"
+        : "答題記錄";
+  const classSectionDescription =
+    activeClassSection === "classes"
+      ? "管理班級代碼、開放加入狀態與班級基本資訊。"
+      : activeClassSection === "students"
+        ? "依班級查看學生名單，可將學生移除或恢復加入狀態。"
+        : "依班級查看學生提交後同步到班級的答題紀錄。";
+
+  return (
+    <div className="panel-stack">
+      <div className="panel-heading">
+        <h2>我的班級</h2>
+        <span>{classes.length} 個班級 · {activeMemberCount} 位學生 · {submissionViews.length} 筆答題紀錄</span>
+      </div>
+
+      <div className="admin-top-tabs" role="tablist" aria-label="班級管理功能表">
+        <button
+          className={activeClassSection === "classes" ? "active" : ""}
+          type="button"
+          role="tab"
+          aria-selected={activeClassSection === "classes"}
+          onClick={() => setActiveClassSection("classes")}
+        >
+          班級管理
+        </button>
+        <button
+          className={activeClassSection === "students" ? "active" : ""}
+          type="button"
+          role="tab"
+          aria-selected={activeClassSection === "students"}
+          onClick={() => setActiveClassSection("students")}
+        >
+          學生名單
+        </button>
+        <button
+          className={activeClassSection === "submissions" ? "active" : ""}
+          type="button"
+          role="tab"
+          aria-selected={activeClassSection === "submissions"}
+          onClick={() => setActiveClassSection("submissions")}
+        >
+          答題記錄
+        </button>
+      </div>
+
+      {activeClassSection === "classes" && (
+      <section className="admin-section">
+        <div className="section-title-row">
+          <div>
+            <h3>建立班級</h3>
+            <p>輸入班級名稱後，系統會自動產生班級代碼。學生可在「我的帳號」輸入代碼加入。</p>
+          </div>
+        </div>
+        <div className="class-create-form">
+          <label className="problem-form-field">
+            班級名稱
+            <input
+              value={classNameDraft}
+              placeholder="例如 603、七年一班、資訊社"
+              onChange={(event) => onClassNameChange(event.target.value)}
+            />
+          </label>
+          <button className="primary-button" type="button" onClick={onCreateClass} disabled={busy || !classNameDraft.trim()}>
+            建立班級
+          </button>
+        </div>
+      </section>
+      )}
+
+      <section className="admin-section">
+        <div className="section-title-row">
+          <div>
+            <h3>{classSectionTitle}</h3>
+            <p>{classSectionDescription}</p>
+          </div>
+        </div>
+
+        {classes.length === 0 && <p className="muted">尚未建立班級。</p>}
+        {classes.map((learningClass) => {
+          const classMembers = membersByClassId.get(learningClass.id) || [];
+          const activeMembers = classMembers.filter((member) => member.status !== "removed");
+          const classSubmissions = submissionsByClassId.get(learningClass.id) || [];
+          return (
+            <div className="class-card" key={learningClass.id}>
+              <div className="class-card-head">
+                <div>
+                  <h4>{learningClass.name}</h4>
+                  <p>{learningClass.schoolName || "未設定學校"}｜{learningClass.teacherName}</p>
+                </div>
+                <div className="class-code-box">
+                  <span>班級代碼</span>
+                  <strong>{learningClass.joinCode}</strong>
+                </div>
+              </div>
+
+              <div className="class-card-meta">
+                <span className={learningClass.joinEnabled ? "status-pill" : "status-pill disabled"}>
+                  {learningClass.joinEnabled ? "開放加入" : "關閉加入"}
+                </span>
+                <span>{activeMembers.length} 位學生</span>
+                <span>{classSubmissions.length} 筆答題紀錄</span>
+                <span>建立：{formatContestDateTime(learningClass.createdAt)}</span>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onToggleJoin(learningClass, !learningClass.joinEnabled)}
+                >
+                  {learningClass.joinEnabled ? "關閉加入" : "開放加入"}
+                </button>
+              </div>
+
+              {activeClassSection === "students" && (
+              <div className="admin-table">
+                <div className="admin-table-head class-member-table-row">
+                  <span>學生</span>
+                  <span>Email</span>
+                  <span>加入時間</span>
+                  <span>狀態</span>
+                  <span>操作</span>
+                </div>
+                {classMembers.length === 0 && <p className="muted table-empty">尚無學生加入。</p>}
+                {classMembers.map((member) => (
+                  <div className="class-member-table-row" key={member.id}>
+                    <span>{member.studentName}</span>
+                    <span>{member.studentEmail || "-"}</span>
+                    <span>{formatContestDateTime(member.joinedAt)}</span>
+                    <span className={member.status === "removed" ? "status-pill disabled" : "status-pill"}>
+                      {member.status === "removed" ? "已移除" : "已加入"}
+                    </span>
+                    <span>
+                      <button
+                        className="ghost-button compact"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => onSetMemberStatus(member, member.status === "removed" ? "active" : "removed")}
+                      >
+                        {member.status === "removed" ? "恢復" : "移除"}
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+              )}
+
+              {activeClassSection === "submissions" && (
+              <div className="class-management-block">
+                <div className="section-title-row compact">
+                  <div>
+                    <h4>學生答題紀錄</h4>
+                    <p>只顯示此班級學生之後提交並同步到班級的紀錄。</p>
+                  </div>
+                  <span className="section-pill">{classSubmissions.length} 筆</span>
+                </div>
+                <div className="admin-table">
+                  <div className="admin-table-head class-submission-table-row">
+                    <span>時間</span>
+                    <span>學生</span>
+                    <span>題目</span>
+                    <span>答題率</span>
+                    <span>分數</span>
+                    <span>狀態</span>
+                  </div>
+                  {classSubmissions.length === 0 && (
+                    <p className="muted table-empty">尚無班級答題紀錄；學生下一次提交後會出現在這裡。</p>
+                  )}
+                  {classSubmissions.slice(0, 50).map((item) => (
+                    <div className="class-submission-table-row" key={item.id}>
+                      <span>{formatContestDateTime(item.createdAt)}</span>
+                      <span>{item.studentName}</span>
+                      <span>{item.problemTitle}</span>
+                      <span>{Math.round(item.passRate * 100)}%</span>
+                      <span>{item.score}/{item.maxScore}</span>
+                      <span className={item.isFullScore ? "status-pill" : "status-pill warning"}>
+                        {item.isFullScore ? "已完成" : item.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              )}
+            </div>
+          );
+        })}
+      </section>
+    </div>
+  );
+}
+
 function AdminPanel({
   admin,
+  superAdmin,
+  adminProfile,
+  adminProfiles,
   adminDataBusy,
   adminSubmissions,
   adminUids,
+  contests,
   currentUser,
+  schools,
+  schoolAccounts,
   importJson,
   importCsv,
   importMode,
+  rosterCsv,
+  rosterContestId,
+  rosterPreview,
+  editingContestId,
+  editingContestDraft,
+  editingSchoolId,
+  editingSchoolDraft,
   editingProblemId,
   editingProblemDraft,
   problemSubmissionCounts,
@@ -1344,29 +2510,57 @@ function AdminPanel({
   onImportCsvChange,
   onImportJsonChange,
   onImportModeChange,
+  onRosterCsvChange,
+  onRosterContestChange,
+  onEditingContestDraftChange,
+  onEditingSchoolDraftChange,
   onEditingProblemDraftChange,
   onInitializeAdmin,
+  onCreateContest,
   onImport,
   onUploadJsonFile,
   jsonFileInputRef,
+  onSelectContestForEdit,
+  onSaveEditedContest,
+  onMoveContestStatus,
+  onCreateSchool,
+  onSelectSchoolForEdit,
+  onSaveEditedSchool,
+  onPreviewRosterImport,
+  onSaveRosterImport,
   onSelectProblemForEdit,
   onSaveEditedProblem,
   onCancelProblemEdit,
   onDeleteProblem,
   onRefreshAdminData,
   onSetUserAdmin,
+  onSetUserSchoolAdmin,
+  onCreateSchoolAccount,
   onSetUserDisabled,
   onClearUserSubmissions,
   onDeleteUser,
 }: {
   admin: boolean;
+  superAdmin: boolean;
+  adminProfile: AdminProfile | null;
+  adminProfiles: AdminProfile[];
   adminDataBusy: boolean;
   adminSubmissions: SubmissionRecord[];
   adminUids: Set<string>;
+  contests: ContestEvent[];
   currentUser: AppUser | null;
+  schools: School[];
+  schoolAccounts: SchoolAccount[];
   importJson: string;
   importCsv: string;
   importMode: ProblemImportMode;
+  rosterCsv: string;
+  rosterContestId: string;
+  rosterPreview: RosterImportPreview | null;
+  editingContestId: string;
+  editingContestDraft: ContestEvent | null;
+  editingSchoolId: string;
+  editingSchoolDraft: School | null;
   editingProblemId: string;
   editingProblemDraft: Problem | null;
   problemSubmissionCounts: Record<string, number>;
@@ -1380,36 +2574,186 @@ function AdminPanel({
   onImportCsvChange: (value: string) => void;
   onImportJsonChange: (value: string) => void;
   onImportModeChange: (value: ProblemImportMode) => void;
+  onRosterCsvChange: (value: string) => void;
+  onRosterContestChange: (value: string) => void;
+  onEditingContestDraftChange: (value: ContestEvent | null) => void;
+  onEditingSchoolDraftChange: (value: School | null) => void;
   onEditingProblemDraftChange: (value: Problem | null) => void;
   onInitializeAdmin: () => void;
+  onCreateContest: (previous?: ContestEvent) => void;
   onImport: () => void;
   onUploadJsonFile: (file: File | undefined) => void;
   jsonFileInputRef: RefObject<HTMLInputElement | null>;
+  onSelectContestForEdit: (contestId: string) => void;
+  onSaveEditedContest: (contest: ContestEvent) => void;
+  onMoveContestStatus: (contest: ContestEvent, nextStatus: ContestStatus) => void;
+  onCreateSchool: () => void;
+  onSelectSchoolForEdit: (schoolId: string) => void;
+  onSaveEditedSchool: (school: School) => void;
+  onPreviewRosterImport: () => void;
+  onSaveRosterImport: () => void;
   onSelectProblemForEdit: (problemId: string) => void;
   onSaveEditedProblem: (problem: Problem) => void;
   onCancelProblemEdit: () => void;
   onDeleteProblem: (problemId: string) => void;
   onRefreshAdminData: () => void;
   onSetUserAdmin: (user: ManagedUser, makeAdmin: boolean) => void;
+  onSetUserSchoolAdmin: (user: ManagedUser, schoolId: string) => void;
+  onCreateSchoolAccount: (schoolId: string, email: string, name: string) => Promise<boolean> | boolean;
   onSetUserDisabled: (user: ManagedUser, disabled: boolean) => void;
   onClearUserSubmissions: (user: ManagedUser) => void;
   onDeleteUser: (user: ManagedUser) => void;
 }) {
   const progressRows = buildUserProgressRows(users, problems, adminSubmissions, adminUids);
   const userSubmissionCounts = countSubmissionsByUser(adminSubmissions);
-  const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>("problems");
+  const adminProfileByUid = useMemo(
+    () => new Map(adminProfiles.map((profile) => [profile.uid, profile])),
+    [adminProfiles],
+  );
+  const schoolNameById = useMemo(
+    () => new Map(schools.map((school) => [school.id, school.name])),
+    [schools],
+  );
+  const assignableSchools = useMemo(
+    () => schools.filter((school) => school.enabled !== false),
+    [schools],
+  );
+  const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>(
+    superAdmin ? "contests" : "schoolAccounts",
+  );
+  const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState("");
+  const [schoolAccountSchoolId, setSchoolAccountSchoolId] = useState("");
+  const [schoolAccountEmail, setSchoolAccountEmail] = useState("");
+  const [schoolAccountName, setSchoolAccountName] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<UserDirectoryRoleFilter>("all");
+  const [userSchoolFilterId, setUserSchoolFilterId] = useState("all");
   const [expandedProgressUserId, setExpandedProgressUserId] = useState("");
-  const adminSections: Array<{ key: AdminSectionKey; label: string }> = [
-    { key: "problems", label: "題目管理" },
-    { key: "users", label: "使用者管理" },
-    { key: "progress", label: "使用者解題資料" },
-  ];
+  const adminSections: Array<{ key: AdminSectionKey; label: string }> = superAdmin
+    ? [
+        { key: "contests", label: "賽事管理" },
+        { key: "schoolAccounts", label: "學校帳號" },
+        { key: "problems", label: "題目管理" },
+        { key: "users", label: "使用者管理" },
+        { key: "progress", label: "使用者解題資料" },
+      ]
+    : [
+        { key: "schoolAccounts", label: "本校帳號" },
+      ];
+  const openContestCount = contests.filter((contest) => contest.status !== "archived").length;
+  const selectedSchoolAccountSchoolId = schoolAccountSchoolId || assignableSchools[0]?.id || "";
+  const visibleSchoolAccounts =
+    selectedSchoolAccountSchoolId
+      ? schoolAccounts.filter((account) => account.schoolId === selectedSchoolAccountSchoolId)
+      : schoolAccounts;
+  const adminRoleLabel = superAdmin ? "超級管理者" : adminProfile?.role === "teacher" ? "教師" : "管理者";
+  const schoolAccountsByUid = useMemo(() => {
+    const grouped = new Map<string, SchoolAccount[]>();
+    for (const account of schoolAccounts) {
+      if (!account.uid) {
+        continue;
+      }
+      grouped.set(account.uid, [...(grouped.get(account.uid) || []), account]);
+    }
+    return grouped;
+  }, [schoolAccounts]);
+  const schoolAccountsByEmail = useMemo(() => {
+    const grouped = new Map<string, SchoolAccount[]>();
+    for (const account of schoolAccounts) {
+      const email = normalizeEmailForLookup(account.normalizedEmail || account.email);
+      if (!email) {
+        continue;
+      }
+      grouped.set(email, [...(grouped.get(email) || []), account]);
+    }
+    return grouped;
+  }, [schoolAccounts]);
+  const userDirectoryRows = useMemo(
+    () =>
+      users.map((item) => {
+        const profile = adminProfileByUid.get(item.uid);
+        const role = getManagedUserDirectoryRole(item, profile);
+        const schoolIds = getManagedUserSchoolIds(
+          item,
+          profile,
+          schoolAccountsByUid,
+          schoolAccountsByEmail,
+        );
+        const schoolNames = schoolIds
+          .map((schoolId) => schoolNameById.get(schoolId) || schoolId)
+          .filter(Boolean);
+        const schoolLabel =
+          schoolNames.length > 0
+            ? Array.from(new Set(schoolNames)).join("、")
+            : item.schoolName || profile?.schoolName || "尚未設定";
+
+        return {
+          item,
+          role,
+          roleLabel: getManagedUserDirectoryRoleLabel(role),
+          schoolIds,
+          schoolLabel,
+        };
+      }),
+    [adminProfileByUid, schoolAccountsByEmail, schoolAccountsByUid, schoolNameById, users],
+  );
+  const visibleUserDirectoryRows = useMemo(
+    () =>
+      userDirectoryRows.filter((row) => {
+        const roleMatched = userRoleFilter === "all" || row.role === userRoleFilter;
+        const schoolMatched =
+          userSchoolFilterId === "all" || row.schoolIds.includes(userSchoolFilterId);
+        return roleMatched && schoolMatched;
+      }),
+    [userDirectoryRows, userRoleFilter, userSchoolFilterId],
+  );
+  const visibleTeacherCount = visibleUserDirectoryRows.filter((row) => row.role === "teacher").length;
+  const visibleStudentCount = visibleUserDirectoryRows.filter((row) => row.role === "student").length;
+  const visibleNoSchoolCount = visibleUserDirectoryRows.filter((row) => row.schoolIds.length === 0).length;
+
+  useEffect(() => {
+    const allowedSectionKeys = new Set(adminSections.map((section) => section.key));
+    if (!allowedSectionKeys.has(activeAdminSection)) {
+      setActiveAdminSection(adminSections[0]?.key || "schoolAccounts");
+    }
+  }, [activeAdminSection, adminSections]);
+
+  useEffect(() => {
+    if (assignableSchools.length === 0) {
+      setSchoolAdminSchoolId("");
+      setSchoolAccountSchoolId("");
+      setUserSchoolFilterId("all");
+      return;
+    }
+    if (!assignableSchools.some((school) => school.id === schoolAdminSchoolId)) {
+      setSchoolAdminSchoolId(assignableSchools[0].id);
+    }
+    if (!assignableSchools.some((school) => school.id === schoolAccountSchoolId)) {
+      setSchoolAccountSchoolId(assignableSchools[0].id);
+    }
+    if (userSchoolFilterId !== "all" && !assignableSchools.some((school) => school.id === userSchoolFilterId)) {
+      setUserSchoolFilterId("all");
+    }
+  }, [assignableSchools, schoolAccountSchoolId, schoolAdminSchoolId, userSchoolFilterId]);
+
+  const getAdminRoleLabel = (item: ManagedUser) => {
+    const profile = adminProfileByUid.get(item.uid);
+    if (!profile) {
+      return getRoleLabel(item.role);
+    }
+    if (profile.role === "super") {
+      return "超級管理者";
+    }
+    const schoolNames = (profile.schoolIds || [profile.schoolId || ""])
+      .filter(Boolean)
+      .map((schoolId) => schoolNameById.get(schoolId) || profile.schoolName || schoolId);
+    return schoolNames.length > 0 ? `教師：${schoolNames.join("、")}` : "教師";
+  };
 
   return (
     <div className="panel-stack">
       <div className="panel-heading">
         <h2>管理中心</h2>
-        <span>{admin ? "管理者" : "未啟用"}</span>
+        <span>{admin ? adminRoleLabel : "未啟用"}</span>
       </div>
       {!firebaseReady && (
         <p className="warning-text">目前未設定 Firebase，管理資料會保存於本機 localStorage。</p>
@@ -1435,6 +2779,379 @@ function AdminPanel({
               </button>
             ))}
           </div>
+
+          {superAdmin && activeAdminSection === "contests" && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>年度賽事生命週期</h3>
+                  <p>每年建立一個獨立賽事實例，從草稿、名單匯入、競賽中、成績審核到封存逐步管理。</p>
+                </div>
+                <div className="admin-file-actions">
+                  <button className="ghost-button" onClick={onRefreshAdminData} disabled={adminDataBusy}>
+                    重新整理
+                  </button>
+                  <button className="primary-button" onClick={() => onCreateContest()} disabled={adminBusy}>
+                    新增賽事草稿
+                  </button>
+                </div>
+              </div>
+
+              <div className="contest-lifecycle-strip" aria-label="賽事生命週期">
+                {contestStatusFlow.map((status) => (
+                  <span className={`contest-status-step ${status.tone}`} key={status.key}>
+                    {status.label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="metric-row">
+                <Metric label="賽事總數" value={`${contests.length} 場`} />
+                <Metric label="未封存賽事" value={`${openContestCount} 場`} />
+                <Metric label="題庫可用題數" value={`${problems.length} 題`} />
+              </div>
+
+              <div className="admin-table">
+                <div className="admin-table-head contest-table-row">
+                  <span>年度</span>
+                  <span>賽事名稱</span>
+                  <span>狀態</span>
+                  <span>模式</span>
+                  <span>開始</span>
+                  <span>結束</span>
+                  <span>題目</span>
+                  <span>參賽</span>
+                  <span>學校</span>
+                  <span>操作</span>
+                </div>
+                {contests.length === 0 && <p className="muted table-empty">尚未建立賽事。請先新增年度賽事草稿。</p>}
+                {contests.map((contest) => {
+                  const expanded = editingContestId === contest.id;
+                  const nextStatus = getNextContestStatus(contest.status);
+                  return (
+                    <div className="contest-table-item" key={contest.id}>
+                      <div
+                        className={expanded ? "contest-table-row clickable active" : "contest-table-row clickable"}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onSelectContestForEdit(contest.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onSelectContestForEdit(contest.id);
+                          }
+                        }}
+                      >
+                        <span>{contest.year}</span>
+                        <span>{contest.title}</span>
+                        <span className={`contest-status-badge ${contest.status}`}>
+                          {getContestStatusLabel(contest.status)}
+                        </span>
+                        <span>{getContestModeLabel(contest.mode)}</span>
+                        <span>{formatContestDateTime(contest.startAt)}</span>
+                        <span>{formatContestDateTime(contest.endAt)}</span>
+                        <span>{contest.problemIds.length} 題</span>
+                        <span>{contest.participantCount || 0} 人</span>
+                        <span>{contest.schoolCount || 0} 校</span>
+                        <div className="contest-actions">
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onSelectContestForEdit(contest.id);
+                            }}
+                          >
+                            {expanded ? "收合" : "編輯"}
+                          </button>
+                          {nextStatus && (
+                            <button
+                              className="ghost-button"
+                              type="button"
+                              disabled={adminBusy}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onMoveContestStatus(contest, nextStatus);
+                              }}
+                            >
+                              下一階段：{getContestStatusLabel(nextStatus)}
+                            </button>
+                          )}
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            disabled={adminBusy}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onCreateContest(contest);
+                            }}
+                          >
+                            複製明年
+                          </button>
+                        </div>
+                      </div>
+                      {expanded && editingContestDraft && (
+                        <ContestEditorForm
+                          contest={editingContestDraft}
+                          busy={adminBusy}
+                          onChange={onEditingContestDraftChange}
+                          onSave={() => onSaveEditedContest(editingContestDraft)}
+                          onCancel={() => onSelectContestForEdit(contest.id)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <section className="admin-subsection">
+                <div className="section-title-row">
+                  <div>
+                    <h3>學校設定</h3>
+                    <p>建立可供教師選擇的學校清單；Email 網域欄位暫保留為選填備註，不再作為學校判斷核心。</p>
+                  </div>
+                  <button className="primary-button" type="button" onClick={onCreateSchool} disabled={adminBusy}>
+                    新增學校
+                  </button>
+                </div>
+                <div className="admin-table">
+                  <div className="admin-table-head school-table-row">
+                    <span>學校</span>
+                    <span>Email 網域/備註</span>
+                    <span>狀態</span>
+                    <span>操作</span>
+                  </div>
+                  {schools.length === 0 && <p className="muted table-empty">尚未建立學校資料。請先新增學校。</p>}
+                  {schools.map((school) => {
+                    const expanded = editingSchoolId === school.id;
+                    return (
+                      <div className="school-table-item" key={school.id}>
+                        <div
+                          className={expanded ? "school-table-row clickable active" : "school-table-row clickable"}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onSelectSchoolForEdit(school.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              onSelectSchoolForEdit(school.id);
+                            }
+                          }}
+                        >
+                          <span>{school.name}</span>
+                          <span>{school.domains.join("、") || "-"}</span>
+                          <span className={school.enabled === false ? "status-pill disabled" : "status-pill"}>
+                            {school.enabled === false ? "停用" : "啟用"}
+                          </span>
+                          <button
+                            className="ghost-button"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onSelectSchoolForEdit(school.id);
+                            }}
+                          >
+                            {expanded ? "收合" : "編輯"}
+                          </button>
+                        </div>
+                        {expanded && editingSchoolDraft && (
+                          <SchoolEditorForm
+                            school={editingSchoolDraft}
+                            busy={adminBusy}
+                            onChange={onEditingSchoolDraftChange}
+                            onSave={() => onSaveEditedSchool(editingSchoolDraft)}
+                            onCancel={() => onSelectSchoolForEdit(school.id)}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="admin-subsection">
+                <div className="section-title-row">
+                  <div>
+                    <h3>賽事名單匯入</h3>
+                    <p>CSV 只需要兩欄：email,name。此區暫保留舊版預覽流程，後續賽事名單會調整為「先選學校，再匯入 email,name」。</p>
+                  </div>
+                  {rosterPreview && (
+                    <span className="section-pill">
+                      可匯入 {rosterPreview.validRows.length} 筆／需修正 {rosterPreview.invalidRows.length} 筆
+                    </span>
+                  )}
+                </div>
+                <div className="roster-import-grid">
+                  <label className="admin-field">
+                    匯入賽事
+                    <select value={rosterContestId} onChange={(event) => onRosterContestChange(event.target.value)}>
+                      <option value="">請選擇賽事</option>
+                      {contests.map((contest) => (
+                        <option key={contest.id} value={contest.id}>
+                          {contest.year}｜{contest.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="admin-field roster-csv-field">
+                    CSV 名單資料
+                    <textarea
+                      className="json-input compact"
+                      value={rosterCsv}
+                      onChange={(event) => onRosterCsvChange(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="problem-form-actions">
+                  <button className="ghost-button" type="button" onClick={onPreviewRosterImport} disabled={adminBusy}>
+                    預覽檢查
+                  </button>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={onSaveRosterImport}
+                    disabled={adminBusy || !rosterPreview || rosterPreview.validRows.length === 0}
+                  >
+                    匯入有效名單
+                  </button>
+                </div>
+                {rosterPreview && (
+                  <div className="admin-table roster-preview-table">
+                    <div className="admin-table-head roster-table-row">
+                      <span>列</span>
+                      <span>Email</span>
+                      <span>姓名</span>
+                      <span>學校</span>
+                      <span>網域</span>
+                      <span>檢查結果</span>
+                    </div>
+                    {rosterPreview.rows.map((row) => (
+                      <div className="roster-table-row" key={`${row.rowNumber}-${row.email}`}>
+                        <span>{row.rowNumber}</span>
+                        <span>{row.email || "-"}</span>
+                        <span>{row.name || "-"}</span>
+                        <span>{row.schoolName || "-"}</span>
+                        <span>{row.domain || "-"}</span>
+                        <span className={row.valid ? "ok-text" : "danger-text"}>
+                          {row.valid ? "可匯入" : row.errors.join("、")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </section>
+          )}
+
+          {activeAdminSection === "schoolAccounts" && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>{superAdmin ? "學校帳號管理" : "本校帳號管理"}</h3>
+                  <p>
+                    {superAdmin
+                      ? "可檢視並新增各校一般使用者帳號；這份名冊與年度賽事名單分開，方便未來再調整教師權限。"
+                      : "教師只能新增與查看被指派學校的帳號，暫不開放賽事資料與全站答題資料。"}
+                  </p>
+                </div>
+                <button className="ghost-button" onClick={onRefreshAdminData} disabled={adminDataBusy}>
+                  重新整理
+                </button>
+              </div>
+
+              {assignableSchools.length === 0 ? (
+                <p className="warning-text">
+                  {superAdmin ? "尚未建立學校資料，請先到賽事管理新增學校網域。" : "尚未指派可管理的學校，請聯絡超級管理者。"}
+                </p>
+              ) : (
+                <>
+                  <div className="school-account-form">
+                    <label className="problem-form-field">
+                      學校
+                      <select
+                        value={selectedSchoolAccountSchoolId}
+                        onChange={(event) => setSchoolAccountSchoolId(event.target.value)}
+                        disabled={!superAdmin && assignableSchools.length <= 1}
+                      >
+                        {assignableSchools.map((school) => (
+                          <option key={school.id} value={school.id}>
+                            {school.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="problem-form-field">
+                      學生 Email
+                      <input
+                        type="email"
+                        value={schoolAccountEmail}
+                        placeholder="student@example.edu.tw"
+                        onChange={(event) => setSchoolAccountEmail(event.target.value)}
+                      />
+                    </label>
+                    <label className="problem-form-field">
+                      姓名
+                      <input
+                        value={schoolAccountName}
+                        placeholder="王小明"
+                        onChange={(event) => setSchoolAccountName(event.target.value)}
+                      />
+                    </label>
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={adminBusy || !selectedSchoolAccountSchoolId}
+                      onClick={async () => {
+                        const created = await onCreateSchoolAccount(
+                          selectedSchoolAccountSchoolId,
+                          schoolAccountEmail,
+                          schoolAccountName,
+                        );
+                        if (created) {
+                          setSchoolAccountEmail("");
+                          setSchoolAccountName("");
+                        }
+                      }}
+                    >
+                      新增本校帳號
+                    </button>
+                  </div>
+
+                  <div className="metric-row">
+                    <Metric label="可管理學校" value={`${assignableSchools.length} 校`} />
+                    <Metric label="目前顯示帳號" value={`${visibleSchoolAccounts.length} 筆`} />
+                    <Metric label="全部學校帳號" value={`${schoolAccounts.length} 筆`} />
+                  </div>
+
+                  <div className="admin-table">
+                    <div className="admin-table-head school-account-table-row">
+                      <span>學校</span>
+                      <span>Email</span>
+                      <span>姓名</span>
+                      <span>網域</span>
+                      <span>狀態</span>
+                      <span>建立時間</span>
+                    </div>
+                    {visibleSchoolAccounts.length === 0 && (
+                      <p className="muted table-empty">目前尚無本校帳號。</p>
+                    )}
+                    {visibleSchoolAccounts.map((account) => (
+                      <div className="school-account-table-row" key={account.id}>
+                        <span>{account.schoolName || schoolNameById.get(account.schoolId) || "-"}</span>
+                        <span>{account.email}</span>
+                        <span>{account.name}</span>
+                        <span>{account.domain || "-"}</span>
+                        <span className={account.status === "disabled" ? "status-pill disabled" : "status-pill"}>
+                          {account.status === "disabled" ? "停用" : "啟用"}
+                        </span>
+                        <span>{formatContestDateTime(account.createdAt)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          )}
 
           {activeAdminSection === "problems" && (
             <>
@@ -1602,12 +3319,29 @@ function AdminPanel({
             <section className="admin-section">
             <div className="section-title-row">
               <div>
-                <h3>使用者權限</h3>
-                <p>管理者可進入管理頁；一般使用者不會看到管理標籤。</p>
+                    <h3>使用者權限</h3>
+                <p>超級管理者可調整教師任教學校；學生維持一般使用者身份。</p>
               </div>
-              <button className="ghost-button" onClick={onRefreshAdminData} disabled={adminDataBusy}>
-                重新整理
-              </button>
+              <div className="admin-file-actions">
+                <label className="inline-admin-select">
+                  指派教師學校
+                  <select
+                    value={schoolAdminSchoolId}
+                    onChange={(event) => setSchoolAdminSchoolId(event.target.value)}
+                    disabled={assignableSchools.length === 0}
+                  >
+                    {assignableSchools.length === 0 && <option value="">尚無學校</option>}
+                    {assignableSchools.map((school) => (
+                      <option key={school.id} value={school.id}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button className="ghost-button" onClick={onRefreshAdminData} disabled={adminDataBusy}>
+                  重新整理
+                </button>
+              </div>
             </div>
             <div className="admin-table">
               <div className="admin-table-head user-table-row">
@@ -1619,8 +3353,46 @@ function AdminPanel({
                 <span>操作</span>
               </div>
               {users.length === 0 && <p className="muted table-empty">尚無使用者資料。</p>}
-              {users.map((item) => {
-                const itemIsAdmin = adminUids.has(item.uid);
+              <div className="user-directory-filters">
+                <label className="problem-form-field">
+                  身分
+                  <select
+                    value={userRoleFilter}
+                    onChange={(event) => setUserRoleFilter(event.target.value as UserDirectoryRoleFilter)}
+                  >
+                    <option value="all">全部身分</option>
+                    <option value="teacher">教師</option>
+                    <option value="student">學生</option>
+                  </select>
+                </label>
+                <label className="problem-form-field">
+                  學校
+                  <select
+                    value={userSchoolFilterId}
+                    onChange={(event) => setUserSchoolFilterId(event.target.value)}
+                  >
+                    <option value="all">全部學校</option>
+                    {assignableSchools.map((school) => (
+                      <option key={school.id} value={school.id}>
+                        {school.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="user-directory-summary">
+                  <Metric label="目前顯示" value={`${visibleUserDirectoryRows.length}/${users.length} 人`} />
+                  <Metric label="教師" value={`${visibleTeacherCount} 人`} />
+                  <Metric label="學生" value={`${visibleStudentCount} 人`} />
+                  <Metric label="未設學校" value={`${visibleNoSchoolCount} 人`} />
+                </div>
+              </div>
+              {users.length > 0 && visibleUserDirectoryRows.length === 0 && (
+                <p className="muted table-empty">沒有符合篩選條件的使用者。</p>
+              )}
+              {visibleUserDirectoryRows.map((row) => {
+                const item = row.item;
+                const itemAdminProfile = adminProfileByUid.get(item.uid);
+                const itemIsSuperAdmin = itemAdminProfile?.role === "super";
                 const isSelf = item.uid === currentUser?.uid;
                 const itemSubmissionCount = userSubmissionCounts[item.uid] || 0;
                 return (
@@ -1628,17 +3400,27 @@ function AdminPanel({
                     <span>{item.displayName || "未命名使用者"}</span>
                     <span>{item.email || "-"}</span>
                     <span>{formatManagedTimestamp(item.lastLoginAt)}</span>
-                    <span>{itemIsAdmin ? "管理者" : "一般使用者"}</span>
+                    <span className="table-role-stack">
+                      <strong>{row.roleLabel}</strong>
+                      <small>{row.schoolLabel}</small>
+                    </span>
                     <span className={item.disabled ? "status-pill disabled" : "status-pill"}>
                       {item.disabled ? "停用" : "啟用"} / {itemSubmissionCount} 筆
                     </span>
                     <div className="user-actions">
                       <button
                         className="ghost-button"
-                        onClick={() => onSetUserAdmin(item, !itemIsAdmin)}
+                        onClick={() => onSetUserAdmin(item, !itemIsSuperAdmin)}
                         disabled={adminBusy || isSelf}
                       >
-                        {itemIsAdmin ? "改為一般" : "設為管理者"}
+                        {itemIsSuperAdmin ? "改為一般" : "設為超管"}
+                      </button>
+                      <button
+                        className="ghost-button"
+                        onClick={() => onSetUserSchoolAdmin(item, schoolAdminSchoolId)}
+                        disabled={adminBusy || isSelf || !schoolAdminSchoolId}
+                      >
+                        設為教師
                       </button>
                       <button
                         className="ghost-button"
@@ -1749,6 +3531,219 @@ function AdminPanel({
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function SchoolEditorForm({
+  school,
+  busy,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  school: School;
+  busy: boolean;
+  onChange: (school: School | null) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const updateSchool = <K extends keyof School>(key: K, value: School[K]) => {
+    onChange({ ...school, [key]: value });
+  };
+
+  return (
+    <div className="school-edit-row">
+      <div className="school-form-grid">
+        <label className="problem-form-field">
+          學校 ID
+          <input value={school.id} readOnly />
+        </label>
+        <label className="problem-form-field">
+          學校名稱
+          <input value={school.name} onChange={(event) => updateSchool("name", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          狀態
+          <select
+            value={school.enabled === false ? "disabled" : "enabled"}
+            onChange={(event) => updateSchool("enabled", event.target.value === "enabled")}
+          >
+            <option value="enabled">啟用</option>
+            <option value="disabled">停用</option>
+          </select>
+        </label>
+      </div>
+      <label className="problem-form-field">
+        Email 網域/備註（選填；目前不再用來判斷學校）
+        <textarea
+          value={school.domains.join("\n")}
+          onChange={(event) => updateSchool("domains", parseDomainText(event.target.value))}
+        />
+      </label>
+      <div className="problem-form-actions">
+        <button className="primary-button" type="button" onClick={onSave} disabled={busy}>
+          <Save size={17} />
+          儲存學校
+        </button>
+        <button className="ghost-button" type="button" onClick={onCancel} disabled={busy}>
+          取消
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ContestEditorForm({
+  contest,
+  busy,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  contest: ContestEvent;
+  busy: boolean;
+  onChange: (contest: ContestEvent | null) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const updateContest = <K extends keyof ContestEvent>(key: K, value: ContestEvent[K]) => {
+    onChange({ ...contest, [key]: value });
+  };
+
+  return (
+    <div className="contest-edit-row">
+      <div className="contest-form-grid">
+        <label className="problem-form-field">
+          賽事 ID
+          <input value={contest.id} readOnly />
+        </label>
+        <label className="problem-form-field">
+          年度
+          <input value={contest.year} onChange={(event) => updateContest("year", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          賽事名稱
+          <input value={contest.title} onChange={(event) => updateContest("title", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          狀態
+          <select
+            value={contest.status}
+            onChange={(event) => updateContest("status", event.target.value as ContestStatus)}
+          >
+            {contestStatusFlow.map((status) => (
+              <option key={status.key} value={status.key}>
+                {status.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="problem-form-field">
+          模式
+          <select
+            value={contest.mode}
+            onChange={(event) => updateContest("mode", event.target.value as ContestEvent["mode"])}
+          >
+            <option value="contest">正式競賽</option>
+            <option value="practice">練習活動</option>
+            <option value="hybrid">競賽＋練習</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="contest-form-grid secondary">
+        <label className="problem-form-field">
+          報名開始
+          <input
+            type="datetime-local"
+            value={formatDateTimeInputValue(contest.registrationStartAt)}
+            onChange={(event) => updateContest("registrationStartAt", event.target.value)}
+          />
+        </label>
+        <label className="problem-form-field">
+          報名結束
+          <input
+            type="datetime-local"
+            value={formatDateTimeInputValue(contest.registrationEndAt)}
+            onChange={(event) => updateContest("registrationEndAt", event.target.value)}
+          />
+        </label>
+        <label className="problem-form-field">
+          競賽開始
+          <input
+            type="datetime-local"
+            value={formatDateTimeInputValue(contest.startAt)}
+            onChange={(event) => updateContest("startAt", event.target.value)}
+          />
+        </label>
+        <label className="problem-form-field">
+          競賽結束
+          <input
+            type="datetime-local"
+            value={formatDateTimeInputValue(contest.endAt)}
+            onChange={(event) => updateContest("endAt", event.target.value)}
+          />
+        </label>
+        <label className="problem-form-field">
+          參賽人數
+          <input
+            type="number"
+            min="0"
+            value={contest.participantCount || 0}
+            onChange={(event) => updateContest("participantCount", Math.max(0, Number(event.target.value) || 0))}
+          />
+        </label>
+        <label className="problem-form-field">
+          學校數
+          <input
+            type="number"
+            min="0"
+            value={contest.schoolCount || 0}
+            onChange={(event) => updateContest("schoolCount", Math.max(0, Number(event.target.value) || 0))}
+          />
+        </label>
+      </div>
+
+      <label className="problem-form-field">
+        賽事說明
+        <textarea value={contest.description || ""} onChange={(event) => updateContest("description", event.target.value)} />
+      </label>
+
+      <label className="problem-form-field">
+        競賽題目 ID（一行一題，未來可接題目選擇器）
+        <textarea
+          value={contest.problemIds.join("\n")}
+          onChange={(event) => updateContest("problemIds", parseProblemIdText(event.target.value))}
+        />
+      </label>
+
+      <div className="contest-note-grid">
+        <label className="problem-form-field">
+          名單／報名備註
+          <textarea value={contest.rosterNote || ""} onChange={(event) => updateContest("rosterNote", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          成績審核／公布備註
+          <textarea value={contest.resultNote || ""} onChange={(event) => updateContest("resultNote", event.target.value)} />
+        </label>
+      </div>
+
+      <div className="contest-editor-summary">
+        <span>目前階段：{getContestStatusLabel(contest.status)}</span>
+        <span>競賽題數：{contest.problemIds.length} 題</span>
+        <span>更新時間：{formatContestDateTime(contest.updatedAt)}</span>
+      </div>
+
+      <div className="problem-form-actions">
+        <button className="primary-button" type="button" onClick={onSave} disabled={busy}>
+          <Save size={17} />
+          儲存賽事
+        </button>
+        <button className="ghost-button" type="button" onClick={onCancel} disabled={busy}>
+          取消
+        </button>
+      </div>
     </div>
   );
 }
@@ -2097,6 +4092,106 @@ function cloneProblem(problem: Problem): Problem {
   return JSON.parse(JSON.stringify(problem)) as Problem;
 }
 
+function cloneContest(contest: ContestEvent): ContestEvent {
+  return JSON.parse(JSON.stringify(contest)) as ContestEvent;
+}
+
+function cloneSchool(school: School): School {
+  return JSON.parse(JSON.stringify(school)) as School;
+}
+
+function sanitizeSchoolDraft(school: School): School {
+  const now = new Date().toISOString();
+  return {
+    ...school,
+    name: school.name.trim() || "未命名學校",
+    domains: Array.from(new Set(school.domains.map((domain) => domain.trim().toLowerCase()).filter(Boolean))),
+    enabled: school.enabled !== false,
+    updatedAt: now,
+    createdAt: school.createdAt || now,
+  };
+}
+
+function sanitizeContestDraft(contest: ContestEvent): ContestEvent {
+  const now = new Date().toISOString();
+  return {
+    ...contest,
+    title: contest.title.trim() || "未命名賽事",
+    year: contest.year.trim() || String(new Date().getFullYear()),
+    description: contest.description?.trim() || "",
+    startAt: contest.startAt || "",
+    endAt: contest.endAt || "",
+    registrationStartAt: contest.registrationStartAt || "",
+    registrationEndAt: contest.registrationEndAt || "",
+    problemIds: parseProblemIdText(contest.problemIds.join("\n")),
+    participantCount: Math.max(0, Math.round(contest.participantCount || 0)),
+    schoolCount: Math.max(0, Math.round(contest.schoolCount || 0)),
+    rosterNote: contest.rosterNote?.trim() || "",
+    resultNote: contest.resultNote?.trim() || "",
+    updatedAt: now,
+    createdAt: contest.createdAt || now,
+  };
+}
+
+function getContestStatusLabel(status: ContestStatus) {
+  return contestStatusFlow.find((item) => item.key === status)?.label || status;
+}
+
+function getContestModeLabel(mode: ContestEvent["mode"]) {
+  if (mode === "practice") {
+    return "練習活動";
+  }
+  if (mode === "hybrid") {
+    return "競賽＋練習";
+  }
+  return "正式競賽";
+}
+
+function getNextContestStatus(status: ContestStatus): ContestStatus | undefined {
+  const transitions: Partial<Record<ContestStatus, ContestStatus>> = {
+    draft: "roster",
+    roster: "waiting",
+    waiting: "active",
+    active: "ended",
+    paused: "active",
+    ended: "review",
+    review: "published",
+    published: "archived",
+  };
+  return transitions[status];
+}
+
+function parseProblemIdText(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\s,，]+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function formatDateTimeInputValue(value: string | undefined) {
+  if (!value) {
+    return "";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value.slice(0, 16);
+  }
+  const localTime = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60_000);
+  return localTime.toISOString().slice(0, 16);
+}
+
+function formatContestDateTime(value: string | undefined) {
+  if (!value) {
+    return "-";
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("zh-TW");
+}
+
 function sanitizeProblemDraft(problem: Problem): Problem {
   const now = new Date().toISOString();
   const output: Problem = {
@@ -2163,6 +4258,57 @@ function countSubmissionsByUser(records: SubmissionRecord[]) {
     counts[uid] = (counts[uid] || 0) + 1;
     return counts;
   }, {});
+}
+
+function getManagedUserDirectoryRole(item: ManagedUser, profile?: AdminProfile): UserRole {
+  if (profile?.role === "super") {
+    return "super";
+  }
+  if (profile?.role === "teacher") {
+    return "teacher";
+  }
+  if (item.role === "teacher" || item.role === "student") {
+    return item.role;
+  }
+  return inferUserRoleFromEmail(item.email);
+}
+
+function getManagedUserDirectoryRoleLabel(role: UserRole) {
+  if (role === "super") {
+    return "超級管理者";
+  }
+  if (role === "teacher") {
+    return "教師";
+  }
+  return "學生";
+}
+
+function getManagedUserSchoolIds(
+  item: ManagedUser,
+  profile: AdminProfile | undefined,
+  schoolAccountsByUid: Map<string, SchoolAccount[]>,
+  schoolAccountsByEmail: Map<string, SchoolAccount[]>,
+) {
+  const schoolIds = new Set<string>();
+  addSchoolId(schoolIds, item.schoolId);
+  addSchoolId(schoolIds, profile?.schoolId);
+  (profile?.schoolIds || []).forEach((schoolId) => addSchoolId(schoolIds, schoolId));
+  (schoolAccountsByUid.get(item.uid) || []).forEach((account) => addSchoolId(schoolIds, account.schoolId));
+  (schoolAccountsByEmail.get(normalizeEmailForLookup(item.email)) || []).forEach((account) =>
+    addSchoolId(schoolIds, account.schoolId),
+  );
+  return Array.from(schoolIds);
+}
+
+function addSchoolId(target: Set<string>, schoolId?: string) {
+  const normalized = (schoolId || "").trim();
+  if (normalized) {
+    target.add(normalized);
+  }
+}
+
+function normalizeEmailForLookup(email?: string | null) {
+  return (email || "").trim().toLowerCase();
 }
 
 function buildUserProgressRows(
@@ -2463,3 +4609,7 @@ const defaultImportJson = JSON.stringify(
   null,
   2,
 );
+
+const defaultRosterCsv = `email,name
+student001@school-domain.edu.tw,王小明
+student002@school-domain.edu.tw,陳小華`;

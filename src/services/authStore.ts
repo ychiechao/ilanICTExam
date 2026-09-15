@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { auth, db, onAuthStateChanged, signInWithGoogle, signOut, type User } from "../firebase";
 import type { AppUser } from "../types";
+import { getEmailDomain, inferUserRoleFromEmail } from "./accountService";
 import { withRemoteTimeout } from "./remote";
 
 const ADMIN_INITIALIZATION_TIMEOUT_MS = 25000;
@@ -41,6 +42,7 @@ export function subscribeToAuth(callback: (user: AppUser | null) => void) {
     const appUser = toAppUser(firebaseUser);
     await upsertUser(firebaseUser);
     await autoInitializeFirstAdmin(appUser);
+    await autoInitializeTeacherProfile(appUser);
     callback(appUser);
   });
 }
@@ -56,6 +58,7 @@ export async function loginWithGoogle() {
   await upsertUser(credential.user);
   const appUser = toAppUser(credential.user);
   await autoInitializeFirstAdmin(appUser);
+  await autoInitializeTeacherProfile(appUser);
   return appUser;
 }
 
@@ -74,6 +77,26 @@ export async function isAdmin(uid?: string) {
     return snapshot.exists();
   } catch (error) {
     console.warn("Firestore 管理者讀取失敗。", error);
+    return false;
+  }
+}
+
+export async function isSuperAdmin(uid?: string) {
+  if (!db) {
+    return isDemoAdmin();
+  }
+  if (!uid) {
+    return false;
+  }
+  try {
+    const snapshot = await withRemoteTimeout(getDoc(doc(db, "admins", uid)), "Firestore 超級管理者讀取");
+    if (!snapshot.exists()) {
+      return false;
+    }
+    const role = snapshot.data().role;
+    return isSuperAdminRole(role);
+  } catch (error) {
+    console.warn("Firestore 超級管理者讀取失敗。", error);
     return false;
   }
 }
@@ -117,6 +140,7 @@ export async function initializeFirstAdmin(user: AppUser): Promise<AdminInitiali
     uid: user.uid,
     displayName: user.displayName,
     email: user.email || "",
+    role: "super",
     createdAt: serverTimestamp(),
   });
   batch.set(bootstrapRef, {
@@ -132,7 +156,11 @@ export async function initializeFirstAdmin(user: AppUser): Promise<AdminInitiali
 }
 
 export function isDemoAdmin() {
-  return localStorage.getItem("yilan-demo-admin") === "true";
+  return !db && typeof localStorage !== "undefined" && localStorage.getItem("yilan-demo-admin") === "true";
+}
+
+function isSuperAdminRole(role: unknown) {
+  return role !== "teacher" && role !== "school" && role !== "student";
 }
 
 async function autoInitializeFirstAdmin(user: AppUser) {
@@ -143,19 +171,62 @@ async function autoInitializeFirstAdmin(user: AppUser) {
   }
 }
 
+async function autoInitializeTeacherProfile(user: AppUser) {
+  if (!db || inferUserRoleFromEmail(user.email) !== "teacher") {
+    return;
+  }
+
+  try {
+    const adminRef = doc(db, "admins", user.uid);
+    const snapshot = await withRemoteTimeout(getDoc(adminRef), "Firestore 教師身分讀取");
+    if (snapshot.exists()) {
+      return;
+    }
+    await withRemoteTimeout(
+      setDoc(
+        adminRef,
+        {
+          uid: user.uid,
+          displayName: user.displayName || user.email || "未命名教師",
+          email: user.email || "",
+          role: "teacher",
+          status: "active",
+          schoolIds: [],
+          schoolVerified: false,
+          schoolSource: "self",
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      ),
+      "Firestore 教師身分初始化",
+    );
+  } catch (error) {
+    console.info("教師身分初始化未完成，將維持目前權限。", error);
+  }
+}
+
 async function upsertUser(user: User) {
   if (!db) {
     return;
   }
 
   try {
+    const userRef = doc(db, "users", user.uid);
+    const existingSnapshot = await withRemoteTimeout(getDoc(userRef), "Firestore 使用者資料讀取");
+    const existing = existingSnapshot.exists() ? existingSnapshot.data() : {};
+    const inferredRole = inferUserRoleFromEmail(user.email);
+    const nextRole = existing.role || inferredRole;
+    const nextStatus = existing.status || "active";
     await withRemoteTimeout(
       setDoc(
-        doc(db, "users", user.uid),
+        userRef,
         {
           uid: user.uid,
           displayName: user.displayName || "未命名使用者",
           email: user.email,
+          emailDomain: getEmailDomain(user.email),
+          role: nextRole,
+          status: nextStatus,
           photoURL: user.photoURL,
           lastLoginAt: serverTimestamp(),
         },

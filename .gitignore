@@ -1,0 +1,31 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+screenshots/
+dev-server.log
+bdesigner_*.json
+bdesigner_*.xls
+q*.html
+qimg_*.jpg
+q*_table*.jpg
+
+# v3 baseline additions
+*.log
+.wrangler/
+.agents/
+.codex/
+upload/
+bdesigner_*
+*.Prn
+
+# old working copies kept outside version control
+c3-branch-work/
+deploy-main-work/
+ilanICTExam-ready/

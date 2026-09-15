@@ -10,11 +10,6 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    function isAdmin() {
-      return signedIn() && accountEnabled() &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
     function accountEnabled() {
       return signedIn() &&
         (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
@@ -25,24 +20,117 @@ service cloud.firestore {
       return isOwner(uid) && accountEnabled();
     }
 
+    function isAdmin() {
+      return signedIn() && accountEnabled() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function adminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isAdmin() &&
+        (
+          !adminData().keys().hasAny(["role"]) ||
+          adminData().role == "super" ||
+          !(adminData().role in ["teacher", "school", "student"])
+        );
+    }
+
+    function isTeacherAdmin() {
+      return isAdmin() && (adminData().role == "teacher" || adminData().role == "school");
+    }
+
+    function isTeacher() {
+      return isTeacherAdmin() || isTeacherEmail();
+    }
+
+    function isTeacherFor(schoolId) {
+      return isTeacherAdmin() &&
+        (
+          (adminData().keys().hasAny(["schoolIds"]) && schoolId in adminData().schoolIds) ||
+          (adminData().keys().hasAny(["schoolId"]) && adminData().schoolId == schoolId)
+        );
+    }
+
+    function classData(classId) {
+      return get(/databases/$(database)/documents/classes/$(classId)).data;
+    }
+
+    function isClassTeacher(classId) {
+      return isTeacher() && classData(classId).teacherUid == request.auth.uid;
+    }
+
+    function classMemberData(memberId) {
+      return get(/databases/$(database)/documents/classMembers/$(memberId)).data;
+    }
+
+    function isActiveClassMemberFor(memberId, classId, studentUid) {
+      return exists(/databases/$(database)/documents/classMembers/$(memberId)) &&
+        classMemberData(memberId).classId == classId &&
+        classMemberData(memberId).studentUid == studentUid &&
+        classMemberData(memberId).status != "removed";
+    }
+
+    function isJoinableClass(classId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/classes/$(classId)) &&
+        classData(classId).joinEnabled == true &&
+        classData(classId).archived != true;
+    }
+
+    function isTeacherEmail() {
+      return signedIn() &&
+        request.auth.token.email is string &&
+        request.auth.token.email.matches(".*@tmail\\.ilc\\.edu\\.tw$");
+    }
+
+    function isStudentEmail() {
+      return signedIn() &&
+        request.auth.token.email is string &&
+        request.auth.token.email.matches(".*@smail\\.ilc\\.edu\\.tw$");
+    }
+
+    function ownerRoleAllowed(role) {
+      return (role == "teacher" && isTeacherEmail()) ||
+        (role == "student" && !isTeacherEmail());
+    }
+
     match /users/{uid} {
-      allow read: if signedIn();
-      allow create: if isAdmin() ||
+      allow read: if isSuperAdmin() || isOwner(uid);
+      allow create: if isSuperAdmin() ||
         (isActiveOwner(uid) &&
-          !request.resource.data.keys().hasAny(["disabled", "disabledAt", "disabledBy"]));
-      allow update: if isAdmin() ||
+          !request.resource.data.keys().hasAny(["disabled", "disabledAt", "disabledBy"]) &&
+          (!request.resource.data.keys().hasAny(["role"]) || ownerRoleAllowed(request.resource.data.role)));
+      allow update: if isSuperAdmin() ||
         (isActiveOwner(uid) &&
           !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(["disabled", "disabledAt", "disabledBy"]));
-      allow delete: if isAdmin();
+            .hasAny(["disabled", "disabledAt", "disabledBy"]) &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(["role"]) ||
+            ownerRoleAllowed(request.resource.data.role)) &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(["status"]) ||
+            request.resource.data.status in ["active", "pending"]));
+      allow delete: if isSuperAdmin();
     }
 
     match /admins/{uid} {
-      allow read: if signedIn();
-      allow create: if isAdmin() ||
+      allow read: if isSuperAdmin() || isOwner(uid);
+      allow create: if isSuperAdmin() ||
         (isOwner(uid) &&
-          !exists(/databases/$(database)/documents/settings/adminBootstrap));
-      allow update, delete: if isAdmin();
+          !exists(/databases/$(database)/documents/settings/adminBootstrap)) ||
+        (isOwner(uid) && isTeacherEmail() && request.resource.data.role == "teacher");
+      allow update: if isSuperAdmin() ||
+        (
+          isOwner(uid) &&
+          isTeacherEmail() &&
+          resource.data.role == "teacher" &&
+          request.resource.data.role == "teacher" &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["uid", "email", "role"]) &&
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(["status"]) ||
+            request.resource.data.status == "active")
+        );
+      allow delete: if isSuperAdmin();
     }
 
     match /settings/{docId} {
@@ -50,34 +138,106 @@ service cloud.firestore {
       allow create: if signedIn() && docId == "adminBootstrap" &&
         request.resource.data.uid == request.auth.uid &&
         !exists(/databases/$(database)/documents/settings/adminBootstrap);
-      allow update, delete: if isAdmin();
+      allow update, delete: if isSuperAdmin();
     }
 
     match /problems/{problemId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /contests/{contestId} {
+      allow read, create, update, delete: if isSuperAdmin();
+    }
+
+    match /schools/{schoolId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /contestRoster/{entryId} {
+      allow read, create, update, delete: if isSuperAdmin();
+    }
+
+    match /schoolAccounts/{accountId} {
+      allow read: if isSuperAdmin() || isTeacherFor(resource.data.schoolId);
+      allow create: if isSuperAdmin() || isTeacherFor(request.resource.data.schoolId);
+      allow update: if isSuperAdmin() ||
+        (
+          isTeacherFor(resource.data.schoolId) &&
+          isTeacherFor(request.resource.data.schoolId)
+        );
+      allow delete: if isSuperAdmin();
+    }
+
+    match /classes/{classId} {
+      allow read: if isSuperAdmin() ||
+        (signedIn() && resource.data.joinEnabled == true) ||
+        (isTeacher() && resource.data.teacherUid == request.auth.uid);
+      allow create: if isSuperAdmin() ||
+        (
+          isTeacher() &&
+          request.resource.data.teacherUid == request.auth.uid
+        );
+      allow update: if isSuperAdmin() ||
+        (
+          isTeacher() &&
+          resource.data.teacherUid == request.auth.uid &&
+          request.resource.data.teacherUid == resource.data.teacherUid &&
+          request.resource.data.schoolId == resource.data.schoolId
+        );
+      allow delete: if isSuperAdmin();
+    }
+
+    match /classMembers/{memberId} {
+      allow read: if isSuperAdmin() ||
+        (signedIn() && resource.data.studentUid == request.auth.uid) ||
+        isClassTeacher(resource.data.classId);
+      allow create: if isSuperAdmin() ||
+        (
+          accountEnabled() &&
+          request.resource.data.studentUid == request.auth.uid &&
+          isJoinableClass(request.resource.data.classId)
+        );
+      allow update: if isSuperAdmin() || isClassTeacher(resource.data.classId);
+      allow delete: if isSuperAdmin();
+    }
+
+    match /classSubmissionViews/{viewId} {
+      allow read: if isSuperAdmin() ||
+        (signedIn() && resource.data.studentUid == request.auth.uid) ||
+        isClassTeacher(resource.data.classId);
+      allow create, update: if accountEnabled() &&
+        request.resource.data.studentUid == request.auth.uid &&
+        isActiveClassMemberFor(
+          request.resource.data.classMemberId,
+          request.resource.data.classId,
+          request.auth.uid
+        ) &&
+        request.resource.data.teacherUid == classData(request.resource.data.classId).teacherUid;
+      allow delete: if isSuperAdmin();
     }
 
     match /submissions/{submissionId} {
-      allow read: if signedIn() &&
-        (resource.data.uid == request.auth.uid || isAdmin());
+      allow read: if isSuperAdmin() ||
+        (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if accountEnabled() &&
         request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow update, delete: if isSuperAdmin();
     }
 
     match /userProblemStats/{statId} {
-      allow read: if signedIn() &&
-        (resource.data.uid == request.auth.uid || isAdmin());
+      allow read: if isSuperAdmin() ||
+        (signedIn() && resource.data.uid == request.auth.uid);
       allow create, update: if accountEnabled() &&
         request.resource.data.uid == request.auth.uid;
-      allow delete: if isAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     match /leaderboards/{problemId} {
       allow read: if true;
-      allow create, update: if accountEnabled();
-      allow delete: if isAdmin();
+      allow create, update: if isSuperAdmin() || accountEnabled();
+      allow delete: if isSuperAdmin();
     }
   }
 }

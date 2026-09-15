@@ -1,6 +1,24 @@
 export type ProblemVisibility = "public" | "hidden";
 export type ProblemStatus = "published" | "draft" | "archived";
 export type WorkspaceMode = "Blockly" | "Scratch";
+export type ContestStatus =
+  | "draft"
+  | "roster"
+  | "waiting"
+  | "active"
+  | "paused"
+  | "ended"
+  | "review"
+  | "published"
+  | "archived";
+export type ContestMode = "practice" | "contest" | "hybrid";
+export type UserRole = "super" | "teacher" | "student";
+export type AdminRole = "super" | "teacher";
+export type AccountStatus = "pending" | "active" | "disabled";
+export type SchoolSource = "self" | "admin";
+export type RosterEntryStatus = "active" | "disabled";
+export type SchoolAccountStatus = "active" | "disabled";
+export type ClassMemberStatus = "active" | "removed";
 
 export interface ExampleCase {
   title: string;
@@ -112,8 +130,143 @@ export interface ManagedUser {
   displayName: string;
   email?: string | null;
   photoURL?: string | null;
+  role?: UserRole;
+  status?: AccountStatus;
+  emailDomain?: string;
+  schoolId?: string;
+  schoolName?: string;
+  schoolVerified?: boolean;
+  schoolSource?: SchoolSource;
   lastLoginAt?: unknown;
   disabled?: boolean;
   disabledAt?: unknown;
   disabledBy?: string;
+}
+
+export interface AdminProfile {
+  uid: string;
+  displayName: string;
+  email?: string | null;
+  role: AdminRole;
+  status?: AccountStatus;
+  schoolId?: string;
+  schoolName?: string;
+  schoolIds?: string[];
+  schoolVerified?: boolean;
+  schoolSource?: SchoolSource;
+  updatedAt?: unknown;
+  updatedBy?: string;
+}
+
+export interface ContestEvent {
+  id: string;
+  title: string;
+  year: string;
+  status: ContestStatus;
+  mode: ContestMode;
+  description?: string;
+  startAt?: string;
+  endAt?: string;
+  registrationStartAt?: string;
+  registrationEndAt?: string;
+  problemIds: string[];
+  participantCount?: number;
+  schoolCount?: number;
+  rosterNote?: string;
+  resultNote?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface School {
+  id: string;
+  name: string;
+  domains: string[];
+  enabled?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ContestRosterEntry {
+  id: string;
+  contestId: string;
+  email: string;
+  normalizedEmail: string;
+  name: string;
+  schoolId: string;
+  schoolName: string;
+  domain: string;
+  status: RosterEntryStatus;
+  uid?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SchoolAccount {
+  id: string;
+  schoolId: string;
+  schoolName: string;
+  email: string;
+  normalizedEmail: string;
+  name: string;
+  domain: string;
+  status: SchoolAccountStatus;
+  uid?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface LearningClass {
+  id: string;
+  name: string;
+  schoolId: string;
+  schoolName: string;
+  teacherUid: string;
+  teacherName: string;
+  joinCode: string;
+  joinEnabled: boolean;
+  archived?: boolean;
+  memberCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ClassMember {
+  id: string;
+  classId: string;
+  className: string;
+  schoolId: string;
+  schoolName: string;
+  teacherUid: string;
+  teacherName: string;
+  studentUid: string;
+  studentName: string;
+  studentEmail?: string | null;
+  status: ClassMemberStatus;
+  joinedAt?: string;
+  updatedAt?: string;
+}
+
+export interface ClassSubmissionView {
+  id: string;
+  classId: string;
+  className: string;
+  classMemberId: string;
+  teacherUid: string;
+  studentUid: string;
+  studentName: string;
+  studentEmail?: string | null;
+  submissionId: string;
+  problemId: string;
+  problemTitle: string;
+  mode: WorkspaceMode;
+  score: number;
+  maxScore: number;
+  passRate: number;
+  status: GradeResult["status"];
+  isFullScore?: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
