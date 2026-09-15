@@ -20,6 +20,28 @@ service cloud.firestore {
       return isOwner(uid) && accountEnabled();
     }
 
+    // ---- v3 平台模式（規格第 4 章、第 11 章）----
+    // settings/platform 是全站模式的唯一真相來源；找不到文件時視為練習模式。
+    function platformMode() {
+      return exists(/databases/$(database)/documents/settings/platform)
+        ? get(/databases/$(database)/documents/settings/platform).data.get("mode", "practice")
+        : "practice";
+    }
+
+    // 競賽帳號由 Worker 簽發的自訂 token 帶 claims，不查任何名單文件。
+    function isContestAccount() {
+      return signedIn() && request.auth.token.get("accountType", "") == "contest";
+    }
+
+    function isContestAccountFor(contestId) {
+      return isContestAccount() && request.auth.token.get("contestId", "") == contestId;
+    }
+
+    // 練習資料只在練習模式對教師與學生開放；競賽帳號永遠不能碰練習資料。
+    function practiceOpen() {
+      return platformMode() == "practice" && !isContestAccount();
+    }
+
     function isAdmin() {
       return signedIn() && accountEnabled() &&
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
@@ -141,8 +163,30 @@ service cloud.firestore {
       allow update, delete: if isSuperAdmin();
     }
 
-    match /problems/{problemId} {
+    // 全站模式：未登入者也要能讀，登入頁才知道現在是不是競賽期間。
+    match /settings/platform {
       allow read: if true;
+      allow create, update: if isSuperAdmin();
+      allow delete: if false;
+    }
+
+    // 競賽帳號：只有 Worker 以服務帳號寫入；密碼雜湊存 KV，這裡只有非敏感欄位。
+    match /contestAccounts/{accountId} {
+      allow read: if isSuperAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // 超管操作紀錄：只能新增，不能修改或刪除。
+    match /auditLogs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin() &&
+        request.resource.data.actorUid == request.auth.uid &&
+        request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /problems/{problemId} {
+      allow read: if isSuperAdmin() || (practiceOpen() && (true));
       allow create, update, delete: if isSuperAdmin();
     }
 
@@ -171,72 +215,72 @@ service cloud.firestore {
     }
 
     match /classes/{classId} {
-      allow read: if isSuperAdmin() ||
+      allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (signedIn() && resource.data.joinEnabled == true) ||
-        (isTeacher() && resource.data.teacherUid == request.auth.uid);
-      allow create: if isSuperAdmin() ||
+        (isTeacher() && resource.data.teacherUid == request.auth.uid)));
+      allow create: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (
           isTeacher() &&
           request.resource.data.teacherUid == request.auth.uid
-        );
-      allow update: if isSuperAdmin() ||
+        )));
+      allow update: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (
           isTeacher() &&
           resource.data.teacherUid == request.auth.uid &&
           request.resource.data.teacherUid == resource.data.teacherUid &&
           request.resource.data.schoolId == resource.data.schoolId
-        );
+        )));
       allow delete: if isSuperAdmin();
     }
 
     match /classMembers/{memberId} {
-      allow read: if isSuperAdmin() ||
+      allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (signedIn() && resource.data.studentUid == request.auth.uid) ||
-        isClassTeacher(resource.data.classId);
-      allow create: if isSuperAdmin() ||
+        isClassTeacher(resource.data.classId)));
+      allow create: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (
           accountEnabled() &&
           request.resource.data.studentUid == request.auth.uid &&
           isJoinableClass(request.resource.data.classId)
-        );
-      allow update: if isSuperAdmin() || isClassTeacher(resource.data.classId);
+        )));
+      allow update: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() || isClassTeacher(resource.data.classId)));
       allow delete: if isSuperAdmin();
     }
 
     match /classSubmissionViews/{viewId} {
-      allow read: if isSuperAdmin() ||
+      allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (signedIn() && resource.data.studentUid == request.auth.uid) ||
-        isClassTeacher(resource.data.classId);
-      allow create, update: if accountEnabled() &&
+        isClassTeacher(resource.data.classId)));
+      allow create, update: if isSuperAdmin() || (practiceOpen() && (accountEnabled() &&
         request.resource.data.studentUid == request.auth.uid &&
         isActiveClassMemberFor(
           request.resource.data.classMemberId,
           request.resource.data.classId,
           request.auth.uid
         ) &&
-        request.resource.data.teacherUid == classData(request.resource.data.classId).teacherUid;
+        request.resource.data.teacherUid == classData(request.resource.data.classId).teacherUid));
       allow delete: if isSuperAdmin();
     }
 
     match /submissions/{submissionId} {
-      allow read: if isSuperAdmin() ||
-        (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if accountEnabled() &&
-        request.resource.data.uid == request.auth.uid;
+      allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
+        (signedIn() && resource.data.uid == request.auth.uid)));
+      allow create: if isSuperAdmin() || (practiceOpen() && (accountEnabled() &&
+        request.resource.data.uid == request.auth.uid));
       allow update, delete: if isSuperAdmin();
     }
 
     match /userProblemStats/{statId} {
-      allow read: if isSuperAdmin() ||
-        (signedIn() && resource.data.uid == request.auth.uid);
-      allow create, update: if accountEnabled() &&
-        request.resource.data.uid == request.auth.uid;
+      allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
+        (signedIn() && resource.data.uid == request.auth.uid)));
+      allow create, update: if isSuperAdmin() || (practiceOpen() && (accountEnabled() &&
+        request.resource.data.uid == request.auth.uid));
       allow delete: if isSuperAdmin();
     }
 
     match /leaderboards/{problemId} {
-      allow read: if true;
-      allow create, update: if isSuperAdmin() || accountEnabled();
+      allow read: if isSuperAdmin() || (practiceOpen() && (true));
+      allow create, update: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() || accountEnabled()));
       allow delete: if isSuperAdmin();
     }
   }

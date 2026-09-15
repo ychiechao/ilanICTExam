@@ -4,6 +4,7 @@ import { APP_TITLE, defaultImportJson, defaultRosterCsv, tabs } from "./app/cons
 import type { TabKey } from "./app/constants";
 import BlocklyWorkspace from "./components/BlocklyWorkspace";
 import { AdminPanel } from "./components/admin/AdminPanel";
+import { AnnouncementScreen } from "./components/AnnouncementScreen";
 import { AccountPanel } from "./components/panels/AccountPanel";
 import { ClassesPanel } from "./components/panels/ClassesPanel";
 import { HistoryPanel } from "./components/panels/HistoryPanel";
@@ -18,6 +19,7 @@ import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadMana
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
 import { createContestDraft, loadContests, saveContest } from "./services/contestStore";
+import { DEFAULT_PLATFORM_STATE, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
 import { loadGlobalLeaderboard, removeUserFromLeaderboards, updateGlobalLeaderboard } from "./services/leaderboardService";
 import { deleteProblemIfUnused, exportProblemsToCsv, getProblemCsvTemplate, importProblemsFromCsv, importProblemsFromJson, loadAllProblemsForAdmin, loadProblems, saveProblem } from "./services/problemStore";
@@ -25,7 +27,7 @@ import type { ProblemImportMode } from "./services/problemStore";
 import { createSchoolAccount, createSchoolDraft, loadSchoolAccounts, loadSchools, loadSchoolsByIds, previewRosterImport, saveRosterEntries, saveSchool } from "./services/schoolStore";
 import type { RosterImportPreview } from "./services/schoolStore";
 import { deleteSubmissionsForUser, loadAllSubmissions, loadSubmissions, loadUserSubmissions, saveSubmission } from "./services/submissionService";
-import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, Problem, School, SchoolAccount, SubmissionRecord, WorkspaceMode } from "./types";
+import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SchoolAccount, SubmissionRecord, WorkspaceMode } from "./types";
 import { countSubmissionsByProblem } from "./utils/adminUsers";
 import { cloneContest, cloneProblem, cloneSchool, getContestStatusLabel, sanitizeContestDraft, sanitizeProblemDraft, sanitizeSchoolDraft } from "./utils/drafts";
 import { getFirebaseAdminErrorMessage, getLoginErrorMessage, getSchoolWriteErrorMessage, loadAdminDataset, runAdminMutationStep } from "./utils/errors";
@@ -80,6 +82,8 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
+  const [platform, setPlatform] = useState<PlatformState>(DEFAULT_PLATFORM_STATE);
+  const [platformReady, setPlatformReady] = useState(false);
   const [adminBusy, setAdminBusy] = useState(false);
   const [adminDataBusy, setAdminDataBusy] = useState(false);
   const [accountBusy, setAccountBusy] = useState(false);
@@ -156,6 +160,9 @@ export default function App() {
   const availableTabs = useMemo(
     () =>
       tabs.filter((tab) => {
+        if (platform.mode !== "practice") {
+          return tab.key === "admin" && superAdmin;
+        }
         if (tab.key === "admin") {
           return superAdmin;
         }
@@ -167,17 +174,29 @@ export default function App() {
         }
         return true;
       }),
-    [effectiveRole, superAdmin, user],
+    [effectiveRole, platform.mode, superAdmin, user],
   );
+
+  // 全站模式：任何人可讀，超管切換後即時跟隨（規格 4.2）。
+  useEffect(() => {
+    return subscribePlatform((next) => {
+      setPlatform(next);
+      setPlatformReady(true);
+    });
+  }, []);
 
   useEffect(() => {
     document.title = APP_TITLE;
-    loadProblems().then((loaded) => {
-      setProblems(loaded);
-      setSelectedProblemId((current) => current || loaded[0]?.id || "");
-      setCustomInput(getDefaultTestInput(loaded[0]));
-    });
-    loadGlobalLeaderboard().then(setLeaderboard);
+    loadProblems()
+      .then((loaded) => {
+        setProblems(loaded);
+        setSelectedProblemId((current) => current || loaded[0]?.id || "");
+        setCustomInput(getDefaultTestInput(loaded[0]));
+      })
+      .catch((error) => console.info("題目讀取失敗（競賽模式下非超管屬正常）", error));
+    loadGlobalLeaderboard()
+      .then(setLeaderboard)
+      .catch(() => setLeaderboard([]));
   }, []);
 
   useEffect(() => {
@@ -280,6 +299,10 @@ export default function App() {
   }, [selectedProblem, user?.uid]);
 
   useEffect(() => {
+    if (platform.mode !== "practice" && superAdmin && activeTab !== "admin") {
+      setActiveTab("admin");
+      return;
+    }
     if (
       (!admin && activeTab === "admin") ||
       (!user && activeTab === "account") ||
@@ -287,7 +310,7 @@ export default function App() {
     ) {
       setActiveTab("statement");
     }
-  }, [activeTab, admin, effectiveRole, user]);
+  }, [activeTab, admin, effectiveRole, platform.mode, superAdmin, user]);
 
   const handleWorkspaceChange = useCallback((payload: { code: string; xml: string }) => {
     setGeneratedCode(payload.code);
@@ -1268,6 +1291,28 @@ export default function App() {
     window.location.reload();
   }
 
+  if (!platformReady) {
+    return (
+      <main className="loading-screen">
+        <RefreshCw className="spin" />
+        <span>載入平台中...</span>
+      </main>
+    );
+  }
+
+  // 競賽或維護模式：非超管只看到公告（規格 4.3、5.3）。
+  if (platform.mode !== "practice" && !superAdmin) {
+    return (
+      <AnnouncementScreen
+        platform={platform}
+        user={user}
+        loginBusy={loginBusy}
+        onGoogleLogin={handleLogin}
+        onLogout={() => logout()}
+      />
+    );
+  }
+
   if (!selectedProblem) {
     return (
       <main className="loading-screen">
@@ -1307,6 +1352,8 @@ export default function App() {
           )}
         </div>
       </header>
+
+      {platform.announcement && <div className="platform-banner">{platform.announcement}</div>}
 
       <main className={managementMaximized ? "workspace-layout admin-maximized" : "workspace-layout"}>
         <aside className="problem-rail">
@@ -1507,6 +1554,8 @@ export default function App() {
               <AdminPanel
                 admin={admin}
                 superAdmin={superAdmin}
+                platform={platform}
+                onStatusMessage={setStatusMessage}
                 adminProfile={adminProfile}
                 adminProfiles={adminProfiles}
                 adminDataBusy={adminDataBusy}

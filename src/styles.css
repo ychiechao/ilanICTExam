@@ -1903,3 +1903,104 @@ pre {
     min-height: 560px;
   }
 }
+
+/* ---- 平台模式（v3） ---- */
+.announcement-main {
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+  align-content: start;
+  padding: 48px 16px;
+}
+
+.announcement-card {
+  width: min(640px, 100%);
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px 32px;
+  box-shadow: 0 12px 32px rgba(23, 66, 92, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.announcement-card h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.announcement-text {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.platform-mode-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.platform-mode-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 4px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 2px solid #d7e3ec;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.platform-mode-option input {
+  grid-row: 1 / span 2;
+}
+
+.platform-mode-option.active {
+  border-color: #1f7a8c;
+  background: #eef7f9;
+}
+
+.platform-mode-title {
+  font-weight: 700;
+}
+
+.platform-contest-list {
+  display: grid;
+  gap: 8px;
+}
+
+.platform-contest-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid #d7e3ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.platform-contest-item input {
+  grid-row: 1 / span 2;
+}
+
+.platform-contest-title {
+  font-weight: 600;
+}
+
+.platform-check-list {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+
+.platform-banner {
+  background: #fff4d6;
+  color: #7a4b00;
+  padding: 10px 16px;
+  text-align: center;
+  font-weight: 600;
+}

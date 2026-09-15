@@ -174,6 +174,9 @@ export interface ContestEvent {
   schoolCount?: number;
   rosterNote?: string;
   resultNote?: string;
+  /** 已匯入的競賽帳號數與題數；由 Worker 匯入時寫入，切換競賽模式前檢查用。 */
+  accountCount?: number;
+  problemCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -269,4 +272,37 @@ export interface ClassSubmissionView {
   isFullScore?: boolean;
   createdAt: string;
   updatedAt?: string;
+}
+
+export type PlatformMode = "practice" | "contest" | "maintenance";
+
+/** settings/platform：全站模式的唯一真相來源（規格 4.2）。 */
+export interface PlatformState {
+  mode: PlatformMode;
+  activeContestIds: string[];
+  announcement: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export type AuditAction =
+  | "platform.mode"
+  | "contest.status"
+  | "contest.save"
+  | "contest.accounts.import"
+  | "contest.problems.import"
+  | "contest.dashboard"
+  | "contest.void"
+  | "maintenance.backfill";
+
+/** auditLogs：超管操作紀錄，只能新增不能改刪（規格 8.10）。 */
+export interface AuditLogEntry {
+  id: string;
+  action: AuditAction;
+  targetType: string;
+  targetId: string;
+  summary: string;
+  actorUid: string;
+  actorName: string;
+  createdAt?: string;
 }

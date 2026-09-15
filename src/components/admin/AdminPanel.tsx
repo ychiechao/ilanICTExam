@@ -3,10 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { contestStatusFlow, tabs } from "../../app/constants";
 import type { AdminSectionKey, UserDirectoryRoleFilter } from "../../app/constants";
+import { PlatformSection } from "./PlatformSection";
 import { getRoleLabel } from "../../services/accountService";
 import type { ProblemImportMode } from "../../services/problemStore";
 import type { RosterImportPreview } from "../../services/schoolStore";
-import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, Problem, School, SchoolAccount, SubmissionRecord } from "../../types";
+import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SchoolAccount, SubmissionRecord } from "../../types";
 import { buildUserProgressRows, countSubmissionsByUser, getManagedUserDirectoryRole, getManagedUserDirectoryRoleLabel, getManagedUserSchoolIds, normalizeEmailForLookup } from "../../utils/adminUsers";
 import { getContestModeLabel, getContestStatusLabel, getNextContestStatus } from "../../utils/drafts";
 import { formatContestDateTime, formatManagedTimestamp } from "../../utils/format";
@@ -19,6 +20,8 @@ import { SchoolEditorForm } from "./SchoolEditorForm";
 export function AdminPanel({
   admin,
   superAdmin,
+  platform,
+  onStatusMessage,
   adminProfile,
   adminProfiles,
   adminDataBusy,
@@ -83,6 +86,8 @@ export function AdminPanel({
 }: {
   admin: boolean;
   superAdmin: boolean;
+  platform: PlatformState;
+  onStatusMessage: (message: string) => void;
   adminProfile: AdminProfile | null;
   adminProfiles: AdminProfile[];
   adminDataBusy: boolean;
@@ -171,6 +176,7 @@ export function AdminPanel({
   const [expandedProgressUserId, setExpandedProgressUserId] = useState("");
   const adminSections: Array<{ key: AdminSectionKey; label: string }> = superAdmin
     ? [
+        { key: "platform", label: "平台狀態" },
         { key: "contests", label: "賽事管理" },
         { key: "schoolAccounts", label: "學校帳號" },
         { key: "problems", label: "題目管理" },
@@ -320,6 +326,17 @@ export function AdminPanel({
               </button>
             ))}
           </div>
+
+          {superAdmin && activeAdminSection === "platform" && (
+            <PlatformSection
+              platform={platform}
+              contests={contests}
+              currentUser={currentUser}
+              busy={adminBusy}
+              onStatus={onStatusMessage}
+              onMoveContestStatus={onMoveContestStatus}
+            />
+          )}
 
           {superAdmin && activeAdminSection === "contests" && (
             <section className="admin-section">
