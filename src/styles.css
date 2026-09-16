@@ -1984,3 +1984,34 @@ pre {
   background: #fff;
   max-width: 160px;
 }
+
+.class-member-table-row.clickable {
+  cursor: pointer;
+}
+
+.class-member-table-row.clickable:hover,
+.class-member-table-row.clickable.active {
+  background: #eef7f9;
+}
+
+.student-dashboard {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #d7e3ec;
+  border-radius: 14px;
+  background: #fff;
+  display: grid;
+  gap: 12px;
+}
+
+.student-dashboard.embedded {
+  margin-top: 0;
+  border: 0;
+  padding: 8px 0 0;
+}
+
+.student-dashboard-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: #4b5f6e;
+}

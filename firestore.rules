@@ -60,12 +60,16 @@ service cloud.firestore {
         );
     }
 
+    // 教師：admins 文件 role 為 teacher，且超管已指定學校（沒有學校 = 尚未啟用）。
     function isTeacherAdmin() {
-      return isAdmin() && (adminData().role == "teacher" || adminData().role == "school");
+      return isAdmin() &&
+        (adminData().role == "teacher" || adminData().role == "school") &&
+        (adminData().get("schoolId", "") != "" || adminData().get("schoolIds", []).size() > 0);
     }
 
+    // 教師身分只看 admins 文件（由超管設定學校時建立），教師網域的 Email 本身不算。
     function isTeacher() {
-      return isTeacherAdmin() || isTeacherEmail();
+      return isTeacherAdmin();
     }
 
     function classData(classId) {
@@ -106,9 +110,9 @@ service cloud.firestore {
         request.auth.token.email.matches(".*@smail\\.ilc\\.edu\\.tw$");
     }
 
+    // 使用者自己只能把 role 寫成 student，或（教師網域且已由超管啟用）維持 teacher。
     function ownerRoleAllowed(role) {
-      return (role == "teacher" && isTeacherEmail()) ||
-        (role == "student" && !isTeacherEmail());
+      return role == "student" || (role == "teacher" && isTeacherEmail() && isTeacherAdmin());
     }
 
     match /users/{uid} {
@@ -132,18 +136,8 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || isOwner(uid);
       allow create: if isSuperAdmin() ||
         (isOwner(uid) &&
-          !exists(/databases/$(database)/documents/settings/adminBootstrap)) ||
-        (isOwner(uid) && isTeacherEmail() && request.resource.data.role == "teacher");
-      allow update: if isSuperAdmin() ||
-        (
-          isOwner(uid) &&
-          isTeacherEmail() &&
-          resource.data.role == "teacher" &&
-          request.resource.data.role == "teacher" &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["uid", "email", "role"]) &&
-          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(["status"]) ||
-            request.resource.data.status == "active")
-        );
+          !exists(/databases/$(database)/documents/settings/adminBootstrap));
+      allow update: if isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
 

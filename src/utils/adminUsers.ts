@@ -1,4 +1,3 @@
-import { inferUserRoleFromEmail } from "../services/accountService";
 import type { AdminProfile, ManagedUser, Problem, SubmissionRecord, UserRole } from "../types";
 import { formatManagedTimestamp, formatProblemStatusSummary } from "./format";
 import { getBetterSubmission, isFullScoreSubmission } from "./practice";
@@ -25,10 +24,8 @@ export function getManagedUserDirectoryRole(item: ManagedUser, profile?: AdminPr
   if (profile?.role === "teacher") {
     return "teacher";
   }
-  if (item.role === "teacher" || item.role === "student") {
-    return item.role;
-  }
-  return inferUserRoleFromEmail(item.email);
+  void item;
+  return "student";
 }
 
 export function getManagedUserDirectoryRoleLabel(role: UserRole) {

@@ -9,7 +9,7 @@ import {
 import { auth, db, onAuthStateChanged, signInWithCustomToken, signInWithGoogle, signOut, type User } from "../firebase";
 import { graderRequest } from "./grader";
 import type { AppUser } from "../types";
-import { getEmailDomain, inferUserRoleFromEmail } from "./accountService";
+import { getEmailDomain } from "./accountService";
 import { withRemoteTimeout } from "./remote";
 
 const ADMIN_INITIALIZATION_TIMEOUT_MS = 25000;
@@ -50,7 +50,6 @@ export function subscribeToAuth(callback: (user: AppUser | null) => void) {
     const appUser = toAppUser(firebaseUser);
     await upsertUser(firebaseUser);
     await autoInitializeFirstAdmin(appUser);
-    await autoInitializeTeacherProfile(appUser);
     callback(appUser);
   });
 }
@@ -66,7 +65,6 @@ export async function loginWithGoogle() {
   await upsertUser(credential.user);
   const appUser = toAppUser(credential.user);
   await autoInitializeFirstAdmin(appUser);
-  await autoInitializeTeacherProfile(appUser);
   return appUser;
 }
 
@@ -194,40 +192,6 @@ async function autoInitializeFirstAdmin(user: AppUser) {
   }
 }
 
-async function autoInitializeTeacherProfile(user: AppUser) {
-  if (!db || inferUserRoleFromEmail(user.email) !== "teacher") {
-    return;
-  }
-
-  try {
-    const adminRef = doc(db, "admins", user.uid);
-    const snapshot = await withRemoteTimeout(getDoc(adminRef), "Firestore 教師身分讀取");
-    if (snapshot.exists()) {
-      return;
-    }
-    await withRemoteTimeout(
-      setDoc(
-        adminRef,
-        {
-          uid: user.uid,
-          displayName: user.displayName || user.email || "未命名教師",
-          email: user.email || "",
-          role: "teacher",
-          status: "active",
-          schoolIds: [],
-          schoolVerified: false,
-          schoolSource: "self",
-          createdAt: serverTimestamp(),
-        },
-        { merge: true },
-      ),
-      "Firestore 教師身分初始化",
-    );
-  } catch (error) {
-    console.info("教師身分初始化未完成，將維持目前權限。", error);
-  }
-}
-
 async function upsertUser(user: User) {
   if (!db) {
     return;
@@ -237,8 +201,8 @@ async function upsertUser(user: User) {
     const userRef = doc(db, "users", user.uid);
     const existingSnapshot = await withRemoteTimeout(getDoc(userRef), "Firestore 使用者資料讀取");
     const existing = existingSnapshot.exists() ? existingSnapshot.data() : {};
-    const inferredRole = inferUserRoleFromEmail(user.email);
-    const nextRole = existing.role || inferredRole;
+    // 新使用者一律是學生；教師身分由超管設定學校後啟用，不依 Email 網域自動判定。
+    const nextRole = existing.role || "student";
     const nextStatus = existing.status || "active";
     await withRemoteTimeout(
       setDoc(

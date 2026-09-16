@@ -7,6 +7,7 @@ export function AccountPanel({
   profile,
   adminProfile,
   effectiveRole,
+  pendingTeacher,
   schools,
   selectedSchoolId,
   studentJoinCode,
@@ -21,6 +22,7 @@ export function AccountPanel({
   profile: ManagedUser | null;
   adminProfile: AdminProfile | null;
   effectiveRole: UserRole;
+  pendingTeacher: boolean;
   schools: School[];
   selectedSchoolId: string;
   studentJoinCode: string;
@@ -76,21 +78,45 @@ export function AccountPanel({
             <div>
               <span className="account-label">所屬學校</span>
               <strong>{schoolName}</strong>
-              {effectiveRole === "teacher" && (
-                <small>{schoolVerified ? "超管已確認" : "教師自填，待超管確認"}</small>
-              )}
+              {effectiveRole === "teacher" && <small>{schoolVerified ? "管理者已設定" : "待管理者確認"}</small>}
+              {pendingTeacher && <small className="warning-text">教師身分待管理者啟用</small>}
             </div>
           </section>
 
+          {pendingTeacher && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>教師身分尚未啟用</h3>
+                  <p>
+                    你的 Email 屬於教師網域。請聯絡管理者在後台為你設定任教學校，設定完成後即可使用「我的班級」功能。
+                    在此之前，這個帳號以學生身分使用。
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {effectiveRole === "teacher" && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>任教學校</h3>
+                  <p>任教學校由管理者設定，建立班級時會自動帶入；如需變更請聯絡管理者。</p>
+                </div>
+              </div>
+              <p>
+                <strong>{schoolName}</strong>
+              </p>
+            </section>
+          )}
+
+          {effectiveRole === "student" && !pendingTeacher && (
           <section className="admin-section">
             <div className="section-title-row">
               <div>
-                <h3>{effectiveRole === "teacher" ? "任教學校設定" : "所屬學校設定"}</h3>
-                <p>
-                  {effectiveRole === "teacher"
-                    ? "教師可以先自行設定任教學校；超管仍可在後台調整與確認。這個設定會作為建立班級時的預設學校。"
-                    : "請先選擇你的學校，校排行與班級資料會依此顯示；超管仍可在後台調整。"}
-                </p>
+                <h3>所屬學校設定</h3>
+                <p>請先選擇你的學校，校排行與班級資料會依此顯示；加入班級後會自動改為班級的學校。</p>
               </div>
             </div>
 
@@ -104,7 +130,7 @@ export function AccountPanel({
               ) : (
                 <div className="account-school-form">
                   <label className="problem-form-field">
-                    {effectiveRole === "teacher" ? "任教學校" : "學校"}
+                    學校
                     <select value={selectedSchoolId} onChange={(event) => onSchoolChange(event.target.value)}>
                       <option value="">請選擇學校</option>
                       {schools
@@ -122,8 +148,9 @@ export function AccountPanel({
                 </div>
               )}
           </section>
+          )}
 
-          {effectiveRole === "student" && (
+          {effectiveRole === "student" && !pendingTeacher && (
             <section className="admin-section">
               <div className="section-title-row">
                 <div>

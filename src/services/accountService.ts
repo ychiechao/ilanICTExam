@@ -129,13 +129,22 @@ export function getEffectiveRole(
   if (adminProfile?.role === "super") {
     return "super";
   }
-  if (adminProfile?.role === "teacher") {
+  // 教師身分只由超管在後台設定學校時啟用（admins 文件），教師網域的 Email 本身不算。
+  if (
+    adminProfile?.role === "teacher" &&
+    adminProfile.status !== "disabled" &&
+    (Boolean(adminProfile.schoolId) || (adminProfile.schoolIds?.length ?? 0) > 0)
+  ) {
     return "teacher";
   }
-  if (userProfile?.role && userProfile.role !== "super") {
-    return userProfile.role;
-  }
-  return inferUserRoleFromEmail(user?.email);
+  void user;
+  void userProfile;
+  return "student";
+}
+
+/** Email 屬於教師網域但尚未被超管啟用教師身分。 */
+export function isPendingTeacher(user: AppUser | null, effectiveRole: UserRole) {
+  return effectiveRole === "student" && inferUserRoleFromEmail(user?.email) === "teacher";
 }
 
 function normalizeManagedUser(input: unknown): ManagedUser {
@@ -168,7 +177,8 @@ function normalizeUserRole(value: unknown, email: string): UserRole {
   if (value === "teacher" || value === "school") {
     return "teacher";
   }
-  return inferUserRoleFromEmail(email);
+  void email;
+  return "student";
 }
 
 function readText(value: unknown, fallback = "") {

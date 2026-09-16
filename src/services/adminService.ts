@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { AdminProfile, AdminRole, AppUser, ManagedUser } from "../types";
-import { getEmailDomain, inferUserRoleFromEmail, saveAccountSchoolSelection } from "./accountService";
+import { getEmailDomain, saveAccountSchoolSelection } from "./accountService";
 import { withRemoteTimeout } from "./remote";
 
 export async function loadManagedUsers(): Promise<ManagedUser[]> {
@@ -195,7 +195,7 @@ export async function setManagedUserDisabled(
         uid: target.uid,
         displayName: target.displayName || target.email || "未命名使用者",
         email: target.email || "",
-        role: inferUserRoleFromEmail(target.email),
+        role: target.role || "student",
         emailDomain: getEmailDomain(target.email),
         photoURL: target.photoURL || "",
         disabled,

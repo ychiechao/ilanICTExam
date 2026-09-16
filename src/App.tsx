@@ -16,7 +16,7 @@ import { StatementPanel } from "./components/panels/StatementPanel";
 import { TestPanel } from "./components/panels/TestPanel";
 import { GuishanIslandIcon, PracticeStatusBadge } from "./components/ui";
 import { hasFirebaseConfig } from "./firebase";
-import { getEffectiveRole, loadUserProfile, saveAccountSchoolSelection } from "./services/accountService";
+import { getEffectiveRole, inferUserRoleFromEmail, isPendingTeacher, loadUserProfile, saveAccountSchoolSelection } from "./services/accountService";
 import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserSchool, setManagedUserTeacherSchool } from "./services/adminService";
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
@@ -985,7 +985,10 @@ export default function App() {
       setStatusMessage("請選擇學校。");
       return;
     }
-    const isTeacher = adminProfiles.find((profile) => profile.uid === target.uid)?.role === "teacher";
+    // 教師網域的帳號：超管指定學校即啟用教師身分（規格 5.1 補充）。
+    const isTeacher =
+      adminProfiles.find((profile) => profile.uid === target.uid)?.role === "teacher" ||
+      inferUserRoleFromEmail(target.email) === "teacher";
     setAdminBusy(true);
     setStatusMessage("");
     try {
@@ -1032,6 +1035,14 @@ export default function App() {
       setStatusMessage("請先登入後再設定學校。");
       return;
     }
+    if (effectiveRole === "teacher") {
+      setStatusMessage("教師的任教學校由管理者設定。");
+      return;
+    }
+    if (isPendingTeacher(user, effectiveRole)) {
+      setStatusMessage("教師身分尚未啟用，請聯絡管理者設定任教學校。");
+      return;
+    }
     if (effectiveRole === "student" && studentClassMembers.some((member) => member.status !== "removed")) {
       setStatusMessage("已加入班級的學生，學校由班級決定，無法自行更改。");
       return;
@@ -1048,7 +1059,7 @@ export default function App() {
       await saveAccountSchoolSelection({
         user,
         school,
-        role: effectiveRole === "teacher" ? "teacher" : "student",
+        role: "student",
         actorUid: user.uid,
         source: "self",
         verified: false,
@@ -1059,9 +1070,9 @@ export default function App() {
       ]);
       setAccountProfile(nextProfile);
       setAdminProfile(nextAdminProfile);
-      setStatusMessage("已儲存任教學校，超管仍可在後台調整或確認。");
+      setStatusMessage("已儲存學校，管理者仍可在後台調整。");
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "任教學校儲存失敗。");
+      setStatusMessage(error instanceof Error ? error.message : "學校儲存失敗。");
     } finally {
       setAccountBusy(false);
     }
@@ -1490,6 +1501,7 @@ export default function App() {
                 profile={accountProfile}
                 adminProfile={adminProfile}
                 effectiveRole={effectiveRole}
+                pendingTeacher={isPendingTeacher(user, effectiveRole)}
                 schools={schools}
                 selectedSchoolId={accountSchoolId}
                 studentJoinCode={studentJoinCode}
@@ -1506,6 +1518,7 @@ export default function App() {
                 classes={teacherClasses}
                 members={classMembers}
                 submissionViews={classSubmissionViews}
+                problems={problems}
                 classNameDraft={classNameDraft}
                 busy={classBusy}
                 onClassNameChange={setClassNameDraft}
