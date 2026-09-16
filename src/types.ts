@@ -204,6 +204,8 @@ export interface ContestDashboardSettings {
   visibility: DashboardVisibility;
   showNames: boolean;
   topN: number;
+  /** 投影用畫面的 token；重新產生即讓舊連結失效。 */
+  boardToken?: string;
 }
 
 export type ContestAccountStatus = "active" | "disabled";

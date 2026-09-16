@@ -1,7 +1,8 @@
-import { CheckCircle2, FileJson, History, Play, Send } from "lucide-react";
+import { CheckCircle2, FileJson, History, Play, Send, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
+import { subscribeDashboard, type ContestDashboard } from "../../services/dashboardStore";
 import { runCustomTest } from "../../services/gradingEngine";
 import { GraderError, graderRequest } from "../../services/grader";
 import type { ContestProblem } from "../../services/contestProblemStore";
@@ -12,6 +13,7 @@ import BlocklyWorkspace from "../BlocklyWorkspace";
 interface ContestPanelProps {
   user: AppUser;
   maxSubmissions: number;
+  dashboardVisibility: "organizer" | "participants" | "public";
 }
 
 interface CaseResultView {
@@ -41,13 +43,13 @@ interface ContestSubmissionView {
   caseResults: CaseResultView[];
 }
 
-type SideTab = "statement" | "test" | "submit";
+type SideTab = "statement" | "test" | "submit" | "board";
 
 /**
  * 參賽者作答區：左側題目清單、中央積木、右側題目說明／自行測試／提交。
  * 提交送 Worker /grade；提交紀錄以 onSnapshot 訂閱自己的 contestSubmissions。
  */
-export function ContestPanel({ user, maxSubmissions }: ContestPanelProps) {
+export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: ContestPanelProps) {
   const contestId = user.contestId ?? "";
   const [problems, setProblems] = useState<ContestProblem[]>([]);
   const [submissions, setSubmissions] = useState<ContestSubmissionView[]>([]);
@@ -61,6 +63,20 @@ export function ContestPanel({ user, maxSubmissions }: ContestPanelProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [lastResult, setLastResult] = useState<ContestSubmissionView | null>(null);
+  const [dashboard, setDashboard] = useState<ContestDashboard | null>(null);
+  const boardOpen = dashboardVisibility !== "organizer";
+
+  // 主辦單位開放排行榜時才訂閱（Rules 也只在開放時允許讀）。
+  useEffect(() => {
+    if (!boardOpen) {
+      setDashboard(null);
+      return;
+    }
+    return subscribeDashboard(contestId, setDashboard);
+  }, [boardOpen, contestId]);
+  useEffect(() => {
+    if (!boardOpen && tab === "board") setTab("statement");
+  }, [boardOpen, tab]);
 
   // 題目：該場的公開部分（Rules 只允許該場競賽帳號讀）。
   useEffect(() => {
@@ -192,6 +208,7 @@ export function ContestPanel({ user, maxSubmissions }: ContestPanelProps) {
     { key: "statement", label: "題目說明", icon: FileJson },
     { key: "test", label: "自行測試", icon: Play },
     { key: "submit", label: "提交", icon: Send },
+    ...(boardOpen ? [{ key: "board" as SideTab, label: "排行榜", icon: Trophy }] : []),
   ];
 
   return (
@@ -326,6 +343,28 @@ export function ContestPanel({ user, maxSubmissions }: ContestPanelProps) {
                     <span>輸出結果</span>
                     <pre>{testOutput || "尚未執行"}</pre>
                   </div>
+                </div>
+              )}
+
+              {tab === "board" && (
+                <div className="panel-stack">
+                  <div className="panel-heading">
+                    <h2>排行榜</h2>
+                    <span>{dashboard?.submittedCount ?? 0} 人已提交</span>
+                  </div>
+                  {(dashboard?.ranking ?? []).length === 0 && <p className="muted">尚無提交。</p>}
+                  {(dashboard?.ranking ?? []).map((row) => (
+                    <div className={row.username === user.contestUsername ? "leader-row me" : "leader-row"} key={row.username}>
+                      <span className="rank">{row.rank}</span>
+                      <div>
+                        <strong>{row.name || row.username}</strong>
+                        <small>
+                          {row.schoolName ? row.schoolName + " · " : ""}完成 {row.solvedCount} 題 · {row.submitCount} 次
+                        </small>
+                      </div>
+                      <strong>{row.totalScore}</strong>
+                    </div>
+                  ))}
                 </div>
               )}
 

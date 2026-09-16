@@ -5,7 +5,7 @@ export const APP_TITLE = "宜蘭縣資訊科技創意實作競賽";
 
 export type TabKey = "statement" | "test" | "score" | "history" | "leaderboard" | "account" | "classes" | "admin";
 export type PracticeStatus = "completed" | "in-progress" | "not-started";
-export type AdminSectionKey = "platform" | "contests" | "contestAccounts" | "contestProblems" | "schools" | "problems" | "users" | "progress";
+export type AdminSectionKey = "platform" | "dashboard" | "contests" | "contestAccounts" | "contestProblems" | "schools" | "problems" | "users" | "progress";
 export type UserDirectoryRoleFilter = "all" | "teacher" | "student";
 
 export interface PracticeStats {

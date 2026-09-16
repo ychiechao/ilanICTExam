@@ -205,6 +205,15 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // 參賽者線上心跳：只能寫自己那一筆（{contestId}_{username}），超管可讀。
+    match /contestPresence/{presenceId} {
+      allow read: if isSuperAdmin();
+      allow create, update: if isContestAccount() &&
+        presenceId == request.auth.token.get("contestId", "") + "_" + request.auth.token.get("username", "") &&
+        request.resource.data.uid == request.auth.uid;
+      allow delete: if isSuperAdmin();
+    }
+
     // 超管操作紀錄：只能新增，不能修改或刪除。
     match /auditLogs/{logId} {
       allow read: if isSuperAdmin();

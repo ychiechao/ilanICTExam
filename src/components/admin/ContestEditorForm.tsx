@@ -1,9 +1,12 @@
 import { Save } from "lucide-react";
-import { contestStatusFlow } from "../../app/constants";
-import type { ContestEvent, ContestStatus } from "../../types";
-import { getContestStatusLabel, parseProblemIdText } from "../../utils/drafts";
+import type { ContestEvent } from "../../types";
+import { getContestStatusLabel } from "../../utils/drafts";
 import { formatContestDateTime, formatDateTimeInputValue } from "../../utils/format";
 
+/**
+ * 賽事基本設定。狀態由「賽事管理」的階段按鈕與「平台狀態 → 比賽控制」推進；
+ * 參賽人數、學校數、題數由帳號與題庫匯入自動帶入，這裡只顯示。
+ */
 export function ContestEditorForm({
   contest,
   busy,
@@ -25,10 +28,6 @@ export function ContestEditorForm({
     <div className="contest-edit-row">
       <div className="contest-form-grid">
         <label className="problem-form-field">
-          賽事 ID
-          <input value={contest.id} readOnly />
-        </label>
-        <label className="problem-form-field">
           年度
           <input value={contest.year} onChange={(event) => updateContest("year", event.target.value)} />
         </label>
@@ -37,36 +36,15 @@ export function ContestEditorForm({
           <input value={contest.title} onChange={(event) => updateContest("title", event.target.value)} />
         </label>
         <label className="problem-form-field">
-          狀態
-          <select
-            value={contest.status}
-            onChange={(event) => updateContest("status", event.target.value as ContestStatus)}
-          >
-            {contestStatusFlow.map((status) => (
-              <option key={status.key} value={status.key}>
-                {status.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="problem-form-field">
-          模式
-          <select
-            value={contest.mode}
-            onChange={(event) => updateContest("mode", event.target.value as ContestEvent["mode"])}
-          >
-            <option value="contest">正式競賽</option>
-            <option value="practice">練習活動</option>
-            <option value="hybrid">競賽＋練習</option>
-          </select>
-        </label>
-        <label className="problem-form-field">
           組別（帳號前綴）
           <select value={contest.division || "E"} onChange={(event) => updateContest("division", event.target.value)}>
             <option value="E">E 國小組</option>
             <option value="J">J 國中組</option>
           </select>
         </label>
+      </div>
+
+      <div className="contest-form-grid secondary">
         <label className="problem-form-field">
           比賽長度（分鐘）
           <input
@@ -87,27 +65,8 @@ export function ContestEditorForm({
             onChange={(event) => updateContest("maxSubmissionsPerProblem", Math.max(1, Number(event.target.value) || 10))}
           />
         </label>
-      </div>
-
-      <div className="contest-form-grid secondary">
         <label className="problem-form-field">
-          報名開始
-          <input
-            type="datetime-local"
-            value={formatDateTimeInputValue(contest.registrationStartAt)}
-            onChange={(event) => updateContest("registrationStartAt", event.target.value)}
-          />
-        </label>
-        <label className="problem-form-field">
-          報名結束
-          <input
-            type="datetime-local"
-            value={formatDateTimeInputValue(contest.registrationEndAt)}
-            onChange={(event) => updateContest("registrationEndAt", event.target.value)}
-          />
-        </label>
-        <label className="problem-form-field">
-          競賽開始
+          預定開始（選填，實際以「開始比賽」為準）
           <input
             type="datetime-local"
             value={formatDateTimeInputValue(contest.startAt)}
@@ -115,60 +74,30 @@ export function ContestEditorForm({
           />
         </label>
         <label className="problem-form-field">
-          競賽結束
+          預定結束（選填）
           <input
             type="datetime-local"
             value={formatDateTimeInputValue(contest.endAt)}
             onChange={(event) => updateContest("endAt", event.target.value)}
           />
         </label>
-        <label className="problem-form-field">
-          參賽人數
-          <input
-            type="number"
-            min="0"
-            value={contest.participantCount || 0}
-            onChange={(event) => updateContest("participantCount", Math.max(0, Number(event.target.value) || 0))}
-          />
-        </label>
-        <label className="problem-form-field">
-          學校數
-          <input
-            type="number"
-            min="0"
-            value={contest.schoolCount || 0}
-            onChange={(event) => updateContest("schoolCount", Math.max(0, Number(event.target.value) || 0))}
-          />
-        </label>
       </div>
 
       <label className="problem-form-field">
-        賽事說明
+        賽事說明（參賽者登入後會看到）
         <textarea value={contest.description || ""} onChange={(event) => updateContest("description", event.target.value)} />
       </label>
 
       <label className="problem-form-field">
-        競賽題目 ID（一行一題，未來可接題目選擇器）
-        <textarea
-          value={contest.problemIds.join("\n")}
-          onChange={(event) => updateContest("problemIds", parseProblemIdText(event.target.value))}
-        />
+        備註（只有主辦單位看得到）
+        <textarea value={contest.rosterNote || ""} onChange={(event) => updateContest("rosterNote", event.target.value)} />
       </label>
-
-      <div className="contest-note-grid">
-        <label className="problem-form-field">
-          名單／報名備註
-          <textarea value={contest.rosterNote || ""} onChange={(event) => updateContest("rosterNote", event.target.value)} />
-        </label>
-        <label className="problem-form-field">
-          成績審核／公布備註
-          <textarea value={contest.resultNote || ""} onChange={(event) => updateContest("resultNote", event.target.value)} />
-        </label>
-      </div>
 
       <div className="contest-editor-summary">
         <span>目前階段：{getContestStatusLabel(contest.status)}</span>
-        <span>競賽題數：{contest.problemIds.length} 題</span>
+        <span>競賽帳號：{contest.accountCount ?? 0} 個</span>
+        <span>競賽題目：{contest.problemCount ?? 0} 題</span>
+        <span>賽事 ID：{contest.id}</span>
         <span>更新時間：{formatContestDateTime(contest.updatedAt)}</span>
       </div>
 

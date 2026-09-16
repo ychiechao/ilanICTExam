@@ -168,6 +168,7 @@ function normalizeDashboard(value: unknown): ContestEvent["dashboard"] {
     visibility: visibility === "participants" || visibility === "public" ? visibility : "organizer",
     showNames: record.showNames === true,
     topN: Math.max(1, Math.round(readNonNegativeNumber(record.topN) || 20)),
+    ...(readText(record.boardToken) ? { boardToken: readText(record.boardToken) } : {}),
   };
 }
 

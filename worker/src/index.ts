@@ -6,6 +6,7 @@ import {
   handleSetContestAccountStatus,
 } from "./routes/contestAccounts";
 import { handleImportContestProblems } from "./routes/contestProblems";
+import { handleBoard } from "./routes/board";
 import { handleGrade } from "./routes/grade";
 import { handleLogin, handleRefresh } from "./routes/login";
 import { handleTime } from "./routes/time";
@@ -50,6 +51,12 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
 
   // 以下路由都需要 Firestore；RequestContext 建構時才解析服務帳號，/time 不需要 secret。
   const ctx = new RequestContext(env);
+
+  // 投影用排行榜（不需登入，靠 token）
+  const boardMatch = /^\/board\/([A-Za-z0-9_-]+)$/.exec(path);
+  if (method === "GET" && boardMatch) {
+    return handleBoard(request, ctx, boardMatch[1]);
+  }
 
   if (method === "POST" && path === "/login") {
     return handleLogin(request, ctx);

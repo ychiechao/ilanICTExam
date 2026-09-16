@@ -5,12 +5,13 @@ import { contestStatusFlow, tabs } from "../../app/constants";
 import type { AdminSectionKey, UserDirectoryRoleFilter } from "../../app/constants";
 import { ContestAccountsSection } from "./ContestAccountsSection";
 import { ContestProblemsSection } from "./ContestProblemsSection";
+import { DashboardSection } from "./DashboardSection";
 import { PlatformSection } from "./PlatformSection";
 import { getRoleLabel } from "../../services/accountService";
 import type { ProblemImportMode } from "../../services/problemStore";
 import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SubmissionRecord } from "../../types";
 import { buildUserProgressRows, countSubmissionsByUser, getManagedUserDirectoryRole, getManagedUserDirectoryRoleLabel, getManagedUserSchoolIds, normalizeEmailForLookup } from "../../utils/adminUsers";
-import { getContestModeLabel, getContestStatusLabel, getNextContestStatus } from "../../utils/drafts";
+import { getContestStatusLabel, getNextContestStatus } from "../../utils/drafts";
 import { formatContestDateTime, formatManagedTimestamp } from "../../utils/format";
 import { getProblemCaseSummary, isFullScoreSubmission } from "../../utils/practice";
 import { Metric } from "../ui";
@@ -159,6 +160,7 @@ export function AdminPanel({
   const adminSections: Array<{ key: AdminSectionKey; label: string }> = superAdmin
     ? [
         { key: "platform", label: "平台狀態" },
+        { key: "dashboard", label: "儀表板" },
         { key: "contests", label: "賽事管理" },
         { key: "contestAccounts", label: "競賽帳號" },
         { key: "contestProblems", label: "競賽題庫" },
@@ -333,13 +335,12 @@ export function AdminPanel({
                 <div className="admin-table-head contest-table-row">
                   <span>年度</span>
                   <span>賽事名稱</span>
+                  <span>組別</span>
                   <span>狀態</span>
-                  <span>模式</span>
                   <span>開始</span>
                   <span>結束</span>
                   <span>題目</span>
-                  <span>參賽</span>
-                  <span>學校</span>
+                  <span>帳號</span>
                   <span>操作</span>
                 </div>
                 {contests.length === 0 && <p className="muted table-empty">尚未建立賽事。請先新增年度賽事草稿。</p>}
@@ -362,15 +363,14 @@ export function AdminPanel({
                       >
                         <span>{contest.year}</span>
                         <span>{contest.title}</span>
+                        <span>{contest.division === "J" ? "國中" : "國小"}</span>
                         <span className={`contest-status-badge ${contest.status}`}>
                           {getContestStatusLabel(contest.status)}
                         </span>
-                        <span>{getContestModeLabel(contest.mode)}</span>
                         <span>{formatContestDateTime(contest.startAt)}</span>
                         <span>{formatContestDateTime(contest.endAt)}</span>
-                        <span>{contest.problemIds.length} 題</span>
-                        <span>{contest.participantCount || 0} 人</span>
-                        <span>{contest.schoolCount || 0} 校</span>
+                        <span>{contest.problemCount ?? 0} 題</span>
+                        <span>{contest.accountCount ?? 0} 個</span>
                         <div className="contest-actions">
                           <button
                             className="ghost-button"
@@ -424,6 +424,16 @@ export function AdminPanel({
 
 
             </section>
+          )}
+
+          {superAdmin && activeAdminSection === "dashboard" && (
+            <DashboardSection
+              contests={contests}
+              currentUser={currentUser}
+              busy={adminBusy}
+              onStatus={onStatusMessage}
+              onContestsChanged={onRefreshAdminData}
+            />
           )}
 
           {superAdmin && activeAdminSection === "contestAccounts" && (

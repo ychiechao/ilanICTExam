@@ -4,6 +4,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { APP_TITLE } from "../../app/constants";
 import { db } from "../../firebase";
 import { getContestPhase } from "../../services/contestStore";
+import { startPresenceHeartbeat } from "../../services/presence";
 import { formatCountdown, useServerNow } from "../../services/serverClock";
 import type { AppUser, PlatformState } from "../../types";
 import { formatContestDateTime } from "../../utils/format";
@@ -23,6 +24,7 @@ interface LiveContest {
   endAt?: string;
   pausedAt?: string;
   maxSubmissionsPerProblem: number;
+  dashboardVisibility: "organizer" | "participants" | "public";
 }
 
 /**
@@ -33,6 +35,9 @@ interface LiveContest {
 export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
   const [contest, setContest] = useState<LiveContest | null>(null);
   const now = useServerNow();
+
+  // 線上心跳：儀表板的「目前線上」人數。
+  useEffect(() => startPresenceHeartbeat(user), [user]);
 
   // 即時訂閱自己那一場：主辦單位按開始／暫停，畫面同步更新。
   useEffect(() => {
@@ -48,6 +53,7 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
               endAt: typeof data.endAt === "string" ? data.endAt : undefined,
               pausedAt: typeof data.pausedAt === "string" ? data.pausedAt : undefined,
               maxSubmissionsPerProblem: typeof data.maxSubmissionsPerProblem === "number" && data.maxSubmissionsPerProblem > 0 ? data.maxSubmissionsPerProblem : 10,
+              dashboardVisibility: readVisibility((data.dashboard as { visibility?: string } | undefined)?.visibility),
             }
           : null,
       );
@@ -88,7 +94,13 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
 
       {platform.announcement && <div className="platform-banner">{platform.announcement}</div>}
 
-      {phase === "running" && <ContestPanel user={user} maxSubmissions={contest?.maxSubmissionsPerProblem ?? 10} />}
+      {phase === "running" && (
+        <ContestPanel
+          user={user}
+          maxSubmissions={contest?.maxSubmissionsPerProblem ?? 10}
+          dashboardVisibility={contest?.dashboardVisibility ?? "organizer"}
+        />
+      )}
 
       <main className={phase === "running" ? "announcement-main hidden-stage" : "announcement-main"}>
         {phase === "waiting" && (
@@ -122,4 +134,8 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
       </main>
     </div>
   );
+}
+
+function readVisibility(value: unknown): "organizer" | "participants" | "public" {
+  return value === "participants" || value === "public" ? value : "organizer";
 }
