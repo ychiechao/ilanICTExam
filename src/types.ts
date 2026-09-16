@@ -15,7 +15,7 @@ export type ContestMode = "practice" | "contest" | "hybrid";
 export type UserRole = "super" | "teacher" | "student";
 export type AdminRole = "super" | "teacher";
 export type AccountStatus = "pending" | "active" | "disabled";
-export type SchoolSource = "self" | "admin";
+export type SchoolSource = "self" | "admin" | "class";
 export type ClassMemberStatus = "active" | "removed";
 
 export interface ExampleCase {

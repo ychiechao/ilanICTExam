@@ -3,6 +3,7 @@ import {
   doc,
   getDocs,
   query,
+  serverTimestamp,
   setDoc,
   where,
   writeBatch,
@@ -284,6 +285,25 @@ export async function joinClassByCode(rawJoinCode: string, student: AppUser) {
       setDoc(doc(db, "classMembers", member.id), member, { merge: true }),
       "Firestore 加入班級",
     );
+    // 加入班級即帶入開課教師的學校（規格 7.3）；學生不必再自己選。
+    if (learningClass.schoolId) {
+      await withRemoteTimeout(
+        setDoc(
+          doc(db, "users", student.uid),
+          {
+            uid: student.uid,
+            schoolId: learningClass.schoolId,
+            schoolName: learningClass.schoolName,
+            schoolSource: "class",
+            schoolVerified: true,
+            updatedAt: serverTimestamp(),
+            updatedBy: student.uid,
+          },
+          { merge: true },
+        ),
+        "Firestore 學生學校更新",
+      );
+    }
     return member;
   }
 

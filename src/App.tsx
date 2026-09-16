@@ -1150,7 +1150,12 @@ export default function App() {
       const member = await joinClassByCode(studentJoinCode, user);
       setStudentJoinCode("");
       await loadClassData();
-      setStatusMessage(`已加入班級「${member.className}」。`);
+      const nextProfile = await loadUserProfile(user.uid);
+      setAccountProfile(nextProfile);
+      setAccountSchoolId(nextProfile?.schoolId || "");
+      setStatusMessage(
+        member.schoolName ? `已加入班級「${member.className}」，學校設為「${member.schoolName}」。` : `已加入班級「${member.className}」。`,
+      );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "加入班級失敗。");
     } finally {
