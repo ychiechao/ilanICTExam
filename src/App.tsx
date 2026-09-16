@@ -842,7 +842,7 @@ export default function App() {
     const transitions = getContestTransitions(contest);
     const isControlStatus = nextStatus === "active" || nextStatus === "paused" || nextStatus === "ended";
     if (!isControlStatus) {
-      const allowed = [transitions.next, transitions.previous].find((item) => item?.status === nextStatus);
+      const allowed = [transitions.next, transitions.previous, transitions.archive].find((item) => item?.status === nextStatus);
       if (!allowed) {
         setStatusMessage(`不能從「${getContestStatusLabel(contest.status)}」直接切到「${getContestStatusLabel(nextStatus)}」。`);
         return;
@@ -855,7 +855,13 @@ export default function App() {
     setAdminBusy(true);
     setStatusMessage("");
     try {
-      const saved = await saveContest({ ...contest, status: nextStatus });
+      const saved = await saveContest({
+        ...contest,
+        status: nextStatus,
+        // 封存時記住原階段，解封存才能回到原處；解封存後清掉。
+        ...(nextStatus === "archived" ? { archivedFromStatus: contest.status } : {}),
+        ...(contest.status === "archived" ? { archivedFromStatus: undefined } : {}),
+      });
       await writeAuditLog(
         { action: "contest.status", targetType: "contest", targetId: contest.id, summary: `「${contest.title}」${getContestStatusLabel(contest.status)} → ${getContestStatusLabel(nextStatus)}` },
         user,

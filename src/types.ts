@@ -194,6 +194,8 @@ export interface ContestEvent {
   dashboard?: ContestDashboardSettings;
   publishedAt?: string;
   releasedToPractice?: boolean;
+  /** 封存前的階段；解封存時回到這裡（沒有就回正式公布）。 */
+  archivedFromStatus?: ContestStatus;
   createdAt?: string;
   updatedAt?: string;
 }

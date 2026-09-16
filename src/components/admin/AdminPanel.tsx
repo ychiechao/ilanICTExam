@@ -387,14 +387,14 @@ export function AdminPanel({
                               className="ghost-button"
                               type="button"
                               disabled={adminBusy}
-                              title={"退回：" + transitions.previous.label}
+                              title={transitions.previous.buttonLabel ?? "退回：" + transitions.previous.label}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 if (transitions.previous?.confirm && !window.confirm(transitions.previous.confirm)) return;
                                 onMoveContestStatus(contest, transitions.previous!.status);
                               }}
                             >
-                              ← {transitions.previous.label}
+                              {transitions.previous.buttonLabel ?? `← ${transitions.previous.label}`}
                             </button>
                           )}
                           {transitions.next && (
@@ -410,6 +410,20 @@ export function AdminPanel({
                               }}
                             >
                               {transitions.next.label} →
+                            </button>
+                          )}
+                          {transitions.archive && (
+                            <button
+                              className="ghost-button"
+                              type="button"
+                              disabled={adminBusy}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                if (transitions.archive?.confirm && !window.confirm(transitions.archive.confirm)) return;
+                                onMoveContestStatus(contest, transitions.archive!.status);
+                              }}
+                            >
+                              {transitions.archive.buttonLabel}
                             </button>
                           )}
                           {(contest.status === "waiting" || contest.status === "active" || contest.status === "paused") && (

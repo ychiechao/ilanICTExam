@@ -156,6 +156,7 @@ function normalizeContest(input: unknown): ContestEvent {
     dashboard: normalizeDashboard(record.dashboard),
     publishedAt: readText(record.publishedAt),
     releasedToPractice: record.releasedToPractice === true,
+    ...(typeof record.archivedFromStatus === "string" ? { archivedFromStatus: normalizeStatus(record.archivedFromStatus) } : {}),
     createdAt: readText(record.createdAt, now),
     updatedAt: readText(record.updatedAt, now),
   };

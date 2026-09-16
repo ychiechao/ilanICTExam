@@ -89,16 +89,33 @@ export interface ContestTransition {
   /** 有值表示不能執行，內容是原因。 */
   blocked?: string;
   confirm?: string;
+  /** 按鈕文字；沒有就用「← label」或「label →」。 */
+  buttonLabel?: string;
 }
 
 /**
  * 列表上可用的階段按鈕。競賽中／暫停／結束由「平台狀態 → 比賽控制」操作，這裡不提供。
  * 前進要滿足前置條件；退回一步永遠允許（除了進行中）。
  */
-export function getContestTransitions(contest: ContestEvent): { next?: ContestTransition; previous?: ContestTransition } {
+export interface ContestTransitions {
+  next?: ContestTransition;
+  previous?: ContestTransition;
+  /** 還沒匯入任何資料的草稿／報名階段可以直接封存（建錯的賽事收起來）。 */
+  archive?: ContestTransition;
+}
+
+export function getContestTransitions(contest: ContestEvent): ContestTransitions {
   const next = getNextContestStatus(contest.status);
-  const previous = getPreviousContestStatus(contest.status);
-  const result: { next?: ContestTransition; previous?: ContestTransition } = {};
+  // 解封存回到封存前的階段（進行中的階段除外），沒有紀錄就回正式公布。
+  const restoreStatus =
+    contest.archivedFromStatus && contest.archivedFromStatus !== "archived" && contest.archivedFromStatus !== "active" && contest.archivedFromStatus !== "paused"
+      ? contest.archivedFromStatus
+      : undefined;
+  // 舊資料沒有紀錄：從沒匯入過帳號或題庫的賽事回草稿，其他回正式公布。
+  const hasData = (contest.accountCount ?? 0) > 0 || (contest.problemCount ?? 0) > 0;
+  const previous =
+    contest.status === "archived" ? (restoreStatus ?? (hasData ? getPreviousContestStatus("archived") : "draft")) : getPreviousContestStatus(contest.status);
+  const result: ContestTransitions = {};
 
   if (next) {
     const missing: string[] = [];
@@ -111,7 +128,7 @@ export function getContestTransitions(contest: ContestEvent): { next?: ContestTr
       status: next,
       label: getContestStatusLabel(next),
       ...(missing.length > 0 ? { blocked: missing.join("、") } : {}),
-      ...(next === "archived" ? { confirm: "封存後賽事會從各處的選單消失，競賽帳號全部停用。確定封存？" } : {}),
+      ...(next === "archived" ? { confirm: "封存後賽事會從各處的選單消失，之後仍可由超管解封存。確定封存？" } : {}),
       ...(next === "published" ? { confirm: "正式公布後，該場參賽者可以看到最終排行榜。確定公布？" } : {}),
     };
   }
@@ -120,6 +137,17 @@ export function getContestTransitions(contest: ContestEvent): { next?: ContestTr
       status: previous,
       label: getContestStatusLabel(previous),
       ...(contest.status === "published" ? { confirm: "退回審核會讓參賽者暫時看不到最終排行榜。確定？" } : {}),
+      ...(contest.status === "archived"
+        ? { buttonLabel: "解封存", confirm: `解封存後賽事會回到「${getContestStatusLabel(previous)}」，重新出現在各處的選單。確定？` }
+        : {}),
+    };
+  }
+  if ((contest.status === "draft" || contest.status === "roster") && !hasData) {
+    result.archive = {
+      status: "archived",
+      label: getContestStatusLabel("archived"),
+      buttonLabel: "封存",
+      confirm: "這場賽事還沒匯入任何資料，封存後會從各處的選單消失；之後可再解封存回到目前階段。確定封存？",
     };
   }
   return result;
