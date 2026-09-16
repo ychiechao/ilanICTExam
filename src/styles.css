@@ -2303,3 +2303,17 @@ pre {
   display: flex;
   gap: 8px;
 }
+
+.contest-problem-row {
+  display: grid;
+  grid-template-columns: 40px minmax(200px, 2fr) minmax(120px, 1fr) 80px 80px 70px;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #d9eef2;
+  padding: 8px 10px;
+  min-width: 700px;
+}
+
+.contest-problem-row.invalid {
+  background: #fff6f4;
+}

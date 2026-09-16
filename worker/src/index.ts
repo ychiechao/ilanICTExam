@@ -5,6 +5,7 @@ import {
   handleResetContestAccountPassword,
   handleSetContestAccountStatus,
 } from "./routes/contestAccounts";
+import { handleImportContestProblems } from "./routes/contestProblems";
 import { handleLogin, handleRefresh } from "./routes/login";
 import { handleTime } from "./routes/time";
 
@@ -63,6 +64,12 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
     if (!action) return handleImportContestAccounts(request, ctx, contestId);
     if (action === "reset-password") return handleResetContestAccountPassword(request, ctx, contestId);
     if (action === "status") return handleSetContestAccountStatus(request, ctx, contestId);
+  }
+
+  // 超管：競賽題庫
+  const problemsMatch = /^\/contest-problems\/([A-Za-z0-9_-]+)$/.exec(path);
+  if (method === "POST" && problemsMatch) {
+    return handleImportContestProblems(request, ctx, problemsMatch[1]);
   }
 
   throw new HttpError(404, "not_found", "找不到此路徑");

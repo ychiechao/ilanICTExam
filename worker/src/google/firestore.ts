@@ -74,6 +74,12 @@ export class FirestoreClient {
     await this.commit([{ delete: `${this.docsRoot}/${path}` }]);
   }
 
+  async batchDelete(paths: string[]): Promise<void> {
+    for (let index = 0; index < paths.length; index += 500) {
+      await this.commit(paths.slice(index, index + 500).map((path) => ({ delete: `${this.docsRoot}/${path}` })));
+    }
+  }
+
   /**
    * 簡單查詢：單一集合、等值或比較條件、可選排序與筆數上限。
    * where 的 op 使用 REST 的名稱：EQUAL、LESS_THAN、ARRAY_CONTAINS…

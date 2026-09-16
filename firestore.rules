@@ -169,6 +169,13 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // 競賽題庫公開部分（無隱藏測資）：超管，或競賽模式下該場的競賽帳號。
+    match /contestProblems/{docId} {
+      allow read: if isSuperAdmin() ||
+        (platformMode() == "contest" && isContestAccountFor(resource.data.contestId));
+      allow create, update, delete: if false;
+    }
+
     // 超管操作紀錄：只能新增，不能修改或刪除。
     match /auditLogs/{logId} {
       allow read: if isSuperAdmin();

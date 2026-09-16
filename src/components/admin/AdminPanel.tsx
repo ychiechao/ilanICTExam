@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 import { contestStatusFlow, tabs } from "../../app/constants";
 import type { AdminSectionKey, UserDirectoryRoleFilter } from "../../app/constants";
 import { ContestAccountsSection } from "./ContestAccountsSection";
+import { ContestProblemsSection } from "./ContestProblemsSection";
 import { PlatformSection } from "./PlatformSection";
 import { getRoleLabel } from "../../services/accountService";
 import type { ProblemImportMode } from "../../services/problemStore";
@@ -160,6 +161,7 @@ export function AdminPanel({
         { key: "platform", label: "平台狀態" },
         { key: "contests", label: "賽事管理" },
         { key: "contestAccounts", label: "競賽帳號" },
+        { key: "contestProblems", label: "競賽題庫" },
         { key: "schools", label: "學校管理" },
         { key: "problems", label: "題目管理" },
         { key: "users", label: "使用者管理" },
@@ -428,6 +430,15 @@ export function AdminPanel({
             <ContestAccountsSection
               contests={contests}
               schools={schools}
+              busy={adminBusy}
+              onStatus={onStatusMessage}
+              onContestsChanged={onRefreshAdminData}
+            />
+          )}
+
+          {superAdmin && activeAdminSection === "contestProblems" && (
+            <ContestProblemsSection
+              contests={contests}
               busy={adminBusy}
               onStatus={onStatusMessage}
               onContestsChanged={onRefreshAdminData}
