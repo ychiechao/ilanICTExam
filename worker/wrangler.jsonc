@@ -7,7 +7,7 @@
   "vars": {
     "FIREBASE_PROJECT_ID": "fileupload-d96f5",
     // 允許呼叫的前端來源；本機開發另在 .dev.vars 覆寫
-    "ALLOWED_ORIGINS": "https://ilanictexam.pages.dev"
+    "ALLOWED_ORIGINS": "https://ilanictexam.pages.dev,https://v3-dev.ilanictexam.pages.dev"
   },
   // 競賽題完整測資（cases:{contestId}:{problemId}）與競賽帳號密碼雜湊（pw:{accountId}）。
   // id 留空：首次 wrangler deploy 會自動建立；本機 dev 用本機模擬。
