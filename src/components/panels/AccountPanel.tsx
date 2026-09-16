@@ -32,6 +32,10 @@ export function AccountPanel({
   onJoinClass: () => void;
 }) {
   const roleLabel = getRoleLabel(effectiveRole);
+  // 學生一旦加入班級，學校就由班級決定，不再開放自選（規格 7.3）。
+  const activeMemberships = studentClassMembers.filter((member) => member.status !== "removed");
+  const schoolLockedByClass = effectiveRole === "student" && activeMemberships.length > 0;
+  const lockingMembership = activeMemberships.find((member) => member.schoolName) || activeMemberships[0];
   const schoolName = adminProfile?.schoolName || profile?.schoolName || "尚未設定";
   const schoolVerified = adminProfile?.schoolVerified || profile?.schoolVerified;
   const accountStatus = getAccountStatusLabel(profile?.status || adminProfile?.status, profile?.disabled);
@@ -90,7 +94,12 @@ export function AccountPanel({
               </div>
             </div>
 
-              {schools.length === 0 ? (
+              {schoolLockedByClass ? (
+                <p className="muted">
+                  你已加入班級「{lockingMembership?.className}」，學校由班級決定為「
+                  {lockingMembership?.schoolName || schoolName}」。如需更改，請洽老師或管理者。
+                </p>
+              ) : schools.length === 0 ? (
                 <p className="warning-text">目前尚無可選學校，請先由超管建立學校資料。</p>
               ) : (
                 <div className="account-school-form">

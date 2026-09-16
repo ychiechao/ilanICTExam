@@ -1032,6 +1032,10 @@ export default function App() {
       setStatusMessage("請先登入後再設定學校。");
       return;
     }
+    if (effectiveRole === "student" && studentClassMembers.some((member) => member.status !== "removed")) {
+      setStatusMessage("已加入班級的學生，學校由班級決定，無法自行更改。");
+      return;
+    }
     const school = schools.find((item) => item.id === accountSchoolId);
     if (!school) {
       setStatusMessage("請先選擇學校。");
