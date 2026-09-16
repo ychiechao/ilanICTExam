@@ -292,6 +292,7 @@ export function AdminPanel({
               busy={adminBusy}
               onStatus={onStatusMessage}
               onMoveContestStatus={onMoveContestStatus}
+              onContestsChanged={onRefreshAdminData}
             />
           )}
 

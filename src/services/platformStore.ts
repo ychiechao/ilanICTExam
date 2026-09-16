@@ -85,19 +85,31 @@ export function validateContestActivation(contests: ContestEvent[], contestIds: 
     if (contest.status !== "waiting" && contest.status !== "active") {
       reasons.push(`${label}狀態必須是「等候開始」或「競賽中」。`);
     }
-    if (!(contest.problemCount && contest.problemCount > 0)) {
-      reasons.push(`${label}尚未匯入競賽題庫。`);
-    }
     if (!(contest.accountCount && contest.accountCount > 0)) {
       reasons.push(`${label}尚未匯入競賽帳號。`);
     }
-    if (!contest.startAt || !contest.endAt) {
-      reasons.push(`${label}尚未設定競賽時段。`);
-    } else if (Date.parse(contest.endAt) <= now) {
-      reasons.push(`${label}的結束時間已經過了。`);
+    // 時段可以在切換後由「比賽控制」按開始才決定；若已預設 endAt，不能是過去。
+    if (contest.endAt && Date.parse(contest.endAt) <= now && contest.status !== "active") {
+      reasons.push(`${label}的結束時間已經過了，請清除或重設時段。`);
+    }
+    if (!(contest.durationMinutes && contest.durationMinutes > 0) && !contest.endAt) {
+      reasons.push(`${label}尚未設定比賽長度。`);
     }
   }
   return reasons;
+}
+
+/** 非阻擋的提醒（例如題庫還沒匯入），切換時顯示但不擋。 */
+export function getContestActivationWarnings(contests: ContestEvent[], contestIds: string[]): string[] {
+  const warnings: string[] = [];
+  for (const contestId of contestIds) {
+    const contest = contests.find((item) => item.id === contestId);
+    if (!contest) continue;
+    if (!(contest.problemCount && contest.problemCount > 0)) {
+      warnings.push(`「${contest.title}」尚未匯入競賽題庫，參賽者登入後只會看到倒數，沒有題目。`);
+    }
+  }
+  return warnings;
 }
 
 function normalizePlatformState(data: Record<string, unknown>): PlatformState {

@@ -183,6 +183,10 @@ export interface ContestEvent {
   division?: string;
   /** 每題提交上限，預設 10。 */
   maxSubmissionsPerProblem?: number;
+  /** 比賽長度（分鐘）；主辦單位按「開始」時用它算出 endAt。 */
+  durationMinutes?: number;
+  /** 暫停中的時間點；繼續時把暫停的長度加回 endAt。 */
+  pausedAt?: string;
   /** 已匯入的競賽帳號數與題數；由 Worker 匯入時寫入，切換競賽模式前檢查用。 */
   accountCount?: number;
   problemCount?: number;

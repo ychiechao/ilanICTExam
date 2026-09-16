@@ -68,6 +68,16 @@ export function ContestEditorForm({
           </select>
         </label>
         <label className="problem-form-field">
+          比賽長度（分鐘）
+          <input
+            type="number"
+            min={5}
+            max={600}
+            value={contest.durationMinutes ?? 120}
+            onChange={(event) => updateContest("durationMinutes", Math.max(5, Number(event.target.value) || 120))}
+          />
+        </label>
+        <label className="problem-form-field">
           每題提交上限
           <input
             type="number"

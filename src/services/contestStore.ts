@@ -48,6 +48,49 @@ export async function saveContest(contest: ContestEvent) {
   return normalized;
 }
 
+/**
+ * 主辦單位按「開始」：以伺服器時間當起點，endAt = 開始 + durationMinutes。
+ * 若已經有 endAt 且在未來（預先排程），維持不變。
+ */
+export function startContestTiming(contest: ContestEvent, nowMs: number): ContestEvent {
+  const startAt = new Date(nowMs).toISOString();
+  const duration = (contest.durationMinutes || 120) * 60_000;
+  const keepEnd = contest.endAt && Date.parse(contest.endAt) > nowMs + 60_000 && contest.status === "waiting" && contest.startAt && Date.parse(contest.startAt) <= nowMs;
+  return {
+    ...contest,
+    status: "active",
+    startAt: keepEnd ? contest.startAt : startAt,
+    endAt: keepEnd ? contest.endAt : new Date(nowMs + duration).toISOString(),
+    pausedAt: "",
+  };
+}
+
+export function pauseContestTiming(contest: ContestEvent, nowMs: number): ContestEvent {
+  return { ...contest, status: "paused", pausedAt: new Date(nowMs).toISOString() };
+}
+
+/** 繼續：暫停了多久，結束時間就往後推多久。 */
+export function resumeContestTiming(contest: ContestEvent, nowMs: number): ContestEvent {
+  const pausedFor = contest.pausedAt ? Math.max(0, nowMs - Date.parse(contest.pausedAt)) : 0;
+  const endAt = contest.endAt ? new Date(Date.parse(contest.endAt) + pausedFor).toISOString() : contest.endAt;
+  return { ...contest, status: "active", endAt, pausedAt: "" };
+}
+
+export function endContestTiming(contest: ContestEvent, nowMs: number): ContestEvent {
+  const endAt = contest.endAt && Date.parse(contest.endAt) < nowMs ? contest.endAt : new Date(nowMs).toISOString();
+  return { ...contest, status: "ended", endAt, pausedAt: "" };
+}
+
+/** 依伺服器時間判斷參賽者現在能不能作答。 */
+export function getContestPhase(contest: Pick<ContestEvent, "status" | "startAt" | "endAt">, nowMs: number) {
+  if (contest.status === "paused") return "paused" as const;
+  if (contest.status === "ended" || contest.status === "review" || contest.status === "published" || contest.status === "archived") return "ended" as const;
+  if (contest.status !== "active") return "waiting" as const;
+  if (contest.startAt && Date.parse(contest.startAt) > nowMs) return "waiting" as const;
+  if (contest.endAt && Date.parse(contest.endAt) <= nowMs) return "ended" as const;
+  return "running" as const;
+}
+
 export function createContestDraft(previous?: ContestEvent): ContestEvent {
   const now = new Date();
   const nextYear = previous?.year ? getNextYear(previous.year) : String(now.getFullYear());
@@ -73,6 +116,7 @@ export function createContestDraft(previous?: ContestEvent): ContestEvent {
     resultNote: "",
     division: "E",
     maxSubmissionsPerProblem: 10,
+    durationMinutes: 120,
     accountCount: 0,
     problemCount: 0,
     dashboard: { visibility: "organizer", showNames: false, topN: 20 },
@@ -103,6 +147,8 @@ function normalizeContest(input: unknown): ContestEvent {
     resultNote: readText(record.resultNote),
     division: readText(record.division, "E"),
     maxSubmissionsPerProblem: Math.max(1, Math.round(readNonNegativeNumber(record.maxSubmissionsPerProblem) || 10)),
+    durationMinutes: Math.max(5, Math.round(readNonNegativeNumber(record.durationMinutes) || 120)),
+    pausedAt: readText(record.pausedAt),
     // 以下由 Worker 寫入；saveContest 是整份覆寫，這裡一定要帶著，否則會被清掉。
     accountCount: readNonNegativeNumber(record.accountCount),
     problemCount: readNonNegativeNumber(record.problemCount),

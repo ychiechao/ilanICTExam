@@ -193,7 +193,9 @@ service cloud.firestore {
     }
 
     match /contests/{contestId} {
-      allow read, create, update, delete: if isSuperAdmin();
+      // 參賽者需要讀自己那一場的時段與狀態來顯示倒數。
+      allow read: if isSuperAdmin() || isContestAccountFor(contestId);
+      allow create, update, delete: if isSuperAdmin();
     }
 
     match /schools/{schoolId} {

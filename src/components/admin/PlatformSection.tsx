@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { PLATFORM_MODE_LABELS, savePlatformState, validateContestActivation } from "../../services/platformStore";
+import {
+  PLATFORM_MODE_LABELS,
+  getContestActivationWarnings,
+  savePlatformState,
+  validateContestActivation,
+} from "../../services/platformStore";
+import { ContestControlPanel } from "./ContestControlPanel";
 import { writeAuditLog } from "../../services/auditStore";
 import type { AppUser, ContestEvent, ContestStatus, PlatformMode, PlatformState } from "../../types";
 import { getContestStatusLabel } from "../../utils/drafts";
@@ -13,6 +19,7 @@ interface PlatformSectionProps {
   busy: boolean;
   onStatus: (message: string) => void;
   onMoveContestStatus: (contest: ContestEvent, nextStatus: ContestStatus) => Promise<void> | void;
+  onContestsChanged: () => void;
 }
 
 const MODE_DESCRIPTIONS: Record<PlatformMode, string> = {
@@ -29,6 +36,7 @@ export function PlatformSection({
   busy,
   onStatus,
   onMoveContestStatus,
+  onContestsChanged,
 }: PlatformSectionProps) {
   const [mode, setMode] = useState<PlatformMode>(platform.mode);
   const [selectedContestIds, setSelectedContestIds] = useState<string[]>(platform.activeContestIds);
@@ -47,6 +55,7 @@ export function PlatformSection({
     .map((id) => contests.find((contest) => contest.id === id))
     .filter((contest): contest is ContestEvent => Boolean(contest));
   const blockers = mode === "contest" ? validateContestActivation(contests, selectedContestIds) : [];
+  const warnings = mode === "contest" ? getContestActivationWarnings(contests, selectedContestIds) : [];
   const dirty =
     mode !== platform.mode ||
     announcement.trim() !== platform.announcement ||
@@ -166,7 +175,26 @@ export function PlatformSection({
               ))}
             </ul>
           )}
+          {warnings.length > 0 && (
+            <ul className="platform-check-list">
+              {warnings.map((item) => (
+                <li key={item} className="muted">
+                  提醒：{item}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+      )}
+
+      {platform.mode === "contest" && activeContests.length > 0 && (
+        <ContestControlPanel
+          contests={activeContests}
+          currentUser={currentUser}
+          busy={busy}
+          onStatus={onStatus}
+          onChanged={onContestsChanged}
+        />
       )}
 
       <label className="admin-field">

@@ -2229,3 +2229,77 @@ pre {
     margin: 8mm;
   }
 }
+
+/* ---- 比賽倒數與控制 ---- */
+.contest-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: #17425c;
+  font-variant-numeric: tabular-nums;
+}
+
+.contest-clock span {
+  font-size: 12px;
+}
+
+.contest-clock strong {
+  font-size: 20px;
+}
+
+.contest-clock.urgent {
+  background: #ffe6e0;
+  color: #a4321a;
+}
+
+.contest-stage {
+  text-align: center;
+  justify-items: center;
+}
+
+.contest-countdown {
+  font-size: clamp(48px, 10vw, 96px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #17425c;
+  line-height: 1.1;
+}
+
+.status-pill.warning {
+  background: #fff1d6;
+  color: #8a5a00;
+}
+
+.contest-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 12px;
+  border: 1px solid #d7e3ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.contest-control-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.contest-control-clock {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #17425c;
+}
+
+.contest-control-actions {
+  display: flex;
+  gap: 8px;
+}
