@@ -36,3 +36,4 @@ worker/.dev.vars
 worker/worker-configuration.d.ts
 worker/.wrangler/
 .claude/settings.local.json
+solution-ebook/
