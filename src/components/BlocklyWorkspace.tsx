@@ -46,7 +46,7 @@ export default function BlocklyWorkspace({
     }
 
     const workspace = Blockly.inject(containerRef.current, {
-      toolbox: createToolbox(),
+      toolbox: createToolbox(mode),
       renderer: mode === "Scratch" ? "zelos" : "geras",
       theme: mode === "Scratch" ? Blockly.Themes.Zelos : Blockly.Themes.Classic,
       grid: { spacing: 24, length: 3, colour: "#d7dee8", snap: true },
@@ -62,7 +62,7 @@ export default function BlocklyWorkspace({
     });
 
     workspaceRef.current = workspace;
-    loadXml(workspace, readInitialWorkspaceXml(storageKey, fallbackStorageKeys));
+    loadXml(workspace, readInitialWorkspaceXml(storageKey, fallbackStorageKeys), mode);
     emitWorkspace(workspace, onChange, storageKey);
 
     const listener = () => emitWorkspace(workspace, onChange, storageKey);
@@ -85,14 +85,14 @@ export default function BlocklyWorkspace({
     if (!workspace || !recordXml) {
       return;
     }
-    loadXml(workspace, recordXml);
+    loadXml(workspace, recordXml, mode);
     emitWorkspace(workspace, onChange, storageKey);
-  }, [onChange, recordXml, storageKey]);
+  }, [mode, onChange, recordXml, storageKey]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
     if (workspace) {
-      workspace.updateToolbox(createToolbox());
+      workspace.updateToolbox(createToolbox(mode));
     }
   }, [mode]);
 
@@ -124,16 +124,115 @@ function emitWorkspace(
   }
 }
 
-function loadXml(workspace: Blockly.WorkspaceSvg, xmlText: string) {
+function loadXml(workspace: Blockly.WorkspaceSvg, xmlText: string, mode: WorkspaceMode) {
   try {
     workspace.clear();
     const dom = parseXml(xmlText);
+    convertBlocksForMode(dom, mode);
     Blockly.Xml.domToWorkspace(dom, workspace);
+    if (mode === "Scratch") {
+      wrapTopLevelStacksInFlagEvent(workspace);
+    }
   } catch {
     workspace.clear();
     const dom = parseXml(DEFAULT_XML);
     Blockly.Xml.domToWorkspace(dom, workspace);
   }
+}
+
+/**
+ * 兩種模式用不同的積木詞彙，切換時互相轉換：
+ *   Scratch                     Blockly
+ *   當綠旗被點擊 { … }       ⇄  頂層程式（拆掉外殼）
+ *   讀取數字 / 讀取文字      ⇄  要求輸入數字 / 文字（text_prompt_ext）
+ *   說出 …                   ⇄  輸出 …（text_print）
+ *   字串長度                 ⇄  text_length
+ * 產生的 JavaScript 完全相同（prompt / alert），評分不受影響。
+ */
+function convertBlocksForMode(root: Element, mode: WorkspaceMode) {
+  const blocks = Array.from(root.getElementsByTagName("block"));
+  for (const block of blocks) {
+    const type = block.getAttribute("type") || "";
+    if (mode === "Blockly") {
+      if (type === "io_input_number" || type === "io_input") {
+        block.setAttribute("type", "text_prompt_ext");
+        clearChildren(block, ["mutation", "field", "value"]);
+        const kind = type === "io_input_number" ? "NUMBER" : "TEXT";
+        const mutation = block.ownerDocument.createElement("mutation");
+        mutation.setAttribute("type", kind);
+        block.prepend(mutation);
+        block.appendChild(fieldElement(block.ownerDocument, "TYPE", kind));
+        block.appendChild(shadowValue(block.ownerDocument, "TEXT", "text", "TEXT", ""));
+      } else if (type === "io_print") {
+        block.setAttribute("type", "text_print");
+      } else if (type === "text_length1") {
+        block.setAttribute("type", "text_length");
+      }
+    } else {
+      if (type === "text_prompt_ext" || type === "text_prompt") {
+        const kind = block.querySelector(":scope > field[name='TYPE']")?.textContent?.trim() || "TEXT";
+        block.setAttribute("type", kind === "NUMBER" ? "io_input_number" : "io_input");
+        clearChildren(block, ["mutation", "field", "value"]);
+      } else if (type === "text_print") {
+        block.setAttribute("type", "io_print");
+      } else if (type === "text_length") {
+        block.setAttribute("type", "text_length1");
+      }
+    }
+  }
+
+  if (mode === "Blockly") {
+    // 拆掉「當綠旗被點擊」：把裡面的程式提到最上層，位置沿用外殼的座標。
+    for (const block of Array.from(root.children)) {
+      if (block.tagName !== "block" || block.getAttribute("type") !== "event_whenflagclicked") continue;
+      const body = block.querySelector(":scope > statement[name='DO'] > block");
+      if (body) {
+        body.setAttribute("x", block.getAttribute("x") || "0");
+        body.setAttribute("y", block.getAttribute("y") || "0");
+        root.insertBefore(body, block);
+      }
+      root.removeChild(block);
+    }
+  }
+}
+
+/** Scratch 模式：頂層的指令堆若沒有外殼，套上「當綠旗被點擊」。 */
+function wrapTopLevelStacksInFlagEvent(workspace: Blockly.WorkspaceSvg) {
+  for (const block of workspace.getTopBlocks(false)) {
+    if (block.type === "event_whenflagclicked" || !block.previousConnection || block.outputConnection) continue;
+    const position = block.getRelativeToSurfaceXY();
+    const event = workspace.newBlock("event_whenflagclicked");
+    event.initSvg();
+    event.render();
+    event.moveBy(position.x, position.y);
+    const input = event.getInput("DO");
+    if (input?.connection && block.previousConnection) {
+      input.connection.connect(block.previousConnection);
+    }
+  }
+}
+
+function clearChildren(block: Element, tags: string[]) {
+  for (const child of Array.from(block.children)) {
+    if (tags.includes(child.tagName)) block.removeChild(child);
+  }
+}
+
+function fieldElement(doc: Document, name: string, text: string) {
+  const field = doc.createElement("field");
+  field.setAttribute("name", name);
+  field.textContent = text;
+  return field;
+}
+
+function shadowValue(doc: Document, inputName: string, shadowType: string, fieldName: string, text: string) {
+  const value = doc.createElement("value");
+  value.setAttribute("name", inputName);
+  const shadow = doc.createElement("shadow");
+  shadow.setAttribute("type", shadowType);
+  shadow.appendChild(fieldElement(doc, fieldName, text));
+  value.appendChild(shadow);
+  return value;
 }
 
 function parseXml(xmlText: string) {
@@ -163,7 +262,7 @@ function isMeaningfulXml(xml: string | null): xml is string {
   return Boolean(xml && (xml.includes("<block") || xml.includes("<variables")));
 }
 
-function createToolbox(): Blockly.utils.toolbox.ToolboxDefinition {
+function createToolbox(mode: WorkspaceMode): Blockly.utils.toolbox.ToolboxDefinition {
   const block = (
     type: string,
     inputs?: Record<string, unknown>,
@@ -189,6 +288,16 @@ function createToolbox(): Blockly.utils.toolbox.ToolboxDefinition {
   return {
     kind: "categoryToolbox",
     contents: [
+      ...(mode === "Scratch"
+        ? [
+            {
+              kind: "category",
+              name: "事件與輸入輸出",
+              colour: "#F6B73C",
+              contents: [block("event_whenflagclicked"), block("io_print", { TEXT: textValue("") }), block("io_input_number"), block("io_input")],
+            },
+          ]
+        : []),
       {
         kind: "category",
         name: "邏輯",
@@ -257,8 +366,13 @@ function createToolbox(): Blockly.utils.toolbox.ToolboxDefinition {
           block("text_getSubstring", { STRING: textValue("abc") }),
           block("text_changeCase", { TEXT: textValue("abc") }),
           block("text_trim", { TEXT: textValue("abc") }),
-          block("text_print", { TEXT: textValue("abc") }),
-          block("text_prompt_ext", { TEXT: textValue("abc") }),
+          ...(mode === "Blockly"
+            ? [
+                block("text_print", { TEXT: textValue("abc") }),
+                block("text_prompt_ext", { TEXT: textValue("") }, { TYPE: "NUMBER" }),
+                block("text_prompt_ext", { TEXT: textValue("") }, { TYPE: "TEXT" }),
+              ]
+            : []),
         ],
       },
       {
