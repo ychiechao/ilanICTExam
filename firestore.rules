@@ -44,6 +44,17 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("schoolId", "") != "";
     }
 
+    // 儀表板／排行榜對外可見範圍：participants = 該場競賽帳號，public = 任何已登入者。
+    function dashboardVisibleTo(contestId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/contests/$(contestId)) &&
+        (
+          (get(/databases/$(database)/documents/contests/$(contestId)).data.get("dashboard", {}).get("visibility", "organizer") == "public") ||
+          (get(/databases/$(database)/documents/contests/$(contestId)).data.get("dashboard", {}).get("visibility", "organizer") == "participants" &&
+            isContestAccountFor(contestId))
+        );
+    }
+
     // 練習資料只在練習模式對教師與學生開放；競賽帳號永遠不能碰練習資料。
     function practiceOpen() {
       return platformMode() == "practice" && !isContestAccount();
@@ -173,6 +184,24 @@ service cloud.firestore {
     match /contestProblems/{docId} {
       allow read: if isSuperAdmin() ||
         (platformMode() == "contest" && isContestAccountFor(resource.data.contestId));
+      allow create, update, delete: if false;
+    }
+
+    // 競賽提交：只有 Worker 寫入；本人或超管可讀。
+    match /contestSubmissions/{submissionId} {
+      allow read: if isSuperAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    // 競賽排行榜 entry 與儀表板快照：只有 Worker 寫入；超管可讀，
+    // 對外開放程度依 contests.dashboard.visibility（participants / public）。
+    match /contestLeaderboards/{entryId} {
+      allow read: if isSuperAdmin() || dashboardVisibleTo(resource.data.contestId);
+      allow create, update, delete: if false;
+    }
+
+    match /contestDashboards/{contestId} {
+      allow read: if isSuperAdmin() || dashboardVisibleTo(contestId);
       allow create, update, delete: if false;
     }
 

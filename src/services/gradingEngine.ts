@@ -1,3 +1,4 @@
+import { normalizeOutput, splitInputs } from "../../shared/grading";
 import type { CaseResult, GradeResult, Problem, ProblemCase } from "../types";
 
 interface WorkerResponse {
@@ -161,19 +162,4 @@ function runWorker(code: string, input: string, timeoutMs: number): Promise<Work
       maxOutputLength: 1000,
     });
   });
-}
-
-function splitInputs(input: string) {
-  return input
-    .split(/[\s,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function normalizeOutput(output: string) {
-  return output
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .join(" ");
 }

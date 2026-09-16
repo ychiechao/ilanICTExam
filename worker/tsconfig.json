@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "paths": { "@shared/*": ["../shared/*"] }
   },
-  "include": ["src/**/*.ts", "../shared/**/*.ts", "worker-configuration.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "../shared/**/*.ts", "worker-configuration.d.ts"]
 }

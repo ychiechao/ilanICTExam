@@ -6,6 +6,7 @@ import {
   handleSetContestAccountStatus,
 } from "./routes/contestAccounts";
 import { handleImportContestProblems } from "./routes/contestProblems";
+import { handleGrade } from "./routes/grade";
 import { handleLogin, handleRefresh } from "./routes/login";
 import { handleTime } from "./routes/time";
 
@@ -55,6 +56,9 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
   }
   if (method === "POST" && path === "/refresh") {
     return handleRefresh(request, ctx);
+  }
+  if (method === "POST" && path === "/grade") {
+    return handleGrade(request, ctx);
   }
 
   // 超管：競賽帳號

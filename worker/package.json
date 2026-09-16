@@ -12,5 +12,8 @@
   "devDependencies": {
     "typescript": "^7.0.2",
     "wrangler": "^4.131.2"
+  },
+  "dependencies": {
+    "js-interpreter": "^6.0.2"
   }
 }
