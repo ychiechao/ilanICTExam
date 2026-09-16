@@ -27,7 +27,7 @@ interface PreviewRow extends ContestAccountImportRow {
   error?: string;
 }
 
-const SAMPLE_CSV = "學校,姓名,備註\n大福國小,王小明,六年一班\n大福國小,陳小華,六年一班";
+const SAMPLE_CSV = "學校,姓名\n大福國小,王小明\n大福國小,陳小華\n順安國小,林小三";
 
 /** 後台「競賽帳號」：每場賽事獨立匯入、發放帳號卡、重設密碼、停用（規格 8.2）。 */
 export function ContestAccountsSection({ contests, schools, busy, onStatus, onContestsChanged }: ContestAccountsSectionProps) {
@@ -90,7 +90,7 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
   function handlePreview() {
     const rows = parseCsv(csvText);
     if (rows.length === 0) {
-      onStatus("請先貼上名單（學校,姓名,備註）。");
+      onStatus("請先貼上名單（學校,姓名）。");
       return;
     }
     setPreview(
@@ -146,7 +146,16 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
     setWorking(true);
     try {
       const result = await resetContestAccountPassword(contest.id, account.username);
-      setIssued([{ username: result.username, password: result.password, name: account.name, schoolName: account.schoolName, note: account.note ?? "" }]);
+      setIssued([
+        {
+          username: result.username,
+          password: result.password,
+          name: account.name,
+          schoolName: account.schoolName,
+          schoolSeq: account.schoolSeq,
+          note: account.note ?? "",
+        },
+      ]);
       setIssuedLabel(`${contest.title}｜重設密碼`);
       onStatus(`${account.username} 密碼已重設，新密碼顯示在下方。`);
     } catch (error) {
@@ -174,8 +183,24 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
   function downloadIssuedCsv() {
     downloadCsv(
       `競賽帳號-${contest?.title ?? contestId}-${csvDateStamp()}.csv`,
-      ["帳號", "密碼", "姓名", "學校", "備註"],
-      issued.map((item) => [item.username, item.password, item.name, item.schoolName, item.note]),
+      ["學校序號", "學校", "姓名", "帳號", "密碼"],
+      issued.map((item) => [item.schoolSeq ?? "", item.schoolName, item.name, item.username, item.password]),
+    );
+  }
+
+  // 帳號清單（不含密碼）：學校序號、學校、姓名、帳號、狀態、首次登入。
+  function downloadAccountListCsv() {
+    downloadCsv(
+      "競賽帳號清單-" + (contest?.title ?? contestId) + "-" + csvDateStamp() + ".csv",
+      ["學校序號", "學校", "姓名", "帳號", "狀態", "首次登入"],
+      accounts.map((item) => [
+        item.schoolSeq ?? "",
+        item.schoolName,
+        item.name,
+        item.username,
+        item.status === "disabled" ? "停用" : "啟用",
+        item.firstLoginAt ? formatContestDateTime(item.firstLoginAt) : "",
+      ]),
     );
   }
 
@@ -206,6 +231,9 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
           <button className="ghost-button" type="button" onClick={() => void refreshAccounts()} disabled={disabled || loadingAccounts}>
             重新整理
           </button>
+          <button className="ghost-button" type="button" onClick={downloadAccountListCsv} disabled={accounts.length === 0}>
+            匯出帳號清單
+          </button>
         </div>
       </div>
 
@@ -224,7 +252,7 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
           <div className="admin-subsection">
             <h4>批次匯入</h4>
             <p className="muted">
-              每列「學校,姓名,備註」，用逗號或 Tab 分隔，可直接從 Excel 貼上；第一列若是標題會自動略過。學校名稱必須與「學校管理」中的名稱完全一致。
+              每列「學校,姓名」，用逗號或 Tab 分隔，可直接從 Excel 貼上；第一列若是標題會自動略過。學校名稱必須與「學校管理」中的名稱完全一致。系統會自動產生帳號、密碼與各校序號。
             </p>
             <textarea
               className="json-input"
@@ -315,19 +343,19 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
               </div>
               <div className="admin-table">
                 <div className="admin-table-head issued-account-row">
+                  <span>學校序號</span>
+                  <span>學校</span>
+                  <span>姓名</span>
                   <span>帳號</span>
                   <span>密碼</span>
-                  <span>姓名</span>
-                  <span>學校</span>
-                  <span>備註</span>
                 </div>
                 {issued.map((item) => (
                   <div className="issued-account-row" key={item.username}>
+                    <span>{item.schoolSeq ?? "-"}</span>
+                    <span>{item.schoolName}</span>
+                    <span>{item.name}</span>
                     <span className="mono">{item.username}</span>
                     <span className="mono">{item.password}</span>
-                    <span>{item.name}</span>
-                    <span>{item.schoolName}</span>
-                    <span>{item.note || "-"}</span>
                   </div>
                 ))}
               </div>
@@ -337,7 +365,10 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
                     <div className="account-card-print" key={item.username}>
                       <div className="account-card-head">
                         <strong>{contest.title}</strong>
-                        <span>{item.schoolName}</span>
+                        <span>
+                          {item.schoolName}
+                          {item.schoolSeq ? " #" + item.schoolSeq : ""}
+                        </span>
                       </div>
                       <div className="account-card-body">
                         <div>
@@ -371,9 +402,9 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
             <div className="admin-table">
               <div className="admin-table-head contest-account-row">
                 <span>帳號</span>
-                <span>姓名</span>
+                <span>學校序號</span>
                 <span>學校</span>
-                <span>備註</span>
+                <span>姓名</span>
                 <span>狀態</span>
                 <span>首次登入</span>
                 <span>操作</span>
@@ -383,9 +414,9 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
               {accounts.map((account) => (
                 <div className="contest-account-row" key={account.id}>
                   <span className="mono">{account.username}</span>
-                  <span>{account.name}</span>
+                  <span>{account.schoolSeq ?? "-"}</span>
                   <span>{account.schoolName || "-"}</span>
-                  <span>{account.note || "-"}</span>
+                  <span>{account.name}</span>
                   <span className={account.status === "disabled" ? "status-pill disabled" : "status-pill"}>
                     {account.status === "disabled" ? "停用" : "啟用"}
                   </span>

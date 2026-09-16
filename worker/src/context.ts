@@ -31,6 +31,7 @@ export interface ContestAccountDoc {
   name: string;
   schoolId: string;
   schoolName: string;
+  schoolSeq?: number;
   note?: string;
   status: "active" | "disabled";
   uid: string;

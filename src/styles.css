@@ -2102,12 +2102,12 @@ pre {
 }
 
 .issued-account-row {
-  grid-template-columns: 110px 120px minmax(100px, 1fr) minmax(140px, 1fr) minmax(120px, 1fr);
+  grid-template-columns: 80px minmax(140px, 1fr) minmax(100px, 1fr) 110px 120px;
   min-width: 700px;
 }
 
 .contest-account-row {
-  grid-template-columns: 100px minmax(100px, 1fr) minmax(140px, 1fr) minmax(100px, 1fr) 80px 160px 190px;
+  grid-template-columns: 100px 80px minmax(140px, 1fr) minmax(100px, 1fr) 80px 160px 190px;
   min-width: 960px;
 }
 

@@ -1,0 +1,3657 @@
+{
+  "year": "115",
+  "category_count": 2,
+  "problem_count": 50,
+  "problems": [
+    {
+      "id": "ilan-115-01",
+      "year": "115",
+      "title": "三星蔥秤重",
+      "description": "【難度 ★】\n\n問題描述\n三星鄉的蔥農阿嬤把今天採收的蔥一把一把秤重，想知道總共有多重、平均一把多重。\n\n題目說明\n輸入 N 把蔥的重量（公克，整數），請輸出總重量以及平均每把的重量（平均值無條件捨去到整數）。",
+      "inputFormat": "第一行：整數 N，代表蔥的把數。\n第二行：N 個整數，代表每把蔥的重量（公克），以空格隔開。",
+      "outputFormat": "一行：兩個整數，總重量與平均重量（無條件捨去），以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "1",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3\n300 450 420",
+          "output": "1170 390",
+          "description": "總重量 1170 公克，除以 3 把後無條件捨去得到 390。"
+        },
+        {
+          "title": "範例 2",
+          "input": "4\n100 100 100 101",
+          "output": "401 100",
+          "description": "總重量 401 公克，除以 4 把後無條件捨去得到 100。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3\n300 450 420",
+          "output": "1170 390",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "4\n100 100 100 101",
+          "output": "401 100",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n999",
+          "output": "999 999",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n250 250 250 250 250",
+          "output": "1250 250",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n120 340 560 780 90 10",
+          "output": "1900 316",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-02",
+      "year": "115",
+      "title": "童玩節門票",
+      "description": "【難度 ★】\n\n問題描述\n宜蘭國際童玩節在冬山河親水公園舉辦，兒童票每張 250 元、成人票每張 350 元。\n\n題目說明\n輸入兒童人數與成人人數，請計算全家要付的門票總金額。",
+      "inputFormat": "第一行：整數，兒童人數。\n第二行：整數，成人人數。",
+      "outputFormat": "一行：一個整數，門票總金額。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "2",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "2\n2",
+          "output": "1200",
+          "description": "兒童 2 人 × 250 元 + 成人 2 人 × 350 元 = 1200 元。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n1",
+          "output": "1100",
+          "description": "兒童 3 人 × 250 元 + 成人 1 人 × 350 元 = 1100 元。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "2\n2",
+          "output": "1200",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n1",
+          "output": "1100",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "0\n4",
+          "output": "1400",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n0",
+          "output": "1250",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "10\n7",
+          "output": "4950",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-03",
+      "year": "115",
+      "title": "龜山島賞鯨船",
+      "description": "【難度 ★】\n\n問題描述\n烏石港的賞鯨船每艘最多可載 K 位遊客，今天有 N 位遊客報名要去龜山島賞鯨。\n\n題目說明\n請計算至少要派出幾艘船，才能讓所有遊客都出海。",
+      "inputFormat": "第一行：整數 N，遊客人數。\n第二行：整數 K，每艘船最多載客數。",
+      "outputFormat": "一行：一個整數，最少需要的船數。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "3",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "45\n20",
+          "output": "3",
+          "description": "45 位遊客，每船 20 人，45 ÷ 20 無條件進位得到 3 艘。"
+        },
+        {
+          "title": "範例 2",
+          "input": "60\n20",
+          "output": "3",
+          "description": "60 位遊客，每船 20 人，60 ÷ 20 無條件進位得到 3 艘。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "45\n20",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "60\n20",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n30",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "121\n40",
+          "output": "4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "99\n10",
+          "output": "10",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-04",
+      "year": "115",
+      "title": "蘇澳冷泉還是礁溪溫泉",
+      "description": "【難度 ★】\n\n問題描述\n宜蘭有兩種有名的泉水：蘇澳冷泉水溫很低，礁溪溫泉水溫很高。\n\n題目說明\n輸入一個泉水的水溫（整數 °C）：22 度以下（含）輸出「冷泉」；40 度以上（含）輸出「溫泉」；其餘輸出「溫水」。",
+      "inputFormat": "一行：一個整數，水溫。",
+      "outputFormat": "一行：冷泉、溫水 或 溫泉。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "4",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "22",
+          "output": "冷泉",
+          "description": "水溫 22 度，依規則判定為「冷泉」。"
+        },
+        {
+          "title": "範例 2",
+          "input": "45",
+          "output": "溫泉",
+          "description": "水溫 45 度，依規則判定為「溫泉」。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "22",
+          "output": "冷泉",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "45",
+          "output": "溫泉",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "30",
+          "output": "溫水",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "40",
+          "output": "溫泉",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "5",
+          "output": "冷泉",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-05",
+      "year": "115",
+      "title": "冬山河龍舟賽",
+      "description": "【難度 ★】\n\n問題描述\n端午節冬山河舉辦龍舟賽，共有 N 支隊伍，每隊划完全程的秒數都記錄下來了。\n\n題目說明\n請找出最快的隊伍是第幾隊（隊伍依輸入順序編號 1～N），以及牠的秒數。保證最快秒數只有一隊。",
+      "inputFormat": "第一行：整數 N，隊伍數。\n第二行：N 個整數，各隊秒數，以空格隔開。",
+      "outputFormat": "一行：兩個整數，最快隊伍的編號與秒數，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "5",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n125 118 130 121",
+          "output": "2 118",
+          "description": "最小的秒數是 118，它是第 2 隊。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n90 85 88",
+          "output": "2 85",
+          "description": "最小的秒數是 85，它是第 2 隊。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n125 118 130 121",
+          "output": "2 118",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n90 85 88",
+          "output": "2 85",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n200",
+          "output": "1 200",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n61 62 63 64 60",
+          "output": "5 60",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n300 250 275 240 260 280",
+          "output": "4 240",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-06",
+      "year": "115",
+      "title": "羅東夜市買小吃",
+      "description": "【難度 ★】\n\n問題描述\n小蘭帶著零用錢逛羅東夜市，想買 N 樣小吃。\n\n題目說明\n輸入每樣小吃的價格與小蘭帶的錢，若錢足夠，輸出買完後剩下的錢；若不夠，輸出「錢不夠」。",
+      "inputFormat": "第一行：整數 N，小吃樣數。\n第二行：N 個整數，各樣小吃的價格。\n第三行：整數，小蘭帶的錢。",
+      "outputFormat": "一行：剩下的錢（整數），或 錢不夠。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "6",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3\n50 35 60\n200",
+          "output": "55",
+          "description": "小吃合計 145 元，帶了 200 元，剩下 55 元。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2\n80 90\n150",
+          "output": "錢不夠",
+          "description": "小吃合計 170 元，帶了 150 元，不夠買，輸出「錢不夠」。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3\n50 35 60\n200",
+          "output": "55",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2\n80 90\n150",
+          "output": "錢不夠",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n100\n100",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n25 25 25 25\n99",
+          "output": "錢不夠",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "5\n10 20 30 40 50\n500",
+          "output": "350",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-07",
+      "year": "115",
+      "title": "太平山蹦蹦車",
+      "description": "【難度 ★】\n\n問題描述\n太平山的蹦蹦車每節車廂可坐 K 人，遊客會依序坐滿一節再坐下一節。\n\n題目說明\n輸入遊客人數 N，請輸出需要幾節車廂，以及最後一節車廂坐了幾人。",
+      "inputFormat": "第一行：整數 N，遊客人數。\n第二行：整數 K，每節車廂座位數。",
+      "outputFormat": "一行：兩個整數，車廂數與最後一節的人數，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "7",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "23\n6",
+          "output": "4 5",
+          "description": "23 人每節 6 人，需要 4 節，最後一節有 5 人。"
+        },
+        {
+          "title": "範例 2",
+          "input": "24\n6",
+          "output": "4 6",
+          "description": "24 人每節 6 人，需要 4 節，最後一節有 6 人。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "23\n6",
+          "output": "4 5",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "24\n6",
+          "output": "4 6",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n8",
+          "output": "1 5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "100\n12",
+          "output": "9 4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n1",
+          "output": "1 1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-08",
+      "year": "115",
+      "title": "蘭陽平原稻田",
+      "description": "【難度 ★】\n\n問題描述\n壯圍鄉的稻田是長方形，農夫想知道田的面積與圍籬的長度。\n\n題目說明\n輸入稻田的長與寬（公尺，整數），請輸出面積與周長。",
+      "inputFormat": "一行：兩個整數，長與寬，以空格隔開。",
+      "outputFormat": "一行：兩個整數，面積與周長，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "8",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "30 20",
+          "output": "600 100",
+          "description": "面積 = 30 × 20 = 600，周長 = (30 + 20) × 2 = 100。"
+        },
+        {
+          "title": "範例 2",
+          "input": "15 15",
+          "output": "225 60",
+          "description": "面積 = 15 × 15 = 225，周長 = (15 + 15) × 2 = 60。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "30 20",
+          "output": "600 100",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "15 15",
+          "output": "225 60",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "100 1",
+          "output": "100 202",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "7 12",
+          "output": "84 38",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "250 80",
+          "output": "20000 660",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-09",
+      "year": "115",
+      "title": "傳藝中心表演投票",
+      "description": "【難度 ★★】\n\n問題描述\n校外教學到國立傳統藝術中心，老師讓全班投票決定要看哪一場表演：1 布袋戲、2 歌仔戲、3 舞獅、4 皮影戲。\n\n題目說明\n輸入每位同學的選票（1～4），請輸出得票最高的表演編號；若最高票有兩個以上相同，輸出「平手」。",
+      "inputFormat": "第一行：整數 N，票數。\n第二行：N 個整數（1～4），每張選票的編號。",
+      "outputFormat": "一行：得票最高的編號，或 平手。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "9",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "7\n1 2 2 3 2 4 1",
+          "output": "2",
+          "description": "1～4 號的票數分別為 2、3、1、1，最高的是 2 號。"
+        },
+        {
+          "title": "範例 2",
+          "input": "6\n1 1 2 2 3 4",
+          "output": "平手",
+          "description": "1～4 號的票數分別為 2、2、1、1，最高票不只一個，輸出「平手」。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "7\n1 2 2 3 2 4 1",
+          "output": "2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "6\n1 1 2 2 3 4",
+          "output": "平手",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n4 4 4 4 4",
+          "output": "4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "8\n3 1 3 2 3 4 4 4",
+          "output": "平手",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "4\n1 2 3 4",
+          "output": "平手",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-10",
+      "year": "115",
+      "title": "幾米公園音樂會座位",
+      "description": "【難度 ★★】\n\n問題描述\n幾米公園舉辦戶外音樂會，座位每排有 M 個位子，座位編號從第 1 排最左邊開始由左到右、再換下一排依序編號。\n\n題目說明\n輸入每排座位數 M 與座位編號 K，請輸出這個座位在第幾排、該排的第幾個位子。",
+      "inputFormat": "第一行：整數 M，每排座位數。\n第二行：整數 K，座位編號。",
+      "outputFormat": "一行：兩個整數，排數與位置，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "10",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "8\n19",
+          "output": "3 3",
+          "description": "每排 8 個位子，編號 19 在第 3 排第 3 個。"
+        },
+        {
+          "title": "範例 2",
+          "input": "8\n16",
+          "output": "2 8",
+          "description": "每排 8 個位子，編號 16 在第 2 排第 8 個。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "8\n19",
+          "output": "3 3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "8\n16",
+          "output": "2 8",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n1",
+          "output": "1 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "10\n101",
+          "output": "11 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n30",
+          "output": "5 6",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-11",
+      "year": "115",
+      "title": "蘭陽博物館導覽",
+      "description": "【難度 ★★】\n\n問題描述\n蘭陽博物館從早上 9:00 開始每隔 M 分鐘出發一梯導覽，例如 M=30 時，導覽在 9:00、9:30、10:00…出發。\n\n題目說明\n小美在 H 點 S 分到達（一定在 9:00 之後、閉館之前），請問她最少要等幾分鐘才有下一梯導覽？若剛好有導覽出發，輸出 0。",
+      "inputFormat": "一行：三個整數 H、S、M，以空格隔開。",
+      "outputFormat": "一行：一個整數，等待的分鐘數。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "11",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "9 40 30",
+          "output": "20",
+          "description": "9:40 距離 9:00 已過 40 分鐘，每 30 分鐘一梯，還要等 20 分鐘。"
+        },
+        {
+          "title": "範例 2",
+          "input": "10 0 45",
+          "output": "30",
+          "description": "10:00 距離 9:00 已過 60 分鐘，每 45 分鐘一梯，還要等 30 分鐘。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "9 40 30",
+          "output": "20",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "10 0 45",
+          "output": "30",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "11 17 20",
+          "output": "3",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "9 0 15",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "13 59 60",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-12",
+      "year": "115",
+      "title": "外澳衝浪日",
+      "description": "【難度 ★★】\n\n問題描述\n頭城外澳海灘的衝浪教練規定：浪高達 100 公分（含）以上才適合上課。\n\n題目說明\n輸入連續 N 天的浪高（公分），請輸出可以上課的天數以及這段期間的最高浪高。",
+      "inputFormat": "第一行：整數 N，天數。\n第二行：N 個整數，每天的浪高。",
+      "outputFormat": "一行：兩個整數，可上課天數與最高浪高，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "12",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n80 120 100 95 150",
+          "output": "3 150",
+          "description": "浪高 ≥ 100 的有 3 天，最高浪高 150 公分。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n50 60 70",
+          "output": "0 70",
+          "description": "浪高 ≥ 100 的有 0 天，最高浪高 70 公分。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n80 120 100 95 150",
+          "output": "3 150",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n50 60 70",
+          "output": "0 70",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n100 100 100 100",
+          "output": "4 100",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n99 101 250 30 180 100",
+          "output": "4 250",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n300",
+          "output": "1 300",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-13",
+      "year": "115",
+      "title": "冬山河電動自行車",
+      "description": "【難度 ★★】\n\n問題描述\n冬山河自行車道分成 N 段，小豪租了一台電動自行車，每騎 1 公里會用掉 1 格電。\n\n題目說明\n輸入每段的長度（公里）與電量，小豪會依序騎，只有電量足夠騎完整段才會騎。請輸出他能完整騎完幾段；若全部騎完，輸出「全程完成」。",
+      "inputFormat": "第一行：整數 N，路段數。\n第二行：N 個整數，每段的長度（公里）。\n第三行：整數 E，電量（格）。",
+      "outputFormat": "一行：完整騎完的段數，或 全程完成。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "13",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n3 5 4 6\n13",
+          "output": "3",
+          "description": "依序扣電量，騎完 3 段後電量不夠下一段。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n2 2 2\n10",
+          "output": "全程完成",
+          "description": "依序扣電量，每一段都騎完，輸出「全程完成」。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n3 5 4 6\n13",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n2 2 2\n10",
+          "output": "全程完成",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "3\n5 1 1\n4",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n1 1 1 1 1\n5",
+          "output": "全程完成",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "2\n10 10\n19",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-14",
+      "year": "115",
+      "title": "金棗蜜餞包裝",
+      "description": "【難度 ★★】\n\n問題描述\n礁溪的金棗蜜餞工廠有大盒（裝 12 顆）與小盒（裝 5 顆），包裝時先盡量裝大盒，再盡量裝小盒，剩下的散裝。\n\n題目說明\n輸入金棗數量 N，請輸出大盒數、小盒數與散裝顆數。",
+      "inputFormat": "一行：整數 N，金棗顆數。",
+      "outputFormat": "一行：三個整數，大盒數、小盒數、散裝顆數，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "14",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "41",
+          "output": "3 1 0",
+          "description": "41 ÷ 12 = 3 大盒餘 5，再 ÷ 5 得 1 小盒，剩 0 顆。"
+        },
+        {
+          "title": "範例 2",
+          "input": "60",
+          "output": "5 0 0",
+          "description": "60 ÷ 12 = 5 大盒餘 0，再 ÷ 5 得 0 小盒，剩 0 顆。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "41",
+          "output": "3 1 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "60",
+          "output": "5 0 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4",
+          "output": "0 0 4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "17",
+          "output": "1 1 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1000",
+          "output": "83 0 4",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-15",
+      "year": "115",
+      "title": "鴨賞禮盒團購",
+      "description": "【難度 ★★】\n\n問題描述\n宜蘭名產鴨賞禮盒每盒 P 元，店家推出團購優惠：買 5 盒（含）以上打 9 折，買 10 盒（含）以上打 8 折。\n\n題目說明\n輸入單價與盒數，請輸出應付金額（打折後若有小數，無條件捨去）。",
+      "inputFormat": "第一行：整數 P，每盒價格。\n第二行：整數 N，購買盒數。",
+      "outputFormat": "一行：一個整數，應付金額。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "15",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "350\n6",
+          "output": "1890",
+          "description": "350 × 6 = 2100 元，打 9 折後為 1890 元。"
+        },
+        {
+          "title": "範例 2",
+          "input": "350\n10",
+          "output": "2800",
+          "description": "350 × 10 = 3500 元，打 8 折後為 2800 元。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "350\n6",
+          "output": "1890",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "350\n10",
+          "output": "2800",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "199\n3",
+          "output": "597",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "333\n5",
+          "output": "1498",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "120\n25",
+          "output": "2400",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-16",
+      "year": "115",
+      "title": "梅花湖環湖",
+      "description": "【難度 ★★】\n\n問題描述\n冬山鄉的梅花湖環湖步道一圈長 L 公尺，阿公每天早上從入口出發沿著步道走。\n\n題目說明\n輸入步道一圈長度 L 與阿公今天走的距離 D（公尺），請輸出他繞了幾圈、最後停在距離入口幾公尺的地方。",
+      "inputFormat": "第一行：整數 L，一圈長度。\n第二行：整數 D，走的距離。",
+      "outputFormat": "一行：兩個整數，圈數與距離入口的公尺數，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "16",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "2400\n5000",
+          "output": "2 200",
+          "description": "5000 ÷ 2400 = 2 圈，餘 200 公尺。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2400\n4800",
+          "output": "2 0",
+          "description": "4800 ÷ 2400 = 2 圈，餘 0 公尺。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "2400\n5000",
+          "output": "2 200",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2400\n4800",
+          "output": "2 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1000\n999",
+          "output": "0 999",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "3000\n0",
+          "output": "0 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1500\n10000",
+          "output": "6 1000",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-17",
+      "year": "115",
+      "title": "南方澳漁獲分類",
+      "description": "【難度 ★★】\n\n問題描述\n南方澳漁港的漁夫把今天捕到的魚依重量分類：未滿 1000 公克是小魚，1000～2999 公克是中魚，3000 公克（含）以上是大魚。\n\n題目說明\n輸入 N 條魚的重量（公克），請輸出小魚、中魚、大魚各有幾條。",
+      "inputFormat": "第一行：整數 N，魚的數量。\n第二行：N 個整數，每條魚的重量。",
+      "outputFormat": "一行：三個整數，小魚、中魚、大魚的數量，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "17",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "6\n500 1200 3000 999 2999 4500",
+          "output": "2 2 2",
+          "description": "依 1000 與 3000 兩個界線分類，小魚 2 條、中魚 2 條、大魚 2 條。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n100 200 300",
+          "output": "3 0 0",
+          "description": "依 1000 與 3000 兩個界線分類，小魚 3 條、中魚 0 條、大魚 0 條。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "6\n500 1200 3000 999 2999 4500",
+          "output": "2 2 2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n100 200 300",
+          "output": "3 0 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n1000 1000 3000 3000",
+          "output": "0 2 2",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n5000 4000 3500 3100 2000",
+          "output": "0 1 4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n999",
+          "output": "1 0 0",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-18",
+      "year": "115",
+      "title": "頭城搶孤成績榜",
+      "description": "【難度 ★★★】\n\n問題描述\n頭城搶孤比賽中，N 位選手爬上孤棚的秒數都記錄下來了，秒數愈少名次愈前面。\n\n題目說明\n請將秒數由小到大排序，輸出前三名的秒數（N 至少 3 人，秒數可能相同）。",
+      "inputFormat": "第一行：整數 N，選手人數（3 ≤ N ≤ 20）。\n第二行：N 個整數，各選手的秒數。",
+      "outputFormat": "一行：三個整數，前三名的秒數，由小到大以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "18",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n95 80 120 80 100",
+          "output": "80 80 95",
+          "description": "排序後最小的三個數是 80 80 95。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n30 20 10",
+          "output": "10 20 30",
+          "description": "排序後最小的三個數是 10 20 30。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n95 80 120 80 100",
+          "output": "80 80 95",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n30 20 10",
+          "output": "10 20 30",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "6\n7 7 7 7 7 7",
+          "output": "7 7 7",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "8\n150 149 148 147 146 145 144 143",
+          "output": "143 144 145",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "4\n1 1000 500 2",
+          "output": "1 2 500",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-19",
+      "year": "115",
+      "title": "綠色博覽會集章",
+      "description": "【難度 ★★★】\n\n問題描述\n宜蘭綠色博覽會有 A、B、C、D、E 五個主題館，每到一館可以蓋一個章，五種章都蓋到就能換獎品。\n\n題目說明\n輸入小朋友依序蓋章的紀錄（一串由 A～E 組成的字母），請輸出他在第幾次蓋章時集齊五種章；若到最後都沒集齊，輸出「未集齊」。",
+      "inputFormat": "一行：一個由 A～E 組成的字串（長度 1～30，字母之間沒有空格）。",
+      "outputFormat": "一行：集齊時的蓋章次數，或 未集齊。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "19",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "ABACDDE",
+          "output": "7",
+          "description": "依序蓋章，第 7 次時 A～E 都已出現。"
+        },
+        {
+          "title": "範例 2",
+          "input": "AABBCC",
+          "output": "未集齊",
+          "description": "到最後仍有主題館沒蓋到，輸出「未集齊」。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "ABACDDE",
+          "output": "7",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "AABBCC",
+          "output": "未集齊",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "EDCBA",
+          "output": "5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "ABCDEABCDE",
+          "output": "5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "AAAAABCDE",
+          "output": "9",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-20",
+      "year": "115",
+      "title": "礁溪溫泉魚池",
+      "description": "【難度 ★★★】\n\n問題描述\n礁溪溫泉公園有 N 個溫泉魚池排成一列，小朋友想選連續 K 個池子泡腳，希望被溫泉魚「親」到的機會最多。\n\n題目說明\n輸入每個池子的魚數與 K，請找出連續 K 個池子魚數總和最大的一段，輸出該總和與起始池的編號（從 1 開始）；若有多段相同，輸出最前面的一段。",
+      "inputFormat": "第一行：整數 N，池子數。\n第二行：N 個整數，每個池子的魚數。\n第三行：整數 K（1 ≤ K ≤ N）。",
+      "outputFormat": "一行：兩個整數，最大總和與起始池編號，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "20",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "6\n5 2 8 3 9 1\n2",
+          "output": "12 4",
+          "description": "連續 2 個池子的最大總和為 12，從第 4 池開始。"
+        },
+        {
+          "title": "範例 2",
+          "input": "5\n3 3 3 3 3\n3",
+          "output": "9 1",
+          "description": "連續 3 個池子的最大總和為 9，從第 1 池開始。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "6\n5 2 8 3 9 1\n2",
+          "output": "12 4",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "5\n3 3 3 3 3\n3",
+          "output": "9 1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n10 1 1 10\n1",
+          "output": "10 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "7\n1 2 3 4 5 6 7\n7",
+          "output": "28 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "8\n4 0 0 4 4 0 0 4\n3",
+          "output": "8 3",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-21",
+      "year": "115",
+      "title": "宜蘭轉運站候車",
+      "description": "【難度 ★★★】\n\n問題描述\n宜蘭轉運站每小時整點發一班往台北的客運，每班最多載 C 人，載不完的人要繼續等下一班。\n\n題目說明\n輸入 N 個小時中每小時新到達的旅客人數，每小時的旅客都會在該小時的班車發車前到達。請輸出 N 小時後還有多少人沒搭上車，以及期間班車發車前最多曾有多少人在等車。",
+      "inputFormat": "第一行：整數 N，小時數。\n第二行：N 個整數，每小時新到的旅客數。\n第三行：整數 C，每班載客上限。",
+      "outputFormat": "一行：兩個整數，最後剩餘人數與最多等候人數，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "21",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n30 50 10 60\n40",
+          "output": "20 60",
+          "description": "每小時先加上新到的人、記錄等候人數，再載走最多 40 人；最後剩 20 人，最多曾等候 60 人。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n10 10 10\n20",
+          "output": "0 10",
+          "description": "每小時先加上新到的人、記錄等候人數，再載走最多 20 人；最後剩 0 人，最多曾等候 10 人。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n30 50 10 60\n40",
+          "output": "20 60",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n10 10 10\n20",
+          "output": "0 10",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n100 0 0 0 0\n30",
+          "output": "0 100",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "2\n40 40\n40",
+          "output": "0 40",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n25 35 45 55 65 75\n50",
+          "output": "45 95",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-22",
+      "year": "115",
+      "title": "噶瑪蘭語母音統計",
+      "description": "【難度 ★★★】\n\n問題描述\n宜蘭是噶瑪蘭族的故鄉，噶瑪蘭語用羅馬字書寫。老師想讓同學練習統計一句話裡的母音。\n\n題目說明\n輸入一串大寫英文字母（沒有空格），請分別統計 A、E、I、O、U 各出現幾次。",
+      "inputFormat": "一行：一個由大寫英文字母組成的字串（長度 1～50）。",
+      "outputFormat": "一行：五個整數，依序為 A、E、I、O、U 的出現次數，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "22",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "KAVALAN",
+          "output": "3 0 0 0 0",
+          "description": "字串「KAVALAN」中 A、E、I、O、U 分別出現 3、0、0、0、0 次。"
+        },
+        {
+          "title": "範例 2",
+          "input": "QNAS",
+          "output": "1 0 0 0 0",
+          "description": "字串「QNAS」中 A、E、I、O、U 分別出現 1、0、0、0、0 次。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "KAVALAN",
+          "output": "3 0 0 0 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "QNAS",
+          "output": "1 0 0 0 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "AEIOUAEIOU",
+          "output": "2 2 2 2 2",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "BRRRRT",
+          "output": "0 0 0 0 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "ILANISBEAUTIFUL",
+          "output": "2 1 3 0 2",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-23",
+      "year": "115",
+      "title": "利澤簡走尪",
+      "description": "【難度 ★★★】\n\n問題描述\n五結鄉利澤簡的「走尪」是抬著神轎在街上奔跑的傳統。神轎一開始在廟口 (0,0) 面向北方。\n\n題目說明\n輸入 N 個指令：F 表示往面對的方向前進 1 格，L 表示原地向左轉 90 度，R 表示原地向右轉 90 度。北方是 y+1，東方是 x+1。請輸出神轎最後的座標。",
+      "inputFormat": "第一行：整數 N，指令數。\n第二行：N 個字母（F、L、R），以空格隔開。",
+      "outputFormat": "一行：最後座標，格式為 (x,y)，中間沒有空格。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "23",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\nF F R F F",
+          "output": "(2,2)",
+          "description": "從 (0,0) 面向北依指令前進與轉向，最後停在 (2,2)。"
+        },
+        {
+          "title": "範例 2",
+          "input": "4\nL F F F",
+          "output": "(-3,0)",
+          "description": "從 (0,0) 面向北依指令前進與轉向，最後停在 (-3,0)。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\nF F R F F",
+          "output": "(2,2)",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "4\nL F F F",
+          "output": "(-3,0)",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "6\nR R F F L F",
+          "output": "(1,-2)",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "3\nF R F",
+          "output": "(1,1)",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "10\nF L F L F L F L F F",
+          "output": "(0,2)",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-24",
+      "year": "115",
+      "title": "蘭陽稻田分組",
+      "description": "【難度 ★★★★】\n\n問題描述\n壯圍鄉有 N 塊稻田沿著馬路排成一列，每塊田的產量不同。農會要把這些田分給兩個工作隊收割，每隊負責「連續」的一段田，且兩隊的產量總和要盡量接近。\n\n題目說明\n請找出最好的分法，輸出兩隊的產量總和，先輸出較少的一隊。",
+      "inputFormat": "第一行：整數 N，稻田數（2 ≤ N ≤ 20）。\n第二行：N 個整數，每塊田的產量。",
+      "outputFormat": "一行：兩個整數，較少與較多的產量總和，以空格隔開。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "24",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "6\n10 12 7 15 23 24",
+          "output": "44 47",
+          "description": "嘗試每個切點，前段與後段總和最接近時為 44 與 47。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2\n5 9",
+          "output": "5 9",
+          "description": "嘗試每個切點，前段與後段總和最接近時為 5 與 9。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "6\n10 12 7 15 23 24",
+          "output": "44 47",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2\n5 9",
+          "output": "5 9",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n1 1 1 1 10",
+          "output": "4 10",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "7\n8 8 8 8 8 8 8",
+          "output": "24 32",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "4\n100 1 1 100",
+          "output": "101 101",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-25",
+      "year": "115",
+      "title": "童玩節看表演",
+      "description": "【難度 ★★★★】\n\n問題描述\n童玩節園區一天有 N 場表演，每場有開始時間與結束時間（整數，單位：小時）。小安想看愈多場愈好，但同一時間只能看一場。\n\n題目說明\n若一場表演的結束時間剛好等於另一場的開始時間，可以接著看。請輸出小安最多能完整看幾場。",
+      "inputFormat": "第一行：整數 N，表演場數（1 ≤ N ≤ 20）。\n第二行：2N 個整數，依序為第 1 場的開始、結束，第 2 場的開始、結束……。",
+      "outputFormat": "一行：一個整數，最多能看的場數。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國小",
+      "categories": [
+        "115宜蘭縣國小",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "25",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n1 3 2 4 3 5 5 7",
+          "output": "3",
+          "description": "優先選結束時間最早、且與已選場次不重疊的表演，最多可看 3 場。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n1 10 10 20 20 30",
+          "output": "3",
+          "description": "優先選結束時間最早、且與已選場次不重疊的表演，最多可看 3 場。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n1 3 2 4 3 5 5 7",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n1 10 10 20 20 30",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n1 2 1 2 1 2 1 2 1 2",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n9 11 10 12 11 13 12 14 13 15 14 16",
+          "output": "3",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n8 9",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-26",
+      "year": "115",
+      "title": "龜山島船票",
+      "description": "【難度 ★】\n\n問題描述\n烏石港開往龜山島的登島船票：成人 600 元、兒童 300 元、65 歲以上長者免費。\n\n題目說明\n輸入成人、兒童、長者人數，請輸出總票價。",
+      "inputFormat": "一行：三個整數，成人、兒童、長者人數，以空格隔開。",
+      "outputFormat": "一行：一個整數，總票價。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "26",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "2 1 1",
+          "output": "1500",
+          "description": "成人 2 × 600 + 兒童 1 × 300 + 長者免費 = 1500 元。"
+        },
+        {
+          "title": "範例 2",
+          "input": "0 0 5",
+          "output": "0",
+          "description": "成人 0 × 600 + 兒童 0 × 300 + 長者免費 = 0 元。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "2 1 1",
+          "output": "1500",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "0 0 5",
+          "output": "0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "3 3 0",
+          "output": "2700",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1 0 0",
+          "output": "600",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "10 20 30",
+          "output": "12000",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-27",
+      "year": "115",
+      "title": "蘭陽平原氣溫紀錄",
+      "description": "【難度 ★】\n\n問題描述\n宜蘭氣象站記錄了連續 N 天的每日氣溫（整數，可能是負數）。\n\n題目說明\n請輸出最高溫、最低溫與兩者的差（全距）。",
+      "inputFormat": "第一行：整數 N，天數。\n第二行：N 個整數，每天的氣溫。",
+      "outputFormat": "一行：三個整數，最高溫、最低溫、全距，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "27",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n12 18 9 21 15",
+          "output": "21 9 12",
+          "description": "最高 21、最低 9，相減得全距 12。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n-2 0 3",
+          "output": "3 -2 5",
+          "description": "最高 3、最低 -2，相減得全距 5。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n12 18 9 21 15",
+          "output": "21 9 12",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n-2 0 3",
+          "output": "3 -2 5",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n25",
+          "output": "25 25 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n30 30 30 30 30 30",
+          "output": "30 30 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "7\n-5 -10 4 8 -1 0 2",
+          "output": "8 -10 18",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-28",
+      "year": "115",
+      "title": "羅東林場圓木",
+      "description": "【難度 ★】\n\n問題描述\n羅東林業文化園區的貯木池裡有許多圓柱形的檜木，工作人員要估算每根圓木的體積。\n\n題目說明\n輸入圓木的直徑與長度（公分，整數），圓周率用 3.14，請輸出體積（立方公分），小數無條件捨去。",
+      "inputFormat": "一行：兩個整數，直徑與長度，以空格隔開。",
+      "outputFormat": "一行：一個整數，體積（無條件捨去）。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "28",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "40 300",
+          "output": "376800",
+          "description": "半徑 20.0，3.14 × 半徑² × 300 無條件捨去得 376800。"
+        },
+        {
+          "title": "範例 2",
+          "input": "10 10",
+          "output": "785",
+          "description": "半徑 5.0，3.14 × 半徑² × 10 無條件捨去得 785。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "40 300",
+          "output": "376800",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "10 10",
+          "output": "785",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "25 120",
+          "output": "58875",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "100 500",
+          "output": "3925000",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "3 7",
+          "output": "49",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-29",
+      "year": "115",
+      "title": "蘇花改隧道",
+      "description": "【難度 ★】\n\n問題描述\n蘇花改公路沿途有 N 座隧道，每座隧道的長度都不同。\n\n題目說明\n輸入每座隧道的長度（公尺），請輸出隧道總長度與最長的隧道長度。",
+      "inputFormat": "第一行：整數 N，隧道數。\n第二行：N 個整數，每座隧道的長度。",
+      "outputFormat": "一行：兩個整數，總長度與最長長度，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "29",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n3200 12600 4800 1200",
+          "output": "21800 12600",
+          "description": "總長 21800 公尺，最長 12600 公尺。"
+        },
+        {
+          "title": "範例 2",
+          "input": "1\n500",
+          "output": "500 500",
+          "description": "總長 500 公尺，最長 500 公尺。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n3200 12600 4800 1200",
+          "output": "21800 12600",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "1\n500",
+          "output": "500 500",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "3\n1000 1000 1000",
+          "output": "3000 1000",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n1 2 3 4 5",
+          "output": "15 5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n8000 7000 9000 6000 10000 5000",
+          "output": "45000 10000",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-30",
+      "year": "115",
+      "title": "冬山河龍舟裁判計時",
+      "description": "【難度 ★★】\n\n問題描述\n冬山河龍舟賽由 5 位裁判各自計時，為了公平，成績會去掉一個最高秒數與一個最低秒數，再取其餘 3 個的平均。\n\n題目說明\n輸入 5 位裁判記錄的秒數，請輸出成績（平均值無條件捨去到整數）。",
+      "inputFormat": "一行：五個整數，各裁判的秒數，以空格隔開。",
+      "outputFormat": "一行：一個整數，成績。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "30",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "120 118 125 119 121",
+          "output": "120",
+          "description": "排序後去掉最高與最低，中間三個的總和 ÷ 3 無條件捨去為 120。"
+        },
+        {
+          "title": "範例 2",
+          "input": "100 100 100 100 100",
+          "output": "100",
+          "description": "排序後去掉最高與最低，中間三個的總和 ÷ 3 無條件捨去為 100。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "120 118 125 119 121",
+          "output": "120",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "100 100 100 100 100",
+          "output": "100",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "90 200 95 91 93",
+          "output": "93",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1 2 3 4 5",
+          "output": "3",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "77 79 78 80 76",
+          "output": "78",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-31",
+      "year": "115",
+      "title": "礁溪溫泉旅館訂房",
+      "description": "【難度 ★★】\n\n問題描述\n礁溪的溫泉旅館平日房價 P 元、假日房價 Q 元；連續住 3 晚（含）以上，總房價打 9 折。\n\n題目說明\n輸入房價、住宿晚數與每晚是否為假日（1 為假日、0 為平日），請輸出總房價（打折後小數無條件捨去）。",
+      "inputFormat": "第一行：兩個整數 P、Q，平日與假日房價。\n第二行：整數 N，住宿晚數。\n第三行：N 個整數（0 或 1），每晚是否為假日。",
+      "outputFormat": "一行：一個整數，總房價。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "31",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3000 4500\n2\n0 1",
+          "output": "7500",
+          "description": "逐晚加總房價，得 7500 元。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3000 4500\n3\n1 1 0",
+          "output": "10800",
+          "description": "逐晚加總房價，住 3 晚以上打 9 折，得 10800 元。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3000 4500\n2\n0 1",
+          "output": "7500",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3000 4500\n3\n1 1 0",
+          "output": "10800",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "2500 3999\n1\n1",
+          "output": "3999",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1000 2000\n5\n0 0 0 0 0",
+          "output": "4500",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "3333 5555\n4\n1 0 1 0",
+          "output": "15998",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-32",
+      "year": "115",
+      "title": "宜蘭餅條碼檢查",
+      "description": "【難度 ★★】\n\n問題描述\n宜蘭餅工廠的產品條碼是 5 位數字。為了防偽，條碼的檢查規則是：第 1 位 ×1 + 第 2 位 ×2 + 第 3 位 ×3 + 第 4 位 ×4 + 第 5 位 ×5，總和必須是 7 的倍數。\n\n題目說明\n輸入一個 5 位數的條碼字串，合法輸出 yes，不合法輸出 no。",
+      "inputFormat": "一行：一個 5 位數字的字串。",
+      "outputFormat": "一行：yes 或 no。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "32",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "12345",
+          "output": "no",
+          "description": "加權和為 55，不是 7 的倍數，輸出 no。"
+        },
+        {
+          "title": "範例 2",
+          "input": "12346",
+          "output": "no",
+          "description": "加權和為 60，不是 7 的倍數，輸出 no。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "12345",
+          "output": "no",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "12346",
+          "output": "no",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "54321",
+          "output": "yes",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "70707",
+          "output": "yes",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "98765",
+          "output": "no",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-33",
+      "year": "115",
+      "title": "南方澳鯖魚競標",
+      "description": "【難度 ★★】\n\n問題描述\n南方澳漁港每天清晨舉行鯖魚競標，N 位盤商各出一個價格。\n\n題目說明\n請輸出最高出價，以及「次高出價」（比最高價低的價格中最高的那一個）；若所有人出價都相同，次高出價輸出「無」。",
+      "inputFormat": "第一行：整數 N，盤商人數。\n第二行：N 個整數，各盤商的出價。",
+      "outputFormat": "一行：最高出價與次高出價，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "33",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n300 450 450 380 400",
+          "output": "450 400",
+          "description": "最高價 450，其餘出價中最高的是 400。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n500 500 500",
+          "output": "500 無",
+          "description": "最高價 500，所有出價相同，次高輸出「無」。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n300 450 450 380 400",
+          "output": "450 400",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n500 500 500",
+          "output": "500 無",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n100 200 300 400",
+          "output": "400 300",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1\n999",
+          "output": "999 無",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n88 88 77 77 99 99",
+          "output": "99 88",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-34",
+      "year": "115",
+      "title": "傳藝中心傳鼓",
+      "description": "【難度 ★★】\n\n問題描述\n傳藝中心的鼓陣表演中，N 位鼓手圍成一圈依順時針編號 1～N。鼓一開始在 1 號手上，每一拍會傳給順時針方向第 K 位鼓手（例如 K=1 傳給下一位，K=2 隔一位）。\n\n題目說明\n請輸出傳了 M 拍之後，鼓在幾號鼓手手上。",
+      "inputFormat": "第一行：整數 N，鼓手人數。\n第二行：整數 K，每拍傳的位數。\n第三行：整數 M，拍數。",
+      "outputFormat": "一行：一個整數，最後拿到鼓的鼓手編號。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "34",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n2\n3",
+          "output": "2",
+          "description": "共前進 6 位，除以 5 取餘數後加 1 得 2 號。"
+        },
+        {
+          "title": "範例 2",
+          "input": "6\n1\n6",
+          "output": "1",
+          "description": "共前進 6 位，除以 6 取餘數後加 1 得 1 號。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n2\n3",
+          "output": "2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "6\n1\n6",
+          "output": "1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "7\n3\n100",
+          "output": "7",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "10\n4\n0",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "3\n5\n7",
+          "output": "3",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-35",
+      "year": "115",
+      "title": "蘭陽博物館購票",
+      "description": "【難度 ★★】\n\n問題描述\n蘭陽博物館票價：未滿 6 歲免費；6～18 歲學生票 50 元；19～64 歲全票 100 元；65 歲（含）以上敬老票 50 元。\n\n題目說明\n輸入一團遊客每個人的年齡，請輸出總票價。",
+      "inputFormat": "第一行：整數 N，人數。\n第二行：N 個整數，每人的年齡。",
+      "outputFormat": "一行：一個整數，總票價。",
+      "difficulty": "easy",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "35",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n5 12 40 70",
+          "output": "200",
+          "description": "依年齡對照票價逐人加總，總票價 200 元。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n6 18 19",
+          "output": "200",
+          "description": "依年齡對照票價逐人加總，總票價 200 元。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n5 12 40 70",
+          "output": "200",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n6 18 19",
+          "output": "200",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "2\n64 65",
+          "output": "150",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1\n0",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n3 10 17 30 50 90",
+          "output": "350",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-36",
+      "year": "115",
+      "title": "猜龜山島的高度",
+      "description": "【難度 ★★★】\n\n問題描述\n龜山島最高點的高度是 1～N 公尺之間的整數 X。小安用「每次猜範圍中間值」的方法猜：範圍 L～R 時猜 (L+R)÷2（整數除法），猜小了就把範圍改成 mid+1～R，猜大了改成 L～mid-1，直到猜中。\n\n題目說明\n輸入 N 與答案 X，請依序輸出每次猜的數字，以及總共猜了幾次。",
+      "inputFormat": "第一行：整數 N，範圍上限。\n第二行：整數 X，答案（1 ≤ X ≤ N）。",
+      "outputFormat": "第一行：每次猜的數字，以空格隔開。\n第二行：一個整數，猜的次數。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "36",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "400\n398",
+          "output": "200 300 350 375 388 394 397 399 398\n9",
+          "description": "從 1～400 開始每次猜中間值，猜測序列為 200 300 350 375 388 394 397 399 398，共 9 次。"
+        },
+        {
+          "title": "範例 2",
+          "input": "100\n50",
+          "output": "50\n1",
+          "description": "從 1～100 開始每次猜中間值，猜測序列為 50，共 1 次。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "400\n398",
+          "output": "200 300 350 375 388 394 397 399 398\n9",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "100\n50",
+          "output": "50\n1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "100\n1",
+          "output": "50 25 12 6 3 1\n6",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1000\n777",
+          "output": "500 750 875 812 781 765 773 777\n8",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "7\n7",
+          "output": "4 6 7\n3",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-37",
+      "year": "115",
+      "title": "羅東夜市人氣排行",
+      "description": "【難度 ★★★】\n\n問題描述\n羅東夜市觀光協會統計了 N 個攤位的人氣值（各不相同），要公布人氣前 K 名。\n\n題目說明\n輸入每個攤位的名稱與人氣值，請依人氣由高到低輸出前 K 名的攤位名稱。",
+      "inputFormat": "第一行：整數 N，攤位數。\n第二行：N 組「名稱 人氣值」，以空格隔開。\n第三行：整數 K（1 ≤ K ≤ N）。",
+      "outputFormat": "一行：前 K 名的攤位名稱，由高到低以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "37",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n包心粉圓 85 龍鳳腿 92 三星蔥餅 78 當歸羊肉 90\n2",
+          "output": "龍鳳腿 當歸羊肉",
+          "description": "依人氣值由高到低排序後，前 2 名為 龍鳳腿 當歸羊肉。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\nA 1 B 2 C 3\n3",
+          "output": "C B A",
+          "description": "依人氣值由高到低排序後，前 3 名為 C B A。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n包心粉圓 85 龍鳳腿 92 三星蔥餅 78 當歸羊肉 90\n2",
+          "output": "龍鳳腿 當歸羊肉",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\nA 1 B 2 C 3\n3",
+          "output": "C B A",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n鹹米苔目 50 卜肉 60 糕渣 70 蒜味肉羹 80 麻糬 90\n1",
+          "output": "麻糬",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "2\n甲 10 乙 20\n2",
+          "output": "乙 甲",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\nf 6 e 5 d 4 c 3 b 2 a 1\n4",
+          "output": "f e d c",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-38",
+      "year": "115",
+      "title": "蹦蹦車調度系統",
+      "description": "【難度 ★★★】\n\n問題描述\n太平山蹦蹦車有三種狀態：停靠中（STOP）、行駛中（RUN）、維修中（FIX），一開始為 STOP。指令：G 出發、S 停靠、M 故障、R 修復。\n\n題目說明\n狀態轉換規則：STOP 收到 G → RUN（算完成一次出發）；STOP 或 RUN 收到 M → FIX；RUN 收到 S → STOP；FIX 收到 R → STOP；其他情況狀態不變。請輸出處理完所有指令後的狀態與出發次數。",
+      "inputFormat": "第一行：整數 N，指令數。\n第二行：N 個大寫字母（G、S、M、R），以空格隔開。",
+      "outputFormat": "一行：最後狀態（STOP、RUN 或 FIX）與出發次數，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "38",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "6\nG S G M R G",
+          "output": "RUN 3",
+          "description": "依指令逐一轉換狀態，最後為 RUN，共出發 3 次。"
+        },
+        {
+          "title": "範例 2",
+          "input": "4\nS S R G",
+          "output": "RUN 1",
+          "description": "依指令逐一轉換狀態，最後為 RUN，共出發 1 次。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "6\nG S G M R G",
+          "output": "RUN 3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "4\nS S R G",
+          "output": "RUN 1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\nG G G S G",
+          "output": "RUN 2",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "3\nM G G",
+          "output": "FIX 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "8\nG M R G S M R S",
+          "output": "STOP 2",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-39",
+      "year": "115",
+      "title": "三星蔥採購",
+      "description": "【難度 ★★★】\n\n問題描述\n餐廳老闆帶著預算 B 元到三星鄉的蔥市場，有 M 個攤位，每個攤位的每把價格與剩餘把數不同。\n\n題目說明\n老闆想買到最多把蔥，請輸出在預算內最多能買幾把（同一攤可以只買部分）。",
+      "inputFormat": "第一行：整數 B，預算。\n第二行：整數 M，攤位數。\n第三行：M 個整數，各攤每把的價格。\n第四行：M 個整數，各攤剩餘的把數。",
+      "outputFormat": "一行：一個整數，最多能買的把數。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "39",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "1000\n3\n100 300 200\n3 4 2",
+          "output": "6",
+          "description": "從最便宜的攤位開始買，直到預算不足，最多買 6 把。"
+        },
+        {
+          "title": "範例 2",
+          "input": "500\n3\n600 700 800\n3 4 5",
+          "output": "0",
+          "description": "從最便宜的攤位開始買，直到預算不足，最多買 0 把。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "1000\n3\n100 300 200\n3 4 2",
+          "output": "6",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "500\n3\n600 700 800\n3 4 5",
+          "output": "0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "250\n2\n50 60\n3 10",
+          "output": "4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1\n1\n1\n100",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "999\n4\n10 20 30 40\n10 10 10 10",
+          "output": "39",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-40",
+      "year": "115",
+      "title": "南澳古道尋路",
+      "description": "【難度 ★★★】\n\n問題描述\n南澳古道被畫成 21×21 的方格地圖，座標範圍 0～20。登山客從入口 (10,10) 出發，依指令移動。\n\n題目說明\n指令格式為方向字母加步數，例如 N5（向北 y+5）、S2（向南 y-2）、E3（向東 x+3）、W4（向西 x-4）。若某個指令會走出地圖範圍，該指令整個不執行。請輸出最後座標，以及最後位置到入口的曼哈頓距離（|x-10|+|y-10|）。",
+      "inputFormat": "第一行：整數 N，指令數。\n第二行：N 個指令，以空格隔開。",
+      "outputFormat": "一行：最後座標 (x,y) 與距離，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "40",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\nN5 E3 S2 W1",
+          "output": "(12,13) 5",
+          "description": "逐一執行指令並略過會超出 0～20 的指令，最後在 (12,13)，距離入口 5。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\nN15 N5 E10",
+          "output": "(20,15) 15",
+          "description": "逐一執行指令並略過會超出 0～20 的指令，最後在 (20,15)，距離入口 15。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\nN5 E3 S2 W1",
+          "output": "(12,13) 5",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\nN15 N5 E10",
+          "output": "(20,15) 15",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\nW10 W1 S10 S1 E20",
+          "output": "(20,0) 20",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "2\nE9 E1",
+          "output": "(20,10) 10",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\nN3 N3 N3 N3 S12 E7",
+          "output": "(17,7) 10",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-41",
+      "year": "115",
+      "title": "龜山島噴口週期",
+      "description": "【難度 ★★★】\n\n問題描述\n龜山島附近海底有 N 個熱泉噴口，第 i 個噴口每 T_i 分鐘噴發一次。今天 0 分時所有噴口同時噴發。\n\n題目說明\n請輸出下一次所有噴口再度「同時噴發」是在第幾分鐘（也就是所有週期的最小公倍數）。",
+      "inputFormat": "第一行：整數 N，噴口數（1 ≤ N ≤ 5）。\n第二行：N 個整數，各噴口的週期（1 ≤ T ≤ 30）。",
+      "outputFormat": "一行：一個整數，下次同時噴發的分鐘數。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "41",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "2\n4 6",
+          "output": "12",
+          "description": "週期 4、6 的最小公倍數是 12。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n2 3 5",
+          "output": "30",
+          "description": "週期 2、3、5 的最小公倍數是 30。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "2\n4 6",
+          "output": "12",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n2 3 5",
+          "output": "30",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n7",
+          "output": "7",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n8 12 6 4",
+          "output": "24",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "5\n9 10 11 12 13",
+          "output": "25740",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-42",
+      "year": "115",
+      "title": "蘭陽溪水位警報",
+      "description": "【難度 ★★★】\n\n問題描述\n颱風季節，水利署每小時記錄蘭陽溪的水位。當水位達到警戒值 H（含）以上，就是警戒狀態。\n\n題目說明\n「進入警戒」事件的定義是：從非警戒狀態變成警戒狀態算 1 次（一開始視為非警戒）；若持續在警戒狀態不重複計算。請輸出進入警戒的次數與最高水位。",
+      "inputFormat": "第一行：整數 N，紀錄筆數。\n第二行：整數 H，警戒值。\n第三行：N 個整數，每小時的水位。",
+      "outputFormat": "一行：兩個整數，進入警戒次數與最高水位，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "42",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "8\n300\n250 310 320 290 305 300 280 350",
+          "output": "3 350",
+          "description": "水位 ≥ 300 為警戒，從非警戒進入警戒共 3 次，最高水位 350。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n100\n100 100 100",
+          "output": "1 100",
+          "description": "水位 ≥ 100 為警戒，從非警戒進入警戒共 1 次，最高水位 100。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "8\n300\n250 310 320 290 305 300 280 350",
+          "output": "3 350",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n100\n100 100 100",
+          "output": "1 100",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n500\n1 2 3 4",
+          "output": "0 4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n50\n60 40 60 40 60 40",
+          "output": "3 60",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n10\n10",
+          "output": "1 10",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-43",
+      "year": "115",
+      "title": "中興文創園區展覽統計",
+      "description": "【難度 ★★★】\n\n問題描述\n中興文創園區的志工每小時回報各展區的參觀人數，同一展區一天內會被回報很多次。\n\n題目說明\n輸入 N 筆「展區名稱 人數」，請依展區第一次出現的順序，輸出每個展區的總人數。",
+      "inputFormat": "第一行：整數 N，回報筆數。\n第二行：N 組「展區名稱 人數」，以空格隔開。",
+      "outputFormat": "一行：依出現順序輸出「展區名稱 總人數」，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "43",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n紙廠 20 倉庫 15 紙廠 30 藝術 10 倉庫 5",
+          "output": "紙廠 50 倉庫 20 藝術 10",
+          "description": "同名展區的人數合併相加，並依第一次出現的順序輸出：紙廠 50 倉庫 20 藝術 10。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\nA 1 A 2 A 3",
+          "output": "A 6",
+          "description": "同名展區的人數合併相加，並依第一次出現的順序輸出：A 6。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n紙廠 20 倉庫 15 紙廠 30 藝術 10 倉庫 5",
+          "output": "紙廠 50 倉庫 20 藝術 10",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\nA 1 A 2 A 3",
+          "output": "A 6",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n甲 7 乙 8 丙 9 丁 10",
+          "output": "甲 7 乙 8 丙 9 丁 10",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\nx 1 y 1 x 1 y 1 x 1 z 1",
+          "output": "x 3 y 2 z 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n單一展區 99",
+          "output": "單一展區 99",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-44",
+      "year": "115",
+      "title": "搶孤選手排隊",
+      "description": "【難度 ★★★】\n\n問題描述\n頭城搶孤開賽前，N 位選手要依身高由矮到高排成一列。裁判只允許「交換相鄰兩人」：從左到右比較相鄰兩人，左邊比右邊高就交換，一輪一輪重複直到排好。\n\n題目說明\n請輸出排好後的身高序列，以及總共交換了幾次。",
+      "inputFormat": "第一行：整數 N，選手人數（2 ≤ N ≤ 10）。\n第二行：N 個整數，各選手身高。",
+      "outputFormat": "一行：排序後的 N 個身高，接著一個整數為交換次數，全部以空格隔開。",
+      "difficulty": "medium",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "44",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n150 120 180 110",
+          "output": "110 120 150 180 4",
+          "description": "相鄰交換排序後為 110 120 150 180，共交換 4 次。"
+        },
+        {
+          "title": "範例 2",
+          "input": "5\n160 140 170 130 150",
+          "output": "130 140 150 160 170 6",
+          "description": "相鄰交換排序後為 130 140 150 160 170，共交換 6 次。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n150 120 180 110",
+          "output": "110 120 150 180 4",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "5\n160 140 170 130 150",
+          "output": "130 140 150 160 170 6",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "3\n1 2 3",
+          "output": "1 2 3 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n6 5 4 3 2 1",
+          "output": "1 2 3 4 5 6 15",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "7\n170 170 165 180 160 175 165",
+          "output": "160 165 165 170 170 175 180 11",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-45",
+      "year": "115",
+      "title": "見晴懷古步道",
+      "description": "【難度 ★★★★】\n\n問題描述\n太平山見晴懷古步道被分成 N 個平台，每個平台有一個高度。登山客從第 1 個平台出發要走到第 N 個。\n\n題目說明\n每一步可以「走到下一個平台」，消耗體力 = 兩平台高度差的絕對值；或「跳過一個平台到下下個」，消耗體力 = 兩平台高度差的絕對值 + 2。請輸出到達第 N 個平台的最少體力。",
+      "inputFormat": "第一行：整數 N，平台數（2 ≤ N ≤ 30）。\n第二行：N 個整數，各平台高度。",
+      "outputFormat": "一行：一個整數，最少體力。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "45",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n10 30 40 20 25",
+          "output": "37",
+          "description": "用動態規劃記錄到每個平台的最少體力（走一步或跳兩步取較小值），到終點為 37。"
+        },
+        {
+          "title": "範例 2",
+          "input": "4\n1 100 1 1",
+          "output": "2",
+          "description": "用動態規劃記錄到每個平台的最少體力（走一步或跳兩步取較小值），到終點為 2。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n10 30 40 20 25",
+          "output": "37",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "4\n1 100 1 1",
+          "output": "2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "2\n5 9",
+          "output": "4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n3 3 3 3 3 3",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "8\n0 10 0 10 0 10 0 10",
+          "output": "16",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-46",
+      "year": "115",
+      "title": "員山稻田空拍",
+      "description": "【難度 ★★★★】\n\n問題描述\n員山鄉的稻田被空拍機畫成 N 列 M 行的方格，每格記錄產量。農會想找出產量最高的 2×2 區塊來當示範田。\n\n題目說明\n請輸出 2×2 區塊的最大產量總和，以及該區塊左上角的列號與行號（都從 1 開始）。若有多個相同，輸出列號最小者，列號也相同時輸出行號最小者。",
+      "inputFormat": "第一行：兩個整數 N、M（2 ≤ N, M ≤ 10）。\n接下來 N 行：每行 M 個整數，代表該列各格的產量。",
+      "outputFormat": "一行：三個整數，最大總和、列號、行號，以空格隔開。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "46",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
+          "output": "28 2 2",
+          "description": "逐一計算每個 2×2 區塊的總和，最大為 28，左上角在第 2 列第 2 行。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2 2\n5 5\n5 5",
+          "output": "20 1 1",
+          "description": "逐一計算每個 2×2 區塊的總和，最大為 20，左上角在第 1 列第 1 行。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3 3\n1 2 3\n4 5 6\n7 8 9",
+          "output": "28 2 2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2 2\n5 5\n5 5",
+          "output": "20 1 1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "3 4\n9 1 1 9\n1 1 1 1\n9 1 1 9",
+          "output": "12 1 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4 2\n1 1\n2 2\n3 3\n10 0",
+          "output": "16 3 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "2 5\n1 2 3 4 5\n5 4 3 2 1",
+          "output": "12 1 1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-47",
+      "year": "115",
+      "title": "童玩節表演排程",
+      "description": "【難度 ★★★★】\n\n問題描述\n童玩節有 N 場表演（編號 1～N），每場有開始與結束時間。工作人員小蘭要安排自己去支援最多場表演，但同一時間只能在一場。\n\n題目說明\n選擇規則：每次都從「與已選場次不衝突」的表演中，挑結束時間最早的（結束時間相同時挑編號小的）。結束時間等於下一場開始時間視為不衝突。請輸出能支援的場數與所選場次編號（依選擇順序）。",
+      "inputFormat": "第一行：整數 N，表演場數（1 ≤ N ≤ 20）。\n第二行：2N 個整數，依序為每場的開始、結束時間。",
+      "outputFormat": "第一行：一個整數，場數。\n第二行：所選場次的編號，以空格隔開。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "47",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "4\n1 3 2 4 3 5 5 7",
+          "output": "3\n1 3 4",
+          "description": "依結束時間排序後貪婪選取，可支援 3 場，場次編號為 1 3 4。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n1 10 10 20 20 30",
+          "output": "3\n1 2 3",
+          "description": "依結束時間排序後貪婪選取，可支援 3 場，場次編號為 1 2 3。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "4\n1 3 2 4 3 5 5 7",
+          "output": "3\n1 3 4",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n1 10 10 20 20 30",
+          "output": "3\n1 2 3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n5 6 1 2 3 4 2 3 4 5",
+          "output": "5\n2 4 3 5 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n1 4 1 4 1 4 1 4",
+          "output": "1\n1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6\n1 9 2 3 3 4 4 8 8 9 9 10",
+          "output": "5\n2 3 4 5 6",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-48",
+      "year": "115",
+      "title": "宜蘭線列車里程",
+      "description": "【難度 ★★★★】\n\n問題描述\n台鐵宜蘭線有 N 個車站依序編號 1～N，相鄰兩站之間的距離已知。旅客會查詢任意兩站之間的距離。\n\n題目說明\n輸入 N-1 個相鄰站距離與 Q 筆查詢（每筆為兩個站號 a、b，a 可能大於 b），請輸出每筆查詢的距離。提示：先算出「從第 1 站到每一站的累積距離」，查詢時相減即可。",
+      "inputFormat": "第一行：整數 N，車站數（2 ≤ N ≤ 30）。\n第二行：N-1 個整數，第 i 個數代表第 i 站到第 i+1 站的距離。\n第三行：整數 Q，查詢筆數。\n第四行：2Q 個整數，每筆查詢的兩個站號。",
+      "outputFormat": "一行：Q 個整數，各查詢的距離，以空格隔開。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "48",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n3 4 2 6\n3\n1 3 2 5 4 4",
+          "output": "7 12 0",
+          "description": "用累積距離相減，各查詢的距離依序為 7 12 0。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n10 20\n2\n3 1 2 3",
+          "output": "30 20",
+          "description": "用累積距離相減，各查詢的距離依序為 30 20。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n3 4 2 6\n3\n1 3 2 5 4 4",
+          "output": "7 12 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n10 20\n2\n3 1 2 3",
+          "output": "30 20",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "6\n1 1 1 1 1\n1\n1 6",
+          "output": "5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n5 5 5\n4\n1 2 2 3 3 4 4 1",
+          "output": "5 5 5 15",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "7\n12 8 15 3 9 20\n3\n7 1 2 6 5 5",
+          "output": "67 35 0",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-49",
+      "year": "115",
+      "title": "龜山島登島名額",
+      "description": "【難度 ★★★★】\n\n問題描述\n龜山島每天限量開放 M 人登島。N 位民眾報名並附上環保積分，名額依積分由高到低發放；為了公平，積分相同的人要一起獲選或一起落選，不能只選其中一部分。\n\n題目說明\n從最高積分的一群開始，若整群加入後不超過 M 人就全部獲選，否則停止發放。請依報名順序輸出獲選者的報名編號；若沒有人獲選，輸出 0。",
+      "inputFormat": "第一行：整數 M，名額。\n第二行：整數 N，報名人數。\n第三行：N 個整數，各報名者的積分。",
+      "outputFormat": "一行：獲選者的報名編號（依報名順序），以空格隔開；或 0。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "49",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3\n6\n90 95 80 95 70 60",
+          "output": "1 2 4",
+          "description": "依積分由高到低整群發放名額 3 人，獲選編號為 1 2 4。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n5\n10 10 10 10 10",
+          "output": "0",
+          "description": "依積分由高到低整群發放名額 3 人，最高分那一群人數已超過名額，輸出 0。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3\n6\n90 95 80 95 70 60",
+          "output": "1 2 4",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n5\n10 10 10 10 10",
+          "output": "0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5\n5\n1 2 3 4 5",
+          "output": "1 2 3 4 5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n6\n50 50 50 40 40 40",
+          "output": "1 2 3",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "2\n4\n100 90 90 80",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "ilan-115-50",
+      "year": "115",
+      "title": "南方澳出海計畫",
+      "description": "【難度 ★★★★】\n\n問題描述\n南方澳的漁船今天加滿了 F 單位的油，附近有 N 個漁場，前往每個漁場要消耗一定的油，並可得到一定的漁獲量。每個漁場最多只去一次。\n\n題目說明\n請在油量足夠的前提下，選出漁場組合使漁獲總量最大，輸出最大漁獲量。",
+      "inputFormat": "第一行：整數 F，油量。\n第二行：整數 N，漁場數（1 ≤ N ≤ 10）。\n第三行：2N 個整數，依序為每個漁場的油耗、漁獲量。",
+      "outputFormat": "一行：一個整數，最大漁獲量。",
+      "difficulty": "hard",
+      "category": "115宜蘭縣國中",
+      "categories": [
+        "115宜蘭縣國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "宜蘭縣115題庫",
+      "sourceId": "50",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "100\n3\n20 50 40 60 30 70",
+          "output": "180",
+          "description": "枚舉所有漁場組合，油耗不超過 100 的組合中漁獲最大為 180。"
+        },
+        {
+          "title": "範例 2",
+          "input": "100\n2\n96 220 51 113",
+          "output": "220",
+          "description": "枚舉所有漁場組合，油耗不超過 100 的組合中漁獲最大為 220。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "100\n3\n20 50 40 60 30 70",
+          "output": "180",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "100\n2\n96 220 51 113",
+          "output": "220",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "10\n4\n5 10 5 10 5 10 5 10",
+          "output": "20",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "50\n5\n10 15 20 30 30 45 25 35 5 8",
+          "output": "75",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n3\n2 100 3 100 4 100",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    }
+  ]
+}

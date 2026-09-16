@@ -48,9 +48,15 @@ export async function handleImportContestAccounts(request: Request, ctx: Request
     where: [{ field: "contestId", op: "EQUAL", value: contestId }],
   });
   let sequence = existing.reduce((max, doc) => Math.max(max, parseSequence(doc.data.username)), 0);
+  // 學校序號：同一場、同一所學校內從 1 起算，分批匯入時接續。
+  const schoolCounters = new Map<string, number>();
+  for (const doc of existing) {
+    const key = schoolKey(doc.data.schoolId, doc.data.schoolName);
+    schoolCounters.set(key, Math.max(schoolCounters.get(key) ?? 0, Number(doc.data.schoolSeq ?? 0)));
+  }
 
   const batchId = `batch-${Date.now()}`;
-  const created: Array<{ username: string; password: string; name: string; schoolName: string; note: string }> = [];
+  const created: Array<{ username: string; password: string; name: string; schoolName: string; schoolSeq: number; note: string }> = [];
   const writes: Array<{ path: string; data: Record<string, unknown> }> = [];
   const passwordWrites: Array<Promise<void>> = [];
 
@@ -58,6 +64,9 @@ export async function handleImportContestAccounts(request: Request, ctx: Request
     sequence += 1;
     const username = `${division}-${String(sequence).padStart(3, "0")}`;
     const docId = accountDocId(contestId, username);
+    const key = schoolKey(row.schoolId, row.schoolName);
+    const schoolSeq = (schoolCounters.get(key) ?? 0) + 1;
+    schoolCounters.set(key, schoolSeq);
     const password = generatePassword(8);
     passwordWrites.push(hashPassword(password).then((hash) => ctx.env.PASSWORDS.put(`pw:${docId}`, hash)));
     writes.push({
@@ -68,6 +77,7 @@ export async function handleImportContestAccounts(request: Request, ctx: Request
         name: row.name,
         schoolId: row.schoolId,
         schoolName: row.schoolName,
+        schoolSeq,
         note: row.note,
         status: "active",
         uid: `contest_${contestId}_${username}`,
@@ -76,7 +86,7 @@ export async function handleImportContestAccounts(request: Request, ctx: Request
         createdBy: actor.uid,
       },
     });
-    created.push({ username, password, name: row.name, schoolName: row.schoolName, note: row.note });
+    created.push({ username, password, name: row.name, schoolName: row.schoolName, schoolSeq, note: row.note });
   }
 
   await Promise.all(passwordWrites);
@@ -147,6 +157,10 @@ function cleanRow(row: ImportRow) {
     schoolName: text(row.schoolName, 100),
     note: text(row.note, 200),
   };
+}
+
+function schoolKey(schoolId: string | undefined, schoolName: string | undefined) {
+  return schoolId || schoolName || "";
 }
 
 function parseSequence(username: string) {

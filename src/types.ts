@@ -212,6 +212,8 @@ export interface ContestAccount {
   name: string;
   schoolId: string;
   schoolName: string;
+  /** 同場、同校內的序號，從 1 起算。 */
+  schoolSeq?: number;
   note?: string;
   status: ContestAccountStatus;
   uid: string;

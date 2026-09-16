@@ -16,6 +16,7 @@ export interface IssuedContestAccount {
   password: string;
   name: string;
   schoolName: string;
+  schoolSeq?: number;
   note: string;
 }
 
@@ -75,6 +76,7 @@ function normalizeAccount(id: string, data: Record<string, unknown>): ContestAcc
     name: text(data.name),
     schoolId: text(data.schoolId),
     schoolName: text(data.schoolName),
+    schoolSeq: typeof data.schoolSeq === "number" ? data.schoolSeq : undefined,
     note: text(data.note),
     status: data.status === "disabled" ? "disabled" : "active",
     uid: text(data.uid),
