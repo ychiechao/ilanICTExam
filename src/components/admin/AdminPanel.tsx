@@ -153,6 +153,8 @@ export function AdminPanel({
   const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>(
     "platform",
   );
+  // 從賽事列表跳到「競賽帳號／競賽題庫」時要預選的賽事。
+  const [focusContestId, setFocusContestId] = useState("");
   const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<UserDirectoryRoleFilter>("all");
   const [userSchoolFilterId, setUserSchoolFilterId] = useState("all");
@@ -412,6 +414,34 @@ export function AdminPanel({
                               {transitions.next.label} →
                             </button>
                           )}
+                          {(contest.status === "draft" || contest.status === "roster" || contest.status === "waiting") && (
+                            <>
+                              <button
+                                className="ghost-button"
+                                type="button"
+                                disabled={adminBusy}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFocusContestId(contest.id);
+                                  setActiveAdminSection("contestAccounts");
+                                }}
+                              >
+                                匯入帳號（{contest.accountCount ?? 0}）
+                              </button>
+                              <button
+                                className="ghost-button"
+                                type="button"
+                                disabled={adminBusy}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFocusContestId(contest.id);
+                                  setActiveAdminSection("contestProblems");
+                                }}
+                              >
+                                匯入題庫（{contest.problemCount ?? 0}）
+                              </button>
+                            </>
+                          )}
                           {transitions.archive && (
                             <button
                               className="ghost-button"
@@ -473,6 +503,8 @@ export function AdminPanel({
 
           {superAdmin && activeAdminSection === "contestAccounts" && (
             <ContestAccountsSection
+              key={focusContestId}
+              initialContestId={focusContestId}
               contests={contests}
               schools={schools}
               busy={adminBusy}
@@ -483,6 +515,8 @@ export function AdminPanel({
 
           {superAdmin && activeAdminSection === "contestProblems" && (
             <ContestProblemsSection
+              key={focusContestId}
+              initialContestId={focusContestId}
               contests={contests}
               busy={adminBusy}
               onStatus={onStatusMessage}

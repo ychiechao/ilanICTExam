@@ -20,6 +20,8 @@ interface ContestAccountsSectionProps {
   busy: boolean;
   onStatus: (message: string) => void;
   onContestsChanged: () => void;
+  /** 從「賽事管理」點進來時預選的賽事。 */
+  initialContestId?: string;
 }
 
 interface PreviewRow extends ContestAccountImportRow {
@@ -30,9 +32,9 @@ interface PreviewRow extends ContestAccountImportRow {
 const SAMPLE_CSV = "學校,姓名\n大福國小,王小明\n大福國小,陳小華\n順安國小,林小三";
 
 /** 後台「競賽帳號」：每場賽事獨立匯入、發放帳號卡、重設密碼、停用（規格 8.2）。 */
-export function ContestAccountsSection({ contests, schools, busy, onStatus, onContestsChanged }: ContestAccountsSectionProps) {
+export function ContestAccountsSection({ contests, schools, busy, onStatus, onContestsChanged, initialContestId }: ContestAccountsSectionProps) {
   const candidateContests = contests.filter((contest) => contest.status !== "archived");
-  const [contestId, setContestId] = useState(candidateContests[0]?.id ?? "");
+  const [contestId, setContestId] = useState(initialContestId || candidateContests[0]?.id || "");
   const [csvText, setCsvText] = useState("");
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [accounts, setAccounts] = useState<ContestAccount[]>([]);

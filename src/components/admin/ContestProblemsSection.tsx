@@ -11,6 +11,8 @@ interface ContestProblemsSectionProps {
   busy: boolean;
   onStatus: (message: string) => void;
   onContestsChanged: () => void;
+  /** 從「賽事管理」點進來時預選的賽事。 */
+  initialContestId?: string;
 }
 
 interface PreviewState {
@@ -20,9 +22,9 @@ interface PreviewState {
 }
 
 /** 後台「競賽題庫」：每場賽事獨立匯入，測資只存 Worker KV（規格 8.6）。 */
-export function ContestProblemsSection({ contests, busy, onStatus, onContestsChanged }: ContestProblemsSectionProps) {
+export function ContestProblemsSection({ contests, busy, onStatus, onContestsChanged, initialContestId }: ContestProblemsSectionProps) {
   const candidateContests = contests.filter((contest) => contest.status !== "archived");
-  const [contestId, setContestId] = useState(candidateContests[0]?.id ?? "");
+  const [contestId, setContestId] = useState(initialContestId || candidateContests[0]?.id || "");
   const [problems, setProblems] = useState<ContestProblem[]>([]);
   const [loading, setLoading] = useState(false);
   const [working, setWorking] = useState(false);
