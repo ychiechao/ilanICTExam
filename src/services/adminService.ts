@@ -216,15 +216,7 @@ export async function deleteManagedUserProfile(target: ManagedUser) {
 
 async function cleanupManagedUserReferences(firestore: NonNullable<typeof db>, target: ManagedUser) {
   const now = new Date().toISOString();
-  const [schoolAccountSnapshot, rosterSnapshot, classMemberSnapshot, classSnapshot] = await Promise.all([
-    withRemoteTimeout(
-      getDocs(query(collection(firestore, "schoolAccounts"), where("uid", "==", target.uid))),
-      "Firestore 使用者學校帳號關聯讀取",
-    ),
-    withRemoteTimeout(
-      getDocs(query(collection(firestore, "contestRoster"), where("uid", "==", target.uid))),
-      "Firestore 使用者賽事名單關聯讀取",
-    ),
+  const [classMemberSnapshot, classSnapshot] = await Promise.all([
     withRemoteTimeout(
       getDocs(query(collection(firestore, "classMembers"), where("studentUid", "==", target.uid))),
       "Firestore 使用者班級成員關聯讀取",
@@ -236,12 +228,6 @@ async function cleanupManagedUserReferences(firestore: NonNullable<typeof db>, t
   ]);
 
   const mutations: Array<(batch: ReturnType<typeof writeBatch>) => void> = [
-    ...schoolAccountSnapshot.docs.map((item) => (batch: ReturnType<typeof writeBatch>) => {
-      batch.set(item.ref, { uid: "", updatedAt: now }, { merge: true });
-    }),
-    ...rosterSnapshot.docs.map((item) => (batch: ReturnType<typeof writeBatch>) => {
-      batch.set(item.ref, { uid: "", updatedAt: now }, { merge: true });
-    }),
     ...classMemberSnapshot.docs.map((item) => (batch: ReturnType<typeof writeBatch>) => {
       batch.set(item.ref, { status: "removed", updatedAt: now }, { merge: true });
     }),

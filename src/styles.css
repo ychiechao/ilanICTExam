@@ -1328,32 +1328,12 @@ pre {
 }
 
 .school-table-row,
-.roster-table-row,
-.school-account-table-row,
-.student-class-table-row,
-.class-member-table-row,
-.class-submission-table-row {
-  display: grid;
-  align-items: center;
-  gap: 10px;
-  min-width: 760px;
-  border-bottom: 1px solid #d9eef2;
-  padding: 9px 10px;
-}
 
 .school-table-row {
   grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.4fr) 90px 110px;
 }
 
-.roster-table-row {
-  grid-template-columns: 54px minmax(210px, 1.1fr) minmax(120px, 0.8fr) minmax(160px, 1fr) minmax(170px, 1fr) minmax(220px, 1.2fr);
-  min-width: 980px;
-}
 
-.school-account-table-row {
-  grid-template-columns: minmax(170px, 1fr) minmax(220px, 1.1fr) minmax(120px, 0.7fr) minmax(150px, 0.8fr) 90px 150px;
-  min-width: 980px;
-}
 
 .student-class-table-row {
   grid-template-columns: minmax(150px, 1fr) minmax(160px, 1fr) minmax(130px, 0.8fr) 150px 90px;
@@ -1407,22 +1387,7 @@ pre {
   gap: 10px;
 }
 
-.roster-import-grid {
-  display: grid;
-  grid-template-columns: minmax(240px, 0.8fr) minmax(360px, 1.4fr);
-  gap: 12px;
-}
 
-.school-account-form {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.8fr) minmax(240px, 1fr) minmax(160px, 0.8fr) auto;
-  align-items: end;
-  gap: 12px;
-  border: 1px solid #cfe9ef;
-  border-radius: 10px;
-  background: #f8feff;
-  padding: 12px;
-}
 
 .inline-admin-select {
   display: flex;
@@ -1442,14 +1407,7 @@ pre {
   padding: 9px 10px;
 }
 
-.roster-csv-field textarea {
-  min-height: 130px;
-}
 
-.roster-preview-table {
-  max-height: 360px;
-  overflow: auto;
-}
 
 .user-progress-detail {
   border-top: 1px solid #d9eef2;

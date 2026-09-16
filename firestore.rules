@@ -68,14 +68,6 @@ service cloud.firestore {
       return isTeacherAdmin() || isTeacherEmail();
     }
 
-    function isTeacherFor(schoolId) {
-      return isTeacherAdmin() &&
-        (
-          (adminData().keys().hasAny(["schoolIds"]) && schoolId in adminData().schoolIds) ||
-          (adminData().keys().hasAny(["schoolId"]) && adminData().schoolId == schoolId)
-        );
-    }
-
     function classData(classId) {
       return get(/databases/$(database)/documents/classes/$(classId)).data;
     }
@@ -197,21 +189,6 @@ service cloud.firestore {
     match /schools/{schoolId} {
       allow read: if signedIn();
       allow create, update, delete: if isSuperAdmin();
-    }
-
-    match /contestRoster/{entryId} {
-      allow read, create, update, delete: if isSuperAdmin();
-    }
-
-    match /schoolAccounts/{accountId} {
-      allow read: if isSuperAdmin() || isTeacherFor(resource.data.schoolId);
-      allow create: if isSuperAdmin() || isTeacherFor(request.resource.data.schoolId);
-      allow update: if isSuperAdmin() ||
-        (
-          isTeacherFor(resource.data.schoolId) &&
-          isTeacherFor(request.resource.data.schoolId)
-        );
-      allow delete: if isSuperAdmin();
     }
 
     match /classes/{classId} {

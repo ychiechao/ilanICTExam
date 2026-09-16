@@ -1,5 +1,5 @@
 import { inferUserRoleFromEmail } from "../services/accountService";
-import type { AdminProfile, ManagedUser, Problem, SchoolAccount, SubmissionRecord, UserRole } from "../types";
+import type { AdminProfile, ManagedUser, Problem, SubmissionRecord, UserRole } from "../types";
 import { formatManagedTimestamp, formatProblemStatusSummary } from "./format";
 import { getBetterSubmission, isFullScoreSubmission } from "./practice";
 
@@ -41,20 +41,11 @@ export function getManagedUserDirectoryRoleLabel(role: UserRole) {
   return "學生";
 }
 
-export function getManagedUserSchoolIds(
-  item: ManagedUser,
-  profile: AdminProfile | undefined,
-  schoolAccountsByUid: Map<string, SchoolAccount[]>,
-  schoolAccountsByEmail: Map<string, SchoolAccount[]>,
-) {
+export function getManagedUserSchoolIds(item: ManagedUser, profile: AdminProfile | undefined) {
   const schoolIds = new Set<string>();
   addSchoolId(schoolIds, item.schoolId);
   addSchoolId(schoolIds, profile?.schoolId);
   (profile?.schoolIds || []).forEach((schoolId) => addSchoolId(schoolIds, schoolId));
-  (schoolAccountsByUid.get(item.uid) || []).forEach((account) => addSchoolId(schoolIds, account.schoolId));
-  (schoolAccountsByEmail.get(normalizeEmailForLookup(item.email)) || []).forEach((account) =>
-    addSchoolId(schoolIds, account.schoolId),
-  );
   return Array.from(schoolIds);
 }
 

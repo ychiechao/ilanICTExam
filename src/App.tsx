@@ -1,6 +1,6 @@
 import { Download, LogIn, LogOut, Play, RefreshCw, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { APP_TITLE, defaultImportJson, defaultRosterCsv, tabs } from "./app/constants";
+import { APP_TITLE, defaultImportJson, tabs } from "./app/constants";
 import type { TabKey } from "./app/constants";
 import BlocklyWorkspace from "./components/BlocklyWorkspace";
 import { AdminPanel } from "./components/admin/AdminPanel";
@@ -26,10 +26,9 @@ import { gradeProblem, runCustomTest } from "./services/gradingEngine";
 import { loadGlobalLeaderboard, removeUserFromLeaderboards, updateGlobalLeaderboard } from "./services/leaderboardService";
 import { deleteProblemIfUnused, exportProblemsToCsv, getProblemCsvTemplate, importProblemsFromCsv, importProblemsFromJson, loadAllProblemsForAdmin, loadProblems, saveProblem } from "./services/problemStore";
 import type { ProblemImportMode } from "./services/problemStore";
-import { createSchoolAccount, createSchoolDraft, loadSchoolAccounts, loadSchools, loadSchoolsByIds, previewRosterImport, saveRosterEntries, saveSchool } from "./services/schoolStore";
-import type { RosterImportPreview } from "./services/schoolStore";
+import { createSchoolDraft, loadSchools, loadSchoolsByIds, saveSchool } from "./services/schoolStore";
 import { deleteSubmissionsForUser, loadAllSubmissions, loadSubmissions, loadUserSubmissions, saveSubmission } from "./services/submissionService";
-import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SchoolAccount, SubmissionRecord, WorkspaceMode } from "./types";
+import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SubmissionRecord, WorkspaceMode } from "./types";
 import { countSubmissionsByProblem } from "./utils/adminUsers";
 import { cloneContest, cloneProblem, cloneSchool, getContestStatusLabel, sanitizeContestDraft, sanitizeProblemDraft, sanitizeSchoolDraft } from "./utils/drafts";
 import { getFirebaseAdminErrorMessage, getLoginErrorMessage, getSchoolWriteErrorMessage, loadAdminDataset, runAdminMutationStep } from "./utils/errors";
@@ -64,13 +63,9 @@ export default function App() {
   const [adminProblems, setAdminProblems] = useState<Problem[]>([]);
   const [contests, setContests] = useState<ContestEvent[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
-  const [schoolAccounts, setSchoolAccounts] = useState<SchoolAccount[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [importJson, setImportJson] = useState(defaultImportJson);
   const [importCsv, setImportCsv] = useState(getProblemCsvTemplate());
-  const [rosterCsv, setRosterCsv] = useState(defaultRosterCsv);
-  const [rosterPreview, setRosterPreview] = useState<RosterImportPreview | null>(null);
-  const [rosterContestId, setRosterContestId] = useState("");
   const [problemImportMode, setProblemImportMode] = useState<ProblemImportMode>("append");
   const [editingProblemId, setEditingProblemId] = useState("");
   const [editingProblemDraft, setEditingProblemDraft] = useState<Problem | null>(null);
@@ -356,7 +351,6 @@ export default function App() {
         const nextAdminProblems = await loadAdminDataset("題目管理資料", loadAllProblemsForAdmin);
         const nextContests = await loadAdminDataset("賽事資料", loadContests);
         const nextSchools = await loadAdminDataset("學校資料", loadSchools);
-        const nextSchoolAccounts = await loadAdminDataset("學校帳號資料", loadSchoolAccounts);
         setManagedUsers(nextUsers);
         setAdminProfiles(nextAdminProfiles);
         setManagedAdminUids(new Set(nextAdminProfiles.map((item) => item.uid)));
@@ -364,15 +358,11 @@ export default function App() {
         setAdminProblems(nextAdminProblems);
         setContests(nextContests);
         setSchools(nextSchools);
-        setSchoolAccounts(nextSchoolAccounts);
         return;
       }
 
       const assignedSchoolIds = adminProfile?.role === "teacher" ? adminProfile.schoolIds || [] : [];
-      const [nextSchools, nextSchoolAccounts] = await Promise.all([
-        loadSchoolsByIds(assignedSchoolIds),
-        loadSchoolAccounts(assignedSchoolIds),
-      ]);
+      const nextSchools = await loadSchoolsByIds(assignedSchoolIds);
       setManagedUsers([]);
       setAdminProfiles(adminProfile ? [adminProfile] : []);
       setManagedAdminUids(adminProfile ? new Set([adminProfile.uid]) : new Set());
@@ -380,7 +370,6 @@ export default function App() {
       setAdminProblems([]);
       setContests([]);
       setSchools(nextSchools);
-      setSchoolAccounts(nextSchoolAccounts);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "後台資料讀取失敗。");
     } finally {
@@ -433,18 +422,6 @@ export default function App() {
       loadClassData();
     }
   }, [activeTab, loadClassData]);
-
-  useEffect(() => {
-    if (!superAdmin) {
-      setRosterContestId("");
-      setRosterPreview(null);
-      return;
-    }
-    if (contests.length > 0 && !contests.some((contest) => contest.id === rosterContestId)) {
-      setRosterContestId(contests[0].id);
-      setRosterPreview(null);
-    }
-  }, [contests, rosterContestId, superAdmin]);
 
   const refreshProblemLists = useCallback(
     async (preferredProblemId?: string) => {
@@ -930,61 +907,9 @@ export default function App() {
     try {
       const saved = await saveSchool(sanitizeSchoolDraft(school));
       await refreshSchoolList(saved.id);
-      setRosterPreview(null);
       setStatusMessage("學校網域已儲存。");
     } catch (error) {
       setStatusMessage(getSchoolWriteErrorMessage(error, "學校網域儲存失敗。"));
-    } finally {
-      setAdminBusy(false);
-    }
-  }
-
-  function handlePreviewRosterImport() {
-    if (!superAdmin) {
-      setStatusMessage("只有超級管理者可以預覽賽事名單。");
-      return;
-    }
-    if (!rosterContestId) {
-      setStatusMessage("請先選擇要匯入的賽事。");
-      return;
-    }
-    if (schools.length === 0) {
-      setStatusMessage("請先建立學校網域，系統才能用 Email 自動歸校。");
-      return;
-    }
-    const preview = previewRosterImport(rosterCsv, rosterContestId, schools);
-    setRosterPreview(preview);
-    setStatusMessage(
-      `名單預覽完成：可匯入 ${preview.validRows.length} 筆，需修正 ${preview.invalidRows.length} 筆。`,
-    );
-  }
-
-  async function handleSaveRosterImport() {
-    if (!superAdmin) {
-      setStatusMessage("只有超級管理者可以匯入賽事名單。");
-      return;
-    }
-    if (!rosterPreview || rosterPreview.validRows.length === 0) {
-      setStatusMessage("沒有可匯入的有效名單，請先預覽並修正錯誤。");
-      return;
-    }
-
-    setAdminBusy(true);
-    setStatusMessage("");
-    try {
-      const result = await saveRosterEntries(rosterPreview.contestId, rosterPreview.validRows);
-      const targetContest = contests.find((contest) => contest.id === rosterPreview.contestId);
-      if (targetContest) {
-        await saveContest({
-          ...targetContest,
-          participantCount: rosterPreview.validRows.length,
-          schoolCount: new Set(rosterPreview.validRows.map((row) => row.schoolId)).size,
-        });
-        await refreshContestList(targetContest.id);
-      }
-      setStatusMessage(`已匯入 ${result.importedCount} 筆賽事名單。`);
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "賽事名單匯入失敗。");
     } finally {
       setAdminBusy(false);
     }
@@ -1073,28 +998,6 @@ export default function App() {
       setStatusMessage(`已將 ${target.displayName || target.email || target.uid} 設為「${school.name}」教師。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "教師權限更新失敗。");
-    } finally {
-      setAdminBusy(false);
-    }
-  }
-
-  async function handleCreateSchoolAccount(schoolId: string, email: string, name: string) {
-    const school = schools.find((item) => item.id === schoolId);
-    if (!school) {
-      setStatusMessage("請先選擇要新增帳號的學校。");
-      return false;
-    }
-
-    setAdminBusy(true);
-    setStatusMessage("");
-    try {
-      await createSchoolAccount(school, email, name, user?.uid || adminProfile?.uid || "");
-      await loadAdminData();
-      setStatusMessage(`已新增 ${name.trim()} 的本校帳號。`);
-      return true;
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "本校帳號新增失敗。");
-      return false;
     } finally {
       setAdminBusy(false);
     }
@@ -1596,15 +1499,11 @@ export default function App() {
                 contests={contests}
                 currentUser={user}
                 schools={schools}
-                schoolAccounts={schoolAccounts}
                 problems={adminProblems.length > 0 ? adminProblems : problems}
                 users={managedUsers}
                 importJson={importJson}
                 importCsv={importCsv}
                 importMode={problemImportMode}
-                rosterCsv={rosterCsv}
-                rosterContestId={rosterContestId}
-                rosterPreview={rosterPreview}
                 editingProblemId={editingProblemId}
                 editingProblemDraft={editingProblemDraft}
                 editingContestId={editingContestId}
@@ -1615,14 +1514,6 @@ export default function App() {
                 onImportJsonChange={setImportJson}
                 onImportCsvChange={setImportCsv}
                 onImportModeChange={setProblemImportMode}
-                onRosterCsvChange={(value) => {
-                  setRosterCsv(value);
-                  setRosterPreview(null);
-                }}
-                onRosterContestChange={(value) => {
-                  setRosterContestId(value);
-                  setRosterPreview(null);
-                }}
                 onEditingProblemDraftChange={setEditingProblemDraft}
                 onInitializeAdmin={handleInitializeAdmin}
                 onCreateContest={handleCreateContestDraft}
@@ -1639,8 +1530,6 @@ export default function App() {
                 onSelectSchoolForEdit={handleSelectSchoolForEdit}
                 onEditingSchoolDraftChange={setEditingSchoolDraft}
                 onSaveEditedSchool={handleSaveEditedSchool}
-                onPreviewRosterImport={handlePreviewRosterImport}
-                onSaveRosterImport={handleSaveRosterImport}
                 onSelectProblemForEdit={handleSelectProblemForEdit}
                 onSaveEditedProblem={handleSaveEditedProblem}
                 onCancelProblemEdit={handleCancelProblemEdit}
@@ -1648,7 +1537,6 @@ export default function App() {
                 onRefreshAdminData={loadAdminData}
                 onSetUserAdmin={handleSetManagedUserAdmin}
                 onSetUserSchoolAdmin={handleSetManagedUserSchoolAdmin}
-                onCreateSchoolAccount={handleCreateSchoolAccount}
                 onSetUserDisabled={handleSetManagedUserDisabled}
                 onClearUserSubmissions={handleClearManagedUserSubmissions}
                 onDeleteUser={handleDeleteManagedUser}

@@ -16,8 +16,6 @@ export type UserRole = "super" | "teacher" | "student";
 export type AdminRole = "super" | "teacher";
 export type AccountStatus = "pending" | "active" | "disabled";
 export type SchoolSource = "self" | "admin";
-export type RosterEntryStatus = "active" | "disabled";
-export type SchoolAccountStatus = "active" | "disabled";
 export type ClassMemberStatus = "active" | "removed";
 
 export interface ExampleCase {
@@ -193,37 +191,6 @@ export interface School {
   enabled?: boolean;
   createdAt?: string;
   updatedAt?: string;
-}
-
-export interface ContestRosterEntry {
-  id: string;
-  contestId: string;
-  email: string;
-  normalizedEmail: string;
-  name: string;
-  schoolId: string;
-  schoolName: string;
-  domain: string;
-  status: RosterEntryStatus;
-  uid?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface SchoolAccount {
-  id: string;
-  schoolId: string;
-  schoolName: string;
-  email: string;
-  normalizedEmail: string;
-  name: string;
-  domain: string;
-  status: SchoolAccountStatus;
-  uid?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: string;
-  updatedBy?: string;
 }
 
 export interface LearningClass {

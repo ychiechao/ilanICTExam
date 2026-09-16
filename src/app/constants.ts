@@ -5,7 +5,7 @@ export const APP_TITLE = "宜蘭縣資訊科技創意實作競賽";
 
 export type TabKey = "statement" | "test" | "score" | "history" | "leaderboard" | "account" | "classes" | "admin";
 export type PracticeStatus = "completed" | "in-progress" | "not-started";
-export type AdminSectionKey = "platform" | "contests" | "schoolAccounts" | "problems" | "users" | "progress";
+export type AdminSectionKey = "platform" | "contests" | "problems" | "users" | "progress";
 export type UserDirectoryRoleFilter = "all" | "teacher" | "student";
 
 export interface PracticeStats {
@@ -74,6 +74,3 @@ export const defaultImportJson = JSON.stringify(
   2,
 );
 
-export const defaultRosterCsv = `email,name
-student001@school-domain.edu.tw,王小明
-student002@school-domain.edu.tw,陳小華`;

@@ -6,8 +6,7 @@ import type { AdminSectionKey, UserDirectoryRoleFilter } from "../../app/constan
 import { PlatformSection } from "./PlatformSection";
 import { getRoleLabel } from "../../services/accountService";
 import type { ProblemImportMode } from "../../services/problemStore";
-import type { RosterImportPreview } from "../../services/schoolStore";
-import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SchoolAccount, SubmissionRecord } from "../../types";
+import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SubmissionRecord } from "../../types";
 import { buildUserProgressRows, countSubmissionsByUser, getManagedUserDirectoryRole, getManagedUserDirectoryRoleLabel, getManagedUserSchoolIds, normalizeEmailForLookup } from "../../utils/adminUsers";
 import { getContestModeLabel, getContestStatusLabel, getNextContestStatus } from "../../utils/drafts";
 import { formatContestDateTime, formatManagedTimestamp } from "../../utils/format";
@@ -30,13 +29,9 @@ export function AdminPanel({
   contests,
   currentUser,
   schools,
-  schoolAccounts,
   importJson,
   importCsv,
   importMode,
-  rosterCsv,
-  rosterContestId,
-  rosterPreview,
   editingContestId,
   editingContestDraft,
   editingSchoolId,
@@ -54,8 +49,6 @@ export function AdminPanel({
   onImportCsvChange,
   onImportJsonChange,
   onImportModeChange,
-  onRosterCsvChange,
-  onRosterContestChange,
   onEditingContestDraftChange,
   onEditingSchoolDraftChange,
   onEditingProblemDraftChange,
@@ -70,8 +63,6 @@ export function AdminPanel({
   onCreateSchool,
   onSelectSchoolForEdit,
   onSaveEditedSchool,
-  onPreviewRosterImport,
-  onSaveRosterImport,
   onSelectProblemForEdit,
   onSaveEditedProblem,
   onCancelProblemEdit,
@@ -79,7 +70,6 @@ export function AdminPanel({
   onRefreshAdminData,
   onSetUserAdmin,
   onSetUserSchoolAdmin,
-  onCreateSchoolAccount,
   onSetUserDisabled,
   onClearUserSubmissions,
   onDeleteUser,
@@ -96,13 +86,9 @@ export function AdminPanel({
   contests: ContestEvent[];
   currentUser: AppUser | null;
   schools: School[];
-  schoolAccounts: SchoolAccount[];
   importJson: string;
   importCsv: string;
   importMode: ProblemImportMode;
-  rosterCsv: string;
-  rosterContestId: string;
-  rosterPreview: RosterImportPreview | null;
   editingContestId: string;
   editingContestDraft: ContestEvent | null;
   editingSchoolId: string;
@@ -120,8 +106,6 @@ export function AdminPanel({
   onImportCsvChange: (value: string) => void;
   onImportJsonChange: (value: string) => void;
   onImportModeChange: (value: ProblemImportMode) => void;
-  onRosterCsvChange: (value: string) => void;
-  onRosterContestChange: (value: string) => void;
   onEditingContestDraftChange: (value: ContestEvent | null) => void;
   onEditingSchoolDraftChange: (value: School | null) => void;
   onEditingProblemDraftChange: (value: Problem | null) => void;
@@ -136,8 +120,6 @@ export function AdminPanel({
   onCreateSchool: () => void;
   onSelectSchoolForEdit: (schoolId: string) => void;
   onSaveEditedSchool: (school: School) => void;
-  onPreviewRosterImport: () => void;
-  onSaveRosterImport: () => void;
   onSelectProblemForEdit: (problemId: string) => void;
   onSaveEditedProblem: (problem: Problem) => void;
   onCancelProblemEdit: () => void;
@@ -145,7 +127,6 @@ export function AdminPanel({
   onRefreshAdminData: () => void;
   onSetUserAdmin: (user: ManagedUser, makeAdmin: boolean) => void;
   onSetUserSchoolAdmin: (user: ManagedUser, schoolId: string) => void;
-  onCreateSchoolAccount: (schoolId: string, email: string, name: string) => Promise<boolean> | boolean;
   onSetUserDisabled: (user: ManagedUser, disabled: boolean) => void;
   onClearUserSubmissions: (user: ManagedUser) => void;
   onDeleteUser: (user: ManagedUser) => void;
@@ -165,12 +146,9 @@ export function AdminPanel({
     [schools],
   );
   const [activeAdminSection, setActiveAdminSection] = useState<AdminSectionKey>(
-    superAdmin ? "contests" : "schoolAccounts",
+    "platform",
   );
   const [schoolAdminSchoolId, setSchoolAdminSchoolId] = useState("");
-  const [schoolAccountSchoolId, setSchoolAccountSchoolId] = useState("");
-  const [schoolAccountEmail, setSchoolAccountEmail] = useState("");
-  const [schoolAccountName, setSchoolAccountName] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<UserDirectoryRoleFilter>("all");
   const [userSchoolFilterId, setUserSchoolFilterId] = useState("all");
   const [expandedProgressUserId, setExpandedProgressUserId] = useState("");
@@ -178,42 +156,13 @@ export function AdminPanel({
     ? [
         { key: "platform", label: "平台狀態" },
         { key: "contests", label: "賽事管理" },
-        { key: "schoolAccounts", label: "學校帳號" },
         { key: "problems", label: "題目管理" },
         { key: "users", label: "使用者管理" },
         { key: "progress", label: "使用者解題資料" },
       ]
-    : [
-        { key: "schoolAccounts", label: "本校帳號" },
-      ];
+    : [];
   const openContestCount = contests.filter((contest) => contest.status !== "archived").length;
-  const selectedSchoolAccountSchoolId = schoolAccountSchoolId || assignableSchools[0]?.id || "";
-  const visibleSchoolAccounts =
-    selectedSchoolAccountSchoolId
-      ? schoolAccounts.filter((account) => account.schoolId === selectedSchoolAccountSchoolId)
-      : schoolAccounts;
   const adminRoleLabel = superAdmin ? "超級管理者" : adminProfile?.role === "teacher" ? "教師" : "管理者";
-  const schoolAccountsByUid = useMemo(() => {
-    const grouped = new Map<string, SchoolAccount[]>();
-    for (const account of schoolAccounts) {
-      if (!account.uid) {
-        continue;
-      }
-      grouped.set(account.uid, [...(grouped.get(account.uid) || []), account]);
-    }
-    return grouped;
-  }, [schoolAccounts]);
-  const schoolAccountsByEmail = useMemo(() => {
-    const grouped = new Map<string, SchoolAccount[]>();
-    for (const account of schoolAccounts) {
-      const email = normalizeEmailForLookup(account.normalizedEmail || account.email);
-      if (!email) {
-        continue;
-      }
-      grouped.set(email, [...(grouped.get(email) || []), account]);
-    }
-    return grouped;
-  }, [schoolAccounts]);
   const userDirectoryRows = useMemo(
     () =>
       users.map((item) => {
@@ -222,8 +171,6 @@ export function AdminPanel({
         const schoolIds = getManagedUserSchoolIds(
           item,
           profile,
-          schoolAccountsByUid,
-          schoolAccountsByEmail,
         );
         const schoolNames = schoolIds
           .map((schoolId) => schoolNameById.get(schoolId) || schoolId)
@@ -241,7 +188,7 @@ export function AdminPanel({
           schoolLabel,
         };
       }),
-    [adminProfileByUid, schoolAccountsByEmail, schoolAccountsByUid, schoolNameById, users],
+    [adminProfileByUid, schoolNameById, users],
   );
   const visibleUserDirectoryRows = useMemo(
     () =>
@@ -260,27 +207,23 @@ export function AdminPanel({
   useEffect(() => {
     const allowedSectionKeys = new Set(adminSections.map((section) => section.key));
     if (!allowedSectionKeys.has(activeAdminSection)) {
-      setActiveAdminSection(adminSections[0]?.key || "schoolAccounts");
+      setActiveAdminSection(adminSections[0]?.key || "platform");
     }
   }, [activeAdminSection, adminSections]);
 
   useEffect(() => {
     if (assignableSchools.length === 0) {
       setSchoolAdminSchoolId("");
-      setSchoolAccountSchoolId("");
       setUserSchoolFilterId("all");
       return;
     }
     if (!assignableSchools.some((school) => school.id === schoolAdminSchoolId)) {
       setSchoolAdminSchoolId(assignableSchools[0].id);
     }
-    if (!assignableSchools.some((school) => school.id === schoolAccountSchoolId)) {
-      setSchoolAccountSchoolId(assignableSchools[0].id);
-    }
     if (userSchoolFilterId !== "all" && !assignableSchools.some((school) => school.id === userSchoolFilterId)) {
       setUserSchoolFilterId("all");
     }
-  }, [assignableSchools, schoolAccountSchoolId, schoolAdminSchoolId, userSchoolFilterId]);
+  }, [assignableSchools, schoolAdminSchoolId, userSchoolFilterId]);
 
   const getAdminRoleLabel = (item: ManagedUser) => {
     const profile = adminProfileByUid.get(item.uid);
@@ -527,187 +470,6 @@ export function AdminPanel({
                 </div>
               </section>
 
-              <section className="admin-subsection">
-                <div className="section-title-row">
-                  <div>
-                    <h3>賽事名單匯入</h3>
-                    <p>CSV 只需要兩欄：email,name。此區暫保留舊版預覽流程，後續賽事名單會調整為「先選學校，再匯入 email,name」。</p>
-                  </div>
-                  {rosterPreview && (
-                    <span className="section-pill">
-                      可匯入 {rosterPreview.validRows.length} 筆／需修正 {rosterPreview.invalidRows.length} 筆
-                    </span>
-                  )}
-                </div>
-                <div className="roster-import-grid">
-                  <label className="admin-field">
-                    匯入賽事
-                    <select value={rosterContestId} onChange={(event) => onRosterContestChange(event.target.value)}>
-                      <option value="">請選擇賽事</option>
-                      {contests.map((contest) => (
-                        <option key={contest.id} value={contest.id}>
-                          {contest.year}｜{contest.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="admin-field roster-csv-field">
-                    CSV 名單資料
-                    <textarea
-                      className="json-input compact"
-                      value={rosterCsv}
-                      onChange={(event) => onRosterCsvChange(event.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="problem-form-actions">
-                  <button className="ghost-button" type="button" onClick={onPreviewRosterImport} disabled={adminBusy}>
-                    預覽檢查
-                  </button>
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={onSaveRosterImport}
-                    disabled={adminBusy || !rosterPreview || rosterPreview.validRows.length === 0}
-                  >
-                    匯入有效名單
-                  </button>
-                </div>
-                {rosterPreview && (
-                  <div className="admin-table roster-preview-table">
-                    <div className="admin-table-head roster-table-row">
-                      <span>列</span>
-                      <span>Email</span>
-                      <span>姓名</span>
-                      <span>學校</span>
-                      <span>網域</span>
-                      <span>檢查結果</span>
-                    </div>
-                    {rosterPreview.rows.map((row) => (
-                      <div className="roster-table-row" key={`${row.rowNumber}-${row.email}`}>
-                        <span>{row.rowNumber}</span>
-                        <span>{row.email || "-"}</span>
-                        <span>{row.name || "-"}</span>
-                        <span>{row.schoolName || "-"}</span>
-                        <span>{row.domain || "-"}</span>
-                        <span className={row.valid ? "ok-text" : "danger-text"}>
-                          {row.valid ? "可匯入" : row.errors.join("、")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </section>
-          )}
-
-          {activeAdminSection === "schoolAccounts" && (
-            <section className="admin-section">
-              <div className="section-title-row">
-                <div>
-                  <h3>{superAdmin ? "學校帳號管理" : "本校帳號管理"}</h3>
-                  <p>
-                    {superAdmin
-                      ? "可檢視並新增各校一般使用者帳號；這份名冊與年度賽事名單分開，方便未來再調整教師權限。"
-                      : "教師只能新增與查看被指派學校的帳號，暫不開放賽事資料與全站答題資料。"}
-                  </p>
-                </div>
-                <button className="ghost-button" onClick={onRefreshAdminData} disabled={adminDataBusy}>
-                  重新整理
-                </button>
-              </div>
-
-              {assignableSchools.length === 0 ? (
-                <p className="warning-text">
-                  {superAdmin ? "尚未建立學校資料，請先到賽事管理新增學校網域。" : "尚未指派可管理的學校，請聯絡超級管理者。"}
-                </p>
-              ) : (
-                <>
-                  <div className="school-account-form">
-                    <label className="problem-form-field">
-                      學校
-                      <select
-                        value={selectedSchoolAccountSchoolId}
-                        onChange={(event) => setSchoolAccountSchoolId(event.target.value)}
-                        disabled={!superAdmin && assignableSchools.length <= 1}
-                      >
-                        {assignableSchools.map((school) => (
-                          <option key={school.id} value={school.id}>
-                            {school.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="problem-form-field">
-                      學生 Email
-                      <input
-                        type="email"
-                        value={schoolAccountEmail}
-                        placeholder="student@example.edu.tw"
-                        onChange={(event) => setSchoolAccountEmail(event.target.value)}
-                      />
-                    </label>
-                    <label className="problem-form-field">
-                      姓名
-                      <input
-                        value={schoolAccountName}
-                        placeholder="王小明"
-                        onChange={(event) => setSchoolAccountName(event.target.value)}
-                      />
-                    </label>
-                    <button
-                      className="primary-button"
-                      type="button"
-                      disabled={adminBusy || !selectedSchoolAccountSchoolId}
-                      onClick={async () => {
-                        const created = await onCreateSchoolAccount(
-                          selectedSchoolAccountSchoolId,
-                          schoolAccountEmail,
-                          schoolAccountName,
-                        );
-                        if (created) {
-                          setSchoolAccountEmail("");
-                          setSchoolAccountName("");
-                        }
-                      }}
-                    >
-                      新增本校帳號
-                    </button>
-                  </div>
-
-                  <div className="metric-row">
-                    <Metric label="可管理學校" value={`${assignableSchools.length} 校`} />
-                    <Metric label="目前顯示帳號" value={`${visibleSchoolAccounts.length} 筆`} />
-                    <Metric label="全部學校帳號" value={`${schoolAccounts.length} 筆`} />
-                  </div>
-
-                  <div className="admin-table">
-                    <div className="admin-table-head school-account-table-row">
-                      <span>學校</span>
-                      <span>Email</span>
-                      <span>姓名</span>
-                      <span>網域</span>
-                      <span>狀態</span>
-                      <span>建立時間</span>
-                    </div>
-                    {visibleSchoolAccounts.length === 0 && (
-                      <p className="muted table-empty">目前尚無本校帳號。</p>
-                    )}
-                    {visibleSchoolAccounts.map((account) => (
-                      <div className="school-account-table-row" key={account.id}>
-                        <span>{account.schoolName || schoolNameById.get(account.schoolId) || "-"}</span>
-                        <span>{account.email}</span>
-                        <span>{account.name}</span>
-                        <span>{account.domain || "-"}</span>
-                        <span className={account.status === "disabled" ? "status-pill disabled" : "status-pill"}>
-                          {account.status === "disabled" ? "停用" : "啟用"}
-                        </span>
-                        <span>{formatContestDateTime(account.createdAt)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
             </section>
           )}
 
