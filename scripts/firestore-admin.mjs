@@ -1,6 +1,7 @@
 // 開發用：以服務帳號直接讀寫 Firestore（REST），供本機測試種資料與還原。
 // 用法：
 //   node scripts/firestore-admin.mjs set settings/platform '{"mode":"practice","activeContestIds":[],"announcement":""}'
+//   node scripts/firestore-admin.mjs merge contests/x '{"status":"active"}'   # 只改指定欄位
 //   node scripts/firestore-admin.mjs get settings/platform
 //   node scripts/firestore-admin.mjs delete contests/test-e
 //   node scripts/firestore-admin.mjs hash <password>        # 產生競賽帳號密碼雜湊（PBKDF2）
@@ -27,9 +28,11 @@ const token = await getAccessToken(sa);
 if (command === "get") {
   const res = await fetch(`${base}/${path}`, { headers: { Authorization: `Bearer ${token}` } });
   console.log(res.status, JSON.stringify(decode(await res.json()), null, 2));
-} else if (command === "set") {
+} else if (command === "set" || command === "merge") {
+  // set = 整份取代；merge = 只更新給定欄位（updateMask）
   const data = JSON.parse(payload);
-  const res = await fetch(`${base}/${path}`, {
+  const mask = command === "merge" ? "?" + Object.keys(data).map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join("&") : "";
+  const res = await fetch(`${base}/${path}${mask}`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ fields: encodeFields(data) }),

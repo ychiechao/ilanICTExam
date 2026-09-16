@@ -2317,3 +2317,16 @@ pre {
 .contest-problem-row.invalid {
   background: #fff6f4;
 }
+
+.announcement-main.hidden-stage {
+  display: none;
+}
+
+.contest-shell .workspace-layout {
+  flex: 1;
+}
+
+.case-row.failed {
+  border-color: #f0b8ad;
+  background: #fff6f4;
+}

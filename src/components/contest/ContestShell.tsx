@@ -8,6 +8,7 @@ import { formatCountdown, useServerNow } from "../../services/serverClock";
 import type { AppUser, PlatformState } from "../../types";
 import { formatContestDateTime } from "../../utils/format";
 import { GuishanIslandIcon } from "../ui";
+import { ContestPanel } from "./ContestPanel";
 
 interface ContestShellProps {
   platform: PlatformState;
@@ -21,6 +22,7 @@ interface LiveContest {
   startAt?: string;
   endAt?: string;
   pausedAt?: string;
+  maxSubmissionsPerProblem: number;
 }
 
 /**
@@ -45,6 +47,7 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
               startAt: typeof data.startAt === "string" ? data.startAt : undefined,
               endAt: typeof data.endAt === "string" ? data.endAt : undefined,
               pausedAt: typeof data.pausedAt === "string" ? data.pausedAt : undefined,
+              maxSubmissionsPerProblem: typeof data.maxSubmissionsPerProblem === "number" && data.maxSubmissionsPerProblem > 0 ? data.maxSubmissionsPerProblem : 10,
             }
           : null,
       );
@@ -85,7 +88,9 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
 
       {platform.announcement && <div className="platform-banner">{platform.announcement}</div>}
 
-      <main className="announcement-main">
+      {phase === "running" && <ContestPanel user={user} maxSubmissions={contest?.maxSubmissionsPerProblem ?? 10} />}
+
+      <main className={phase === "running" ? "announcement-main hidden-stage" : "announcement-main"}>
         {phase === "waiting" && (
           <section className="announcement-card contest-stage">
             <span className="status-pill">等待開始</span>
@@ -96,16 +101,6 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
                 預定開始：{formatContestDateTime(contest.startAt)}（還有 {formatCountdown(untilStartMs)}）
               </p>
             )}
-          </section>
-        )}
-
-        {phase === "running" && (
-          <section className="announcement-card contest-stage">
-            <span className="status-pill">比賽進行中</span>
-            <div className="contest-countdown" aria-live="off">
-              {formatCountdown(remainingMs)}
-            </div>
-            <p className="muted">結束時間 {formatContestDateTime(contest?.endAt)}。作答區將在題庫開放後顯示於此。</p>
           </section>
         )}
 
