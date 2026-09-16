@@ -1,5 +1,5 @@
 import { Upload } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { contestStatusFlow, tabs } from "../../app/constants";
 import type { AdminSectionKey, UserDirectoryRoleFilter } from "../../app/constants";
@@ -205,6 +205,15 @@ export function AdminPanel({
   const visibleTeacherCount = visibleUserDirectoryRows.filter((row) => row.role === "teacher").length;
   const visibleStudentCount = visibleUserDirectoryRows.filter((row) => row.role === "student").length;
   const visibleNoSchoolCount = visibleUserDirectoryRows.filter((row) => row.schoolIds.length === 0).length;
+
+  // 進入使用者管理時若名單是空的（首次載入偶爾沒跟上），自動重新讀取一次。
+  const autoRefreshedRef = useRef(false);
+  useEffect(() => {
+    if (activeAdminSection === "users" && users.length === 0 && !adminDataBusy && !autoRefreshedRef.current) {
+      autoRefreshedRef.current = true;
+      onRefreshAdminData();
+    }
+  }, [activeAdminSection, adminDataBusy, onRefreshAdminData, users.length]);
 
   useEffect(() => {
     const allowedSectionKeys = new Set(adminSections.map((section) => section.key));

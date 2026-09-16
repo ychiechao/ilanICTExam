@@ -597,7 +597,12 @@ export default function App() {
       setSubmissions((current) => mergeSubmissionRecord(current, record));
       setPracticeSubmissions(nextPracticeSubmissions);
       if (user) {
-        setLeaderboard(await updateGlobalLeaderboard(user, problems, nextPracticeSubmissions));
+        setLeaderboard(
+          await updateGlobalLeaderboard(user, problems, nextPracticeSubmissions, {
+            id: accountProfile?.schoolId,
+            name: accountProfile?.schoolName,
+          }),
+        );
       }
       setStatusMessage(
         user ? "已完成評分並寫入紀錄。" : "訪客評分已保存於本機，登入後可寫入排行榜。",

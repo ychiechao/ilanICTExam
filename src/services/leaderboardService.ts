@@ -92,6 +92,7 @@ export async function updateGlobalLeaderboard(
   user: AppUser,
   problems: Problem[],
   submissions: SubmissionRecord[],
+  school?: { id?: string; name?: string },
 ) {
   const publishedProblems = problems.filter((problem) => problem.status === "published");
   const current = await loadGlobalLeaderboard();
@@ -124,6 +125,8 @@ export async function updateGlobalLeaderboard(
   const nextEntry: LeaderboardEntry = {
     uid: user.uid,
     displayName: user.displayName,
+    ...(school?.id ? { schoolId: school.id } : {}),
+    ...(school?.name ? { schoolName: school.name } : {}),
     score: totalScore,
     maxScore: totalMaxScore,
     passRate,

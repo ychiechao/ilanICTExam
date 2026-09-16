@@ -100,6 +100,8 @@ export interface SubmissionRecord extends GradeResult {
 export interface LeaderboardEntry {
   uid: string;
   displayName: string;
+  schoolId?: string;
+  schoolName?: string;
   score: number;
   maxScore: number;
   passRate: number;
