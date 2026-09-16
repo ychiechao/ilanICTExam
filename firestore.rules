@@ -177,6 +177,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // 過渡期：正式站仍是 v2.0，刪除使用者時會查這兩個舊集合；升級後移除。
+    match /contestRoster/{entryId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /schoolAccounts/{accountId} {
+      allow read, write: if isSuperAdmin();
+    }
+
     match /problems/{problemId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (true));
       allow create, update, delete: if isSuperAdmin();
