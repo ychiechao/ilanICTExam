@@ -6,12 +6,14 @@ export function ScorePanel({
   result,
   busy,
   user,
+  recordingEnabled,
   submissions,
   onGrade,
 }: {
   result: GradeResult | null;
   busy: boolean;
   user: AppUser | null;
+  recordingEnabled: boolean;
   submissions: SubmissionRecord[];
   onGrade: () => void;
 }) {
@@ -25,6 +27,9 @@ export function ScorePanel({
         <span>{submissions.length}/{MAX_SUBMISSIONS_PER_PROBLEM} 次</span>
       </div>
       {!user && <p className="warning-text">訪客可計分，但只保存於本機；登入後才會寫入排行榜。</p>}
+      {user && !recordingEnabled && (
+        <p className="warning-text">尚未設定學校：可以線上測驗與評分，但成績不會記錄、也不會進入排行榜。請先到「我的帳號」設定學校或加入班級。</p>
+      )}
       <button className="primary-button wide" onClick={onGrade} disabled={busy}>
         <Save size={17} />
         正式計分

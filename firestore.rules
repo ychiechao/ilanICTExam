@@ -37,6 +37,13 @@ service cloud.firestore {
       return isContestAccount() && request.auth.token.get("contestId", "") == contestId;
     }
 
+    // 未設定學校者只能線上測驗，不記錄成績（提交、統計、排行榜一律拒絕寫入）。
+    function hasSchool() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("schoolId", "") != "";
+    }
+
     // 練習資料只在練習模式對教師與學生開放；競賽帳號永遠不能碰練習資料。
     function practiceOpen() {
       return platformMode() == "practice" && !isContestAccount();
@@ -245,7 +252,7 @@ service cloud.firestore {
     match /submissions/{submissionId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (signedIn() && resource.data.uid == request.auth.uid)));
-      allow create: if isSuperAdmin() || (practiceOpen() && (accountEnabled() &&
+      allow create: if isSuperAdmin() || (practiceOpen() && hasSchool() && (accountEnabled() &&
         request.resource.data.uid == request.auth.uid));
       allow update, delete: if isSuperAdmin();
     }
@@ -253,14 +260,14 @@ service cloud.firestore {
     match /userProblemStats/{statId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (signedIn() && resource.data.uid == request.auth.uid)));
-      allow create, update: if isSuperAdmin() || (practiceOpen() && (accountEnabled() &&
+      allow create, update: if isSuperAdmin() || (practiceOpen() && hasSchool() && (accountEnabled() &&
         request.resource.data.uid == request.auth.uid));
       allow delete: if isSuperAdmin();
     }
 
     match /leaderboards/{problemId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (true));
-      allow create, update: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() || accountEnabled()));
+      allow create, update: if isSuperAdmin() || (practiceOpen() && hasSchool() && (isSuperAdmin() || accountEnabled()));
       allow delete: if isSuperAdmin();
     }
   }

@@ -150,6 +150,15 @@ export default function App() {
     () => getEffectiveRole(user, accountProfile, adminProfile),
     [accountProfile, adminProfile, user],
   );
+  // 未設定學校的學生或教師只能線上測驗，成績不記錄（規格 5.1 補充）。
+  const hasSchool = Boolean(
+    superAdmin ||
+      accountProfile?.schoolId ||
+      adminProfile?.schoolId ||
+      (adminProfile?.schoolIds?.length ?? 0) > 0,
+  );
+  const scoreRecordingEnabled = Boolean(user) && hasSchool;
+
   const managementMaximized =
     (activeTab === "admin" && admin) ||
     (activeTab === "classes" && effectiveRole === "teacher");
@@ -570,6 +579,10 @@ export default function App() {
     try {
       const result = await gradeProblem(selectedProblem, generatedCode);
       setGradeResult(result);
+      if (user && !hasSchool) {
+        setStatusMessage("已完成評分。尚未設定學校，本次成績不會記錄；請先到「我的帳號」設定學校或加入班級。");
+        return;
+      }
       const solveStartedAt = getSolveStartedAt(selectedProblem.id);
       const record = await saveSubmission(
         user,
@@ -1473,6 +1486,7 @@ export default function App() {
                 result={gradeResult}
                 busy={busy}
                 user={user}
+                recordingEnabled={scoreRecordingEnabled}
                 onGrade={handleGrade}
                 submissions={submissions}
               />
