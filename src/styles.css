@@ -1328,9 +1328,34 @@ pre {
 }
 
 .school-table-row,
+.student-class-table-row,
+.class-member-table-row,
+.class-submission-table-row,
+.class-progress-row {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  min-width: 760px;
+  border-bottom: 1px solid #d9eef2;
+  padding: 9px 10px;
+}
 
 .school-table-row {
   grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.4fr) 90px 110px;
+}
+
+.class-progress-row {
+  grid-template-columns: minmax(120px, 0.9fr) minmax(200px, 1.3fr) 90px 80px 70px 150px minmax(200px, 1.6fr);
+  min-width: 980px;
+}
+
+.class-progress-row.clickable {
+  cursor: pointer;
+}
+
+.class-progress-row.clickable:hover,
+.class-progress-row.clickable.active {
+  background: #eef7f9;
 }
 
 

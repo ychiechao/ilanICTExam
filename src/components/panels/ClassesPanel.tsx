@@ -319,10 +319,9 @@ export function ClassesPanel({
             </div>
 
             <div className="admin-table">
-              <div className="admin-table-head progress-table-row">
+              <div className="admin-table-head class-progress-row">
                 <span>學生</span>
                 <span>{selectedClassId === ALL_CLASSES ? "班級" : "Email"}</span>
-                <span>最近作答</span>
                 <span>完成題數</span>
                 <span>答題率</span>
                 <span>提交</span>
@@ -335,7 +334,7 @@ export function ClassesPanel({
                 return (
                   <div className="progress-table-item" key={row.studentUid}>
                     <div
-                      className={expanded ? "progress-table-row clickable active" : "progress-table-row clickable"}
+                      className={expanded ? "class-progress-row clickable active" : "class-progress-row clickable"}
                       role="button"
                       tabIndex={0}
                       onClick={() => setSelectedStudentUid(expanded ? "" : row.studentUid)}
@@ -348,7 +347,6 @@ export function ClassesPanel({
                     >
                       <span>{row.studentName}</span>
                       <span>{selectedClassId === ALL_CLASSES ? row.classNames.join("、") : row.studentEmail || "-"}</span>
-                      <span>{row.lastSubmittedAt ? formatContestDateTime(row.lastSubmittedAt) : "-"}</span>
                       <span>
                         {row.completedCount}/{problems.length}
                       </span>
