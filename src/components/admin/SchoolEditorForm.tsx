@@ -42,7 +42,7 @@ export function SchoolEditorForm({
         </label>
       </div>
       <label className="problem-form-field">
-        Email 網域/備註（選填；目前不再用來判斷學校）
+        備註（選填，例如 Email 網域）
         <textarea
           value={school.domains.join("\n")}
           onChange={(event) => updateSchool("domains", parseDomainText(event.target.value))}

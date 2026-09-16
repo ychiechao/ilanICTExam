@@ -158,6 +158,7 @@ export function AdminPanel({
     ? [
         { key: "platform", label: "平台狀態" },
         { key: "contests", label: "賽事管理" },
+        { key: "schools", label: "學校管理" },
         { key: "problems", label: "題目管理" },
         { key: "users", label: "使用者管理" },
         { key: "progress", label: "使用者解題資料" },
@@ -416,71 +417,74 @@ export function AdminPanel({
                 })}
               </div>
 
-              <section className="admin-subsection">
-                <div className="section-title-row">
-                  <div>
-                    <h3>學校設定</h3>
-                    <p>建立可供教師選擇的學校清單；Email 網域欄位暫保留為選填備註，不再作為學校判斷核心。</p>
-                  </div>
-                  <button className="primary-button" type="button" onClick={onCreateSchool} disabled={adminBusy}>
-                    新增學校
-                  </button>
+
+            </section>
+          )}
+
+          {superAdmin && activeAdminSection === "schools" && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>學校管理</h3>
+                  <p>建立學校清單，供教師任教學校、學生所屬學校與班級使用。按「新增學校」輸入名稱即可，Email 網域為選填備註。</p>
                 </div>
-                <div className="admin-table">
-                  <div className="admin-table-head school-table-row">
-                    <span>學校</span>
-                    <span>Email 網域/備註</span>
-                    <span>狀態</span>
-                    <span>操作</span>
-                  </div>
-                  {schools.length === 0 && <p className="muted table-empty">尚未建立學校資料。請先新增學校。</p>}
-                  {schools.map((school) => {
-                    const expanded = editingSchoolId === school.id;
-                    return (
-                      <div className="school-table-item" key={school.id}>
-                        <div
-                          className={expanded ? "school-table-row clickable active" : "school-table-row clickable"}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => onSelectSchoolForEdit(school.id)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              onSelectSchoolForEdit(school.id);
-                            }
+                <button className="primary-button" type="button" onClick={onCreateSchool} disabled={adminBusy}>
+                  新增學校
+                </button>
+              </div>
+              <div className="admin-table">
+                <div className="admin-table-head school-table-row">
+                  <span>學校</span>
+                  <span>Email 網域/備註</span>
+                  <span>狀態</span>
+                  <span>操作</span>
+                </div>
+                {schools.length === 0 && <p className="muted table-empty">尚未建立學校資料。請先新增學校。</p>}
+                {schools.map((school) => {
+                  const expanded = editingSchoolId === school.id;
+                  return (
+                    <div className="school-table-item" key={school.id}>
+                      <div
+                        className={expanded ? "school-table-row clickable active" : "school-table-row clickable"}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onSelectSchoolForEdit(school.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onSelectSchoolForEdit(school.id);
+                          }
+                        }}
+                      >
+                        <span>{school.name}</span>
+                        <span>{school.domains.join("、") || "-"}</span>
+                        <span className={school.enabled === false ? "status-pill disabled" : "status-pill"}>
+                          {school.enabled === false ? "停用" : "啟用"}
+                        </span>
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectSchoolForEdit(school.id);
                           }}
                         >
-                          <span>{school.name}</span>
-                          <span>{school.domains.join("、") || "-"}</span>
-                          <span className={school.enabled === false ? "status-pill disabled" : "status-pill"}>
-                            {school.enabled === false ? "停用" : "啟用"}
-                          </span>
-                          <button
-                            className="ghost-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onSelectSchoolForEdit(school.id);
-                            }}
-                          >
-                            {expanded ? "收合" : "編輯"}
-                          </button>
-                        </div>
-                        {expanded && editingSchoolDraft && (
-                          <SchoolEditorForm
-                            school={editingSchoolDraft}
-                            busy={adminBusy}
-                            onChange={onEditingSchoolDraftChange}
-                            onSave={() => onSaveEditedSchool(editingSchoolDraft)}
-                            onCancel={() => onSelectSchoolForEdit(school.id)}
-                          />
-                        )}
+                          {expanded ? "收合" : "編輯"}
+                        </button>
                       </div>
-                    );
-                  })}
-                </div>
-              </section>
-
+                      {expanded && editingSchoolDraft && (
+                        <SchoolEditorForm
+                          school={editingSchoolDraft}
+                          busy={adminBusy}
+                          onChange={onEditingSchoolDraftChange}
+                          onSave={() => onSaveEditedSchool(editingSchoolDraft)}
+                          onCancel={() => onSelectSchoolForEdit(school.id)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </section>
           )}
 

@@ -878,12 +878,16 @@ export default function App() {
       setStatusMessage("只有超級管理者可以建立學校網域。");
       return;
     }
+    const name = window.prompt("請輸入學校名稱", "")?.trim();
+    if (!name) {
+      return;
+    }
     setAdminBusy(true);
     setStatusMessage("");
     try {
-      const saved = await saveSchool(createSchoolDraft());
+      const saved = await saveSchool({ ...createSchoolDraft(), name });
       await refreshSchoolList(saved.id);
-      setStatusMessage("已建立學校網域草稿。");
+      setStatusMessage(`已新增學校「${saved.name}」。`);
     } catch (error) {
       setStatusMessage(getSchoolWriteErrorMessage(error, "學校網域草稿建立失敗。"));
     } finally {
@@ -915,11 +919,6 @@ export default function App() {
       setStatusMessage("學校名稱不可空白。");
       return;
     }
-    if (school.domains.length === 0) {
-      setStatusMessage("請至少設定一個 Email 網域。");
-      return;
-    }
-
     setAdminBusy(true);
     setStatusMessage("");
     try {
