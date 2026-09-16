@@ -1032,13 +1032,9 @@ export default function App() {
       setStatusMessage("請先登入後再設定學校。");
       return;
     }
-    if (effectiveRole !== "teacher") {
-      setStatusMessage("目前只有教師帳號需要設定任教學校。");
-      return;
-    }
     const school = schools.find((item) => item.id === accountSchoolId);
     if (!school) {
-      setStatusMessage("請先選擇任教學校。");
+      setStatusMessage("請先選擇學校。");
       return;
     }
 
@@ -1048,7 +1044,7 @@ export default function App() {
       await saveAccountSchoolSelection({
         user,
         school,
-        role: "teacher",
+        role: effectiveRole === "teacher" ? "teacher" : "student",
         actorUid: user.uid,
         source: "self",
         verified: false,

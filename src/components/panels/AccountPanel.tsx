@@ -78,20 +78,24 @@ export function AccountPanel({
             </div>
           </section>
 
-          {effectiveRole === "teacher" && (
-            <section className="admin-section">
-              <div className="section-title-row">
-                <div>
-                  <h3>任教學校設定</h3>
-                  <p>教師可以先自行設定任教學校；超管仍可在後台調整與確認。這個設定會作為未來建立班級時的預設學校。</p>
-                </div>
+          <section className="admin-section">
+            <div className="section-title-row">
+              <div>
+                <h3>{effectiveRole === "teacher" ? "任教學校設定" : "所屬學校設定"}</h3>
+                <p>
+                  {effectiveRole === "teacher"
+                    ? "教師可以先自行設定任教學校；超管仍可在後台調整與確認。這個設定會作為建立班級時的預設學校。"
+                    : "請先選擇你的學校，校排行與班級資料會依此顯示；超管仍可在後台調整。"}
+                </p>
               </div>
+            </div>
+
               {schools.length === 0 ? (
                 <p className="warning-text">目前尚無可選學校，請先由超管建立學校資料。</p>
               ) : (
                 <div className="account-school-form">
                   <label className="problem-form-field">
-                    任教學校
+                    {effectiveRole === "teacher" ? "任教學校" : "學校"}
                     <select value={selectedSchoolId} onChange={(event) => onSchoolChange(event.target.value)}>
                       <option value="">請選擇學校</option>
                       {schools
@@ -108,8 +112,7 @@ export function AccountPanel({
                   </button>
                 </div>
               )}
-            </section>
-          )}
+          </section>
 
           {effectiveRole === "student" && (
             <section className="admin-section">
