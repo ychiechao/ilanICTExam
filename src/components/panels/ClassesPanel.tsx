@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ClassMember, ClassSubmissionView, LearningClass, Problem } from "../../types";
+import { csvDateStamp, downloadCsv } from "../../utils/csv";
 import { formatContestDateTime } from "../../utils/format";
 import { Metric } from "../ui";
 
@@ -92,6 +93,60 @@ export function ClassesPanel({
     }
     return grouped;
   }, [submissionViews]);
+
+  const exportScope = selectedClass ? selectedClass.name : "全部班級";
+
+  // 匯出目前選取範圍的每一筆提交（學生加入班級後的紀錄）。
+  function exportSubmissionsCsv() {
+    downloadCsv(
+      `班級作答紀錄-${exportScope}-${csvDateStamp()}.csv`,
+      ["班級", "學生", "Email", "題目", "答題率(%)", "分數", "滿分", "狀態", "提交時間"],
+      visibleViews.map((item) => [
+        item.className,
+        item.studentName,
+        item.studentEmail || "",
+        item.problemTitle,
+        Math.round(item.passRate * 100),
+        item.score,
+        item.maxScore,
+        item.isFullScore ? "已完成" : item.status,
+        formatContestDateTime(item.createdAt),
+      ]),
+    );
+  }
+
+  // 匯出每位學生的彙總與各題最佳成績（一位學生一列，每題一欄）。
+  function exportProgressCsv() {
+    const attempted = problems.filter((problem) => progressRows.some((row) => row.bestByProblem.has(problem.id)));
+    downloadCsv(
+      `班級學生進度-${exportScope}-${csvDateStamp()}.csv`,
+      [
+        "班級",
+        "學生",
+        "Email",
+        "完成題數",
+        "嘗試中",
+        "平均答題率(%)",
+        "提交次數",
+        "最後作答",
+        ...attempted.map((problem) => `${problem.title} 最佳分數`),
+      ],
+      progressRows.map((row) => [
+        row.classNames.join("、"),
+        row.studentName,
+        row.studentEmail,
+        row.completedCount,
+        row.attemptedCount,
+        Math.round(row.averagePassRate * 100),
+        row.submitCount,
+        row.lastSubmittedAt ? formatContestDateTime(row.lastSubmittedAt) : "",
+        ...attempted.map((problem) => {
+          const best = row.bestByProblem.get(problem.id);
+          return best ? `${best.score}/${best.maxScore}` : "";
+        }),
+      ]),
+    );
+  }
 
   const classSelector = (
     <label className="inline-admin-select">
@@ -303,7 +358,15 @@ export function ClassesPanel({
                 <h3>{selectedClass ? `${selectedClass.name} 答題儀表板` : "全部班級答題儀表板"}</h3>
                 <p>依每位學生各題最佳答題率彙整；點選學生可展開詳細提交紀錄。只包含學生加入班級後的提交。</p>
               </div>
-              <div className="admin-file-actions">{classSelector}</div>
+              <div className="admin-file-actions">
+                {classSelector}
+                <button className="ghost-button" type="button" onClick={exportProgressCsv} disabled={progressRows.length === 0}>
+                  匯出學生進度 CSV
+                </button>
+                <button className="ghost-button" type="button" onClick={exportSubmissionsCsv} disabled={visibleViews.length === 0}>
+                  匯出作答紀錄 CSV
+                </button>
+              </div>
             </div>
 
             <div className="metric-row">
