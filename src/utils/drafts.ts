@@ -64,14 +64,65 @@ export function getNextContestStatus(status: ContestStatus): ContestStatus | und
   const transitions: Partial<Record<ContestStatus, ContestStatus>> = {
     draft: "roster",
     roster: "waiting",
-    waiting: "active",
-    active: "ended",
-    paused: "active",
     ended: "review",
     review: "published",
     published: "archived",
   };
   return transitions[status];
+}
+
+/** 退回上一階段：比賽開始前可自由退回；賽後審核／公布／封存也可退回一步。 */
+export function getPreviousContestStatus(status: ContestStatus): ContestStatus | undefined {
+  const transitions: Partial<Record<ContestStatus, ContestStatus>> = {
+    roster: "draft",
+    waiting: "roster",
+    review: "ended",
+    published: "review",
+    archived: "published",
+  };
+  return transitions[status];
+}
+
+export interface ContestTransition {
+  status: ContestStatus;
+  label: string;
+  /** 有值表示不能執行，內容是原因。 */
+  blocked?: string;
+  confirm?: string;
+}
+
+/**
+ * 列表上可用的階段按鈕。競賽中／暫停／結束由「平台狀態 → 比賽控制」操作，這裡不提供。
+ * 前進要滿足前置條件；退回一步永遠允許（除了進行中）。
+ */
+export function getContestTransitions(contest: ContestEvent): { next?: ContestTransition; previous?: ContestTransition } {
+  const next = getNextContestStatus(contest.status);
+  const previous = getPreviousContestStatus(contest.status);
+  const result: { next?: ContestTransition; previous?: ContestTransition } = {};
+
+  if (next) {
+    const missing: string[] = [];
+    if (next === "waiting") {
+      if (!(contest.accountCount && contest.accountCount > 0)) missing.push("尚未匯入競賽帳號");
+      if (!(contest.problemCount && contest.problemCount > 0)) missing.push("尚未匯入競賽題庫");
+      if (!(contest.durationMinutes && contest.durationMinutes > 0)) missing.push("尚未設定比賽長度");
+    }
+    result.next = {
+      status: next,
+      label: getContestStatusLabel(next),
+      ...(missing.length > 0 ? { blocked: missing.join("、") } : {}),
+      ...(next === "archived" ? { confirm: "封存後賽事會從各處的選單消失，競賽帳號全部停用。確定封存？" } : {}),
+      ...(next === "published" ? { confirm: "正式公布後，該場參賽者可以看到最終排行榜。確定公布？" } : {}),
+    };
+  }
+  if (previous) {
+    result.previous = {
+      status: previous,
+      label: getContestStatusLabel(previous),
+      ...(contest.status === "published" ? { confirm: "退回審核會讓參賽者暫時看不到最終排行榜。確定？" } : {}),
+    };
+  }
+  return result;
 }
 
 export function parseProblemIdText(value: string) {

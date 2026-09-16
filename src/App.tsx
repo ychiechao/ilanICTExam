@@ -21,6 +21,7 @@ import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadMana
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
 import { createContestDraft, loadContests, saveContest } from "./services/contestStore";
+import { writeAuditLog } from "./services/auditStore";
 import { DEFAULT_PLATFORM_STATE, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
 import { loadGlobalLeaderboard, removeUserFromLeaderboards, updateGlobalLeaderboard } from "./services/leaderboardService";
@@ -30,7 +31,7 @@ import { createSchoolDraft, loadSchools, loadSchoolsByIds, saveSchool } from "./
 import { deleteSubmissionsForUser, loadAllSubmissions, loadSubmissions, loadUserSubmissions, saveSubmission } from "./services/submissionService";
 import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SubmissionRecord, WorkspaceMode } from "./types";
 import { countSubmissionsByProblem } from "./utils/adminUsers";
-import { cloneContest, cloneProblem, cloneSchool, getContestStatusLabel, sanitizeContestDraft, sanitizeProblemDraft, sanitizeSchoolDraft } from "./utils/drafts";
+import { cloneContest, cloneProblem, cloneSchool, getContestStatusLabel, getContestTransitions, sanitizeContestDraft, sanitizeProblemDraft, sanitizeSchoolDraft } from "./utils/drafts";
 import { getFirebaseAdminErrorMessage, getLoginErrorMessage, getSchoolWriteErrorMessage, loadAdminDataset, runAdminMutationStep } from "./utils/errors";
 import { buildPracticeStatsByProblem, ensureSolveStartedAt, formatImportStatus, formatPracticeSubtitle, getDefaultTestInput, getLegacyWorkspaceKey, getSharedWorkspaceKey, getSolveStartedAt, hasMeaningfulWorkspaceXml, mergeSubmissionRecord, runInteractiveProgram, slugFileName } from "./utils/practice";
 
@@ -837,10 +838,28 @@ export default function App() {
       setStatusMessage("只有超級管理者可以切換賽事狀態。");
       return;
     }
+    // 只允許相鄰階段（前一步或後一步），且前進要滿足前置條件；比賽控制的 active/paused/ended 另走 saveContest。
+    const transitions = getContestTransitions(contest);
+    const isControlStatus = nextStatus === "active" || nextStatus === "paused" || nextStatus === "ended";
+    if (!isControlStatus) {
+      const allowed = [transitions.next, transitions.previous].find((item) => item?.status === nextStatus);
+      if (!allowed) {
+        setStatusMessage(`不能從「${getContestStatusLabel(contest.status)}」直接切到「${getContestStatusLabel(nextStatus)}」。`);
+        return;
+      }
+      if (allowed.blocked) {
+        setStatusMessage(`無法前進到「${allowed.label}」：${allowed.blocked}。`);
+        return;
+      }
+    }
     setAdminBusy(true);
     setStatusMessage("");
     try {
       const saved = await saveContest({ ...contest, status: nextStatus });
+      await writeAuditLog(
+        { action: "contest.status", targetType: "contest", targetId: contest.id, summary: `「${contest.title}」${getContestStatusLabel(contest.status)} → ${getContestStatusLabel(nextStatus)}` },
+        user,
+      );
       await refreshContestList(saved.id);
       setStatusMessage(`賽事狀態已切換為「${getContestStatusLabel(nextStatus)}」。`);
     } catch (error) {

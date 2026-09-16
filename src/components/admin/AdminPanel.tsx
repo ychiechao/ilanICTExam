@@ -11,7 +11,7 @@ import { getRoleLabel } from "../../services/accountService";
 import type { ProblemImportMode } from "../../services/problemStore";
 import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SubmissionRecord } from "../../types";
 import { buildUserProgressRows, countSubmissionsByUser, getManagedUserDirectoryRole, getManagedUserDirectoryRoleLabel, getManagedUserSchoolIds, normalizeEmailForLookup } from "../../utils/adminUsers";
-import { getContestStatusLabel, getNextContestStatus } from "../../utils/drafts";
+import { getContestStatusLabel, getContestTransitions } from "../../utils/drafts";
 import { formatContestDateTime, formatManagedTimestamp } from "../../utils/format";
 import { getProblemCaseSummary, isFullScoreSubmission } from "../../utils/practice";
 import { Metric } from "../ui";
@@ -346,7 +346,7 @@ export function AdminPanel({
                 {contests.length === 0 && <p className="muted table-empty">尚未建立賽事。請先新增年度賽事草稿。</p>}
                 {contests.map((contest) => {
                   const expanded = editingContestId === contest.id;
-                  const nextStatus = getNextContestStatus(contest.status);
+                  const transitions = getContestTransitions(contest);
                   return (
                     <div className="contest-table-item" key={contest.id}>
                       <div
@@ -382,19 +382,40 @@ export function AdminPanel({
                           >
                             {expanded ? "收合" : "編輯"}
                           </button>
-                          {nextStatus && (
+                          {transitions.previous && (
                             <button
                               className="ghost-button"
                               type="button"
                               disabled={adminBusy}
+                              title={"退回：" + transitions.previous.label}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                onMoveContestStatus(contest, nextStatus);
+                                if (transitions.previous?.confirm && !window.confirm(transitions.previous.confirm)) return;
+                                onMoveContestStatus(contest, transitions.previous!.status);
                               }}
                             >
-                              下一階段：{getContestStatusLabel(nextStatus)}
+                              ← {transitions.previous.label}
                             </button>
                           )}
+                          {transitions.next && (
+                            <button
+                              className="ghost-button"
+                              type="button"
+                              disabled={adminBusy || Boolean(transitions.next.blocked)}
+                              title={transitions.next.blocked ? "無法前進：" + transitions.next.blocked : "前進到 " + transitions.next.label}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                if (transitions.next?.confirm && !window.confirm(transitions.next.confirm)) return;
+                                onMoveContestStatus(contest, transitions.next!.status);
+                              }}
+                            >
+                              {transitions.next.label} →
+                            </button>
+                          )}
+                          {(contest.status === "waiting" || contest.status === "active" || contest.status === "paused") && (
+                            <span className="muted contest-control-hint">開始／暫停／結束在「平台狀態」操作</span>
+                          )}
+                          {transitions.next?.blocked && <span className="warning-text contest-control-hint">{transitions.next.blocked}</span>}
                           <button
                             className="ghost-button"
                             type="button"

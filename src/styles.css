@@ -2422,3 +2422,8 @@ pre {
   gap: 10px;
   margin: 8px 0 14px;
 }
+
+.contest-control-hint {
+  font-size: 0.78rem;
+  align-self: center;
+}
