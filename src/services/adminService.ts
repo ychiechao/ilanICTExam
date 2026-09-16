@@ -123,6 +123,22 @@ export async function setManagedUserTeacherSchool(
   });
 }
 
+/** 調整一般使用者（學生）的學校；教師請用 setManagedUserTeacherSchool，會一併更新 admins。 */
+export async function setManagedUserSchool(
+  target: ManagedUser,
+  school: { id: string; name: string; enabled?: boolean },
+  actor: AppUser | null,
+) {
+  await saveAccountSchoolSelection({
+    user: target,
+    school: { id: school.id, name: school.name, domains: [], enabled: school.enabled },
+    role: target.role === "teacher" ? "teacher" : "student",
+    actorUid: actor?.uid || "",
+    source: "admin",
+    verified: true,
+  });
+}
+
 export async function setManagedUserAdminRole(
   target: ManagedUser,
   role: AdminRole | null,

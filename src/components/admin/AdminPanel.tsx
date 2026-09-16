@@ -70,6 +70,7 @@ export function AdminPanel({
   onRefreshAdminData,
   onSetUserAdmin,
   onSetUserSchoolAdmin,
+  onSetUserSchool,
   onSetUserDisabled,
   onClearUserSubmissions,
   onDeleteUser,
@@ -127,6 +128,7 @@ export function AdminPanel({
   onRefreshAdminData: () => void;
   onSetUserAdmin: (user: ManagedUser, makeAdmin: boolean) => void;
   onSetUserSchoolAdmin: (user: ManagedUser, schoolId: string) => void;
+  onSetUserSchool: (user: ManagedUser, schoolId: string) => void;
   onSetUserDisabled: (user: ManagedUser, disabled: boolean) => void;
   onClearUserSubmissions: (user: ManagedUser) => void;
   onDeleteUser: (user: ManagedUser) => void;
@@ -640,7 +642,7 @@ export function AdminPanel({
             <div className="section-title-row">
               <div>
                     <h3>使用者權限</h3>
-                <p>超級管理者可調整教師任教學校；學生維持一般使用者身份。</p>
+                <p>每一列的學校下拉可直接改該使用者的學校（教師會同步更新任教學校）。「設為教師」會用上方選的學校。</p>
               </div>
               <div className="admin-file-actions">
                 <label className="inline-admin-select">
@@ -722,7 +724,20 @@ export function AdminPanel({
                     <span>{formatManagedTimestamp(item.lastLoginAt)}</span>
                     <span className="table-role-stack">
                       <strong>{row.roleLabel}</strong>
-                      <small>{row.schoolLabel}</small>
+                      <select
+                        className="row-school-select"
+                        value={row.schoolIds[0] || ""}
+                        onChange={(event) => event.target.value && onSetUserSchool(item, event.target.value)}
+                        disabled={adminBusy || itemIsSuperAdmin}
+                        aria-label="所屬學校"
+                      >
+                        <option value="">未設學校</option>
+                        {assignableSchools.map((school) => (
+                          <option key={school.id} value={school.id}>
+                            {school.name}
+                          </option>
+                        ))}
+                      </select>
                     </span>
                     <span className={item.disabled ? "status-pill disabled" : "status-pill"}>
                       {item.disabled ? "停用" : "啟用"} / {itemSubmissionCount} 筆

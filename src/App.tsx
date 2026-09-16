@@ -17,7 +17,7 @@ import { TestPanel } from "./components/panels/TestPanel";
 import { GuishanIslandIcon, PracticeStatusBadge } from "./components/ui";
 import { hasFirebaseConfig } from "./firebase";
 import { getEffectiveRole, loadUserProfile, saveAccountSchoolSelection } from "./services/accountService";
-import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserTeacherSchool } from "./services/adminService";
+import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserSchool, setManagedUserTeacherSchool } from "./services/adminService";
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
 import { createContestDraft, loadContests, saveContest } from "./services/contestStore";
@@ -979,6 +979,30 @@ export default function App() {
     }
   }
 
+  async function handleSetManagedUserSchool(target: ManagedUser, schoolId: string) {
+    const school = schools.find((item) => item.id === schoolId);
+    if (!school) {
+      setStatusMessage("請選擇學校。");
+      return;
+    }
+    const isTeacher = adminProfiles.find((profile) => profile.uid === target.uid)?.role === "teacher";
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      if (isTeacher) {
+        await setManagedUserTeacherSchool(target, school, user);
+      } else {
+        await setManagedUserSchool(target, school, user);
+      }
+      await loadAdminData();
+      setStatusMessage(`已將 ${target.displayName || target.email || target.uid} 的學校改為「${school.name}」。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "學校更新失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
   async function handleSetManagedUserSchoolAdmin(target: ManagedUser, schoolId: string) {
     if (target.uid === user?.uid) {
       setStatusMessage("為避免誤鎖管理權限，不能在這裡變更自己的管理者身分。");
@@ -1537,6 +1561,7 @@ export default function App() {
                 onRefreshAdminData={loadAdminData}
                 onSetUserAdmin={handleSetManagedUserAdmin}
                 onSetUserSchoolAdmin={handleSetManagedUserSchoolAdmin}
+                onSetUserSchool={handleSetManagedUserSchool}
                 onSetUserDisabled={handleSetManagedUserDisabled}
                 onClearUserSubmissions={handleClearManagedUserSubmissions}
                 onDeleteUser={handleDeleteManagedUser}
