@@ -6,7 +6,8 @@ import {
   setDoc,
   writeBatch,
 } from "firebase/firestore";
-import { auth, db, onAuthStateChanged, signInWithGoogle, signOut, type User } from "../firebase";
+import { auth, db, onAuthStateChanged, signInWithCustomToken, signInWithGoogle, signOut, type User } from "../firebase";
+import { graderRequest } from "./grader";
 import type { AppUser } from "../types";
 import { getEmailDomain, inferUserRoleFromEmail } from "./accountService";
 import { withRemoteTimeout } from "./remote";
@@ -28,6 +29,13 @@ export function subscribeToAuth(callback: (user: AppUser | null) => void) {
   return onAuthStateChanged(auth, async (firebaseUser) => {
     if (!firebaseUser) {
       callback(null);
+      return;
+    }
+
+    // 競賽帳號：身分全在 token claims，不建 users 文件、不跑管理者初始化。
+    const contestUser = await toContestAppUser(firebaseUser);
+    if (contestUser) {
+      callback(contestUser);
       return;
     }
 
@@ -60,6 +68,21 @@ export async function loginWithGoogle() {
   await autoInitializeFirstAdmin(appUser);
   await autoInitializeTeacherProfile(appUser);
   return appUser;
+}
+
+/**
+ * 競賽帳號登入：Worker 驗證帳號密碼後簽發自訂 token，再交給 Firebase。
+ * 之後 onAuthStateChanged 會以 token claims 建立 AppUser。
+ */
+export async function loginWithContestAccount(username: string, password: string) {
+  if (!auth) {
+    throw new Error("尚未設定 Firebase，無法登入競賽帳號。");
+  }
+  const data = await graderRequest<{ token: string }>("/login", {
+    method: "POST",
+    body: { username, password, fingerprint: await deviceFingerprint() },
+  });
+  await signInWithCustomToken(auth, data.token);
 }
 
 export async function logout() {
@@ -237,6 +260,42 @@ async function upsertUser(user: User) {
   } catch (error) {
     console.warn("Firestore 使用者資料更新失敗，略過遠端紀錄。", error);
   }
+}
+
+async function toContestAppUser(user: User): Promise<AppUser | null> {
+  try {
+    const result = await user.getIdTokenResult();
+    if (result.claims.accountType !== "contest") {
+      return null;
+    }
+    return {
+      uid: user.uid,
+      displayName: String(result.claims.displayName || result.claims.username || "參賽者"),
+      email: null,
+      photoURL: null,
+      accountType: "contest",
+      contestId: String(result.claims.contestId || ""),
+      contestUsername: String(result.claims.username || ""),
+      schoolId: String(result.claims.schoolId || ""),
+    };
+  } catch (error) {
+    console.warn("讀取 token claims 失敗", error);
+    return null;
+  }
+}
+
+/** 粗略的裝置指紋：只用來在審核時看「換過裝置」，不做阻擋（規格 D14）。 */
+async function deviceFingerprint() {
+  const raw = [
+    navigator.userAgent,
+    navigator.language,
+    `${screen.width}x${screen.height}x${screen.colorDepth}`,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+  ].join("|");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  return Array.from(new Uint8Array(digest).slice(0, 16))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function toAppUser(user: User): AppUser {

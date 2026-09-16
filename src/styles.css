@@ -2004,3 +2004,16 @@ pre {
   text-align: center;
   font-weight: 600;
 }
+
+.contest-login-form {
+  gap: 14px;
+}
+
+.contest-login-form h3 {
+  margin: 0;
+}
+
+.contest-login-form input {
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}

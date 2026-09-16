@@ -123,6 +123,11 @@ export interface AppUser {
   photoURL?: string | null;
   isAnonymous?: boolean;
   disabled?: boolean;
+  /** 競賽帳號由 Worker 簽發的自訂 token 登入，claims 帶在 ID token 內。 */
+  accountType?: "google" | "contest";
+  contestId?: string;
+  contestUsername?: string;
+  schoolId?: string;
 }
 
 export interface ManagedUser {

@@ -5,6 +5,8 @@ import type { TabKey } from "./app/constants";
 import BlocklyWorkspace from "./components/BlocklyWorkspace";
 import { AdminPanel } from "./components/admin/AdminPanel";
 import { AnnouncementScreen } from "./components/AnnouncementScreen";
+import { ContestLoginForm } from "./components/contest/ContestLoginForm";
+import { ContestShell } from "./components/contest/ContestShell";
 import { AccountPanel } from "./components/panels/AccountPanel";
 import { ClassesPanel } from "./components/panels/ClassesPanel";
 import { HistoryPanel } from "./components/panels/HistoryPanel";
@@ -209,6 +211,13 @@ export default function App() {
   useEffect(() => {
     return subscribeToAuth(async (nextUser) => {
       setUser(nextUser);
+      if (nextUser?.accountType === "contest") {
+        setAdminProfile(null);
+        setAdmin(false);
+        setSuperAdmin(false);
+        setAccountProfile(null);
+        return;
+      }
       if (nextUser) {
         const nextAdminProfile = await loadAdminProfile(nextUser.uid);
         const nextSuperAdmin = nextAdminProfile?.role === "super";
@@ -236,6 +245,12 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    if (user?.accountType === "contest") {
+      setPracticeSubmissions([]);
+      return () => {
+        active = false;
+      };
+    }
     loadUserSubmissions(user?.uid)
       .then((records) => {
         if (active) {
@@ -255,7 +270,7 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    if (!user) {
+    if (!user || user.accountType === "contest") {
       setAccountProfile(null);
       setAccountSchoolId("");
       return () => {
@@ -1307,16 +1322,26 @@ export default function App() {
     );
   }
 
+  // 競賽帳號：只在競賽模式有畫面；其他模式登出並回到公告。
+  if (user?.accountType === "contest") {
+    if (platform.mode === "contest" && user.contestId && platform.activeContestIds.includes(user.contestId)) {
+      return <ContestShell platform={platform} user={user} onLogout={() => logout()} />;
+    }
+    void logout();
+  }
+
   // 競賽或維護模式：非超管只看到公告（規格 4.3、5.3）。
   if (platform.mode !== "practice" && !superAdmin) {
     return (
       <AnnouncementScreen
         platform={platform}
-        user={user}
+        user={user?.accountType === "contest" ? null : user}
         loginBusy={loginBusy}
         onGoogleLogin={handleLogin}
         onLogout={() => logout()}
-      />
+      >
+        {!user && <ContestLoginForm />}
+      </AnnouncementScreen>
     );
   }
 

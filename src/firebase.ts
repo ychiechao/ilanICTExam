@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   getAuth,
   onAuthStateChanged,
+  signInWithCustomToken,
   signInWithPopup,
   signOut,
   type Auth,
@@ -37,7 +38,7 @@ if (hasFirebaseConfig) {
   db = getFirestore(app);
 }
 
-export { app, auth, db, onAuthStateChanged, signOut, type User };
+export { app, auth, db, onAuthStateChanged, signInWithCustomToken, signOut, type User };
 
 export async function signInWithGoogle() {
   if (!auth) {
