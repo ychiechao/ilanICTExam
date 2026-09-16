@@ -13,7 +13,7 @@ service cloud.firestore {
     function accountEnabled() {
       return signedIn() &&
         (!exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.disabled != true);
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("disabled", false) != true);
     }
 
     function isActiveOwner(uid) {
@@ -90,8 +90,8 @@ service cloud.firestore {
     function isJoinableClass(classId) {
       return signedIn() &&
         exists(/databases/$(database)/documents/classes/$(classId)) &&
-        classData(classId).joinEnabled == true &&
-        classData(classId).archived != true;
+        classData(classId).get("joinEnabled", false) == true &&
+        classData(classId).get("archived", false) != true;
     }
 
     function isTeacherEmail() {
@@ -193,7 +193,7 @@ service cloud.firestore {
 
     match /classes/{classId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
-        (signedIn() && resource.data.joinEnabled == true) ||
+        (signedIn() && resource.data.get("joinEnabled", false) == true) ||
         (isTeacher() && resource.data.teacherUid == request.auth.uid)));
       allow create: if isSuperAdmin() || (practiceOpen() && (isSuperAdmin() ||
         (
