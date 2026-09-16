@@ -71,6 +71,11 @@ export function createContestDraft(previous?: ContestEvent): ContestEvent {
     schoolCount: 0,
     rosterNote: "",
     resultNote: "",
+    division: "E",
+    maxSubmissionsPerProblem: 10,
+    accountCount: 0,
+    problemCount: 0,
+    dashboard: { visibility: "organizer", showNames: false, topN: 20 },
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
   };
@@ -96,8 +101,27 @@ function normalizeContest(input: unknown): ContestEvent {
     schoolCount: readNonNegativeNumber(record.schoolCount),
     rosterNote: readText(record.rosterNote),
     resultNote: readText(record.resultNote),
+    division: readText(record.division, "E"),
+    maxSubmissionsPerProblem: Math.max(1, Math.round(readNonNegativeNumber(record.maxSubmissionsPerProblem) || 10)),
+    // 以下由 Worker 寫入；saveContest 是整份覆寫，這裡一定要帶著，否則會被清掉。
+    accountCount: readNonNegativeNumber(record.accountCount),
+    problemCount: readNonNegativeNumber(record.problemCount),
+    casesSyncedAt: readText(record.casesSyncedAt),
+    dashboard: normalizeDashboard(record.dashboard),
+    publishedAt: readText(record.publishedAt),
+    releasedToPractice: record.releasedToPractice === true,
     createdAt: readText(record.createdAt, now),
     updatedAt: readText(record.updatedAt, now),
+  };
+}
+
+function normalizeDashboard(value: unknown): ContestEvent["dashboard"] {
+  const record = isRecord(value) ? value : {};
+  const visibility = record.visibility;
+  return {
+    visibility: visibility === "participants" || visibility === "public" ? visibility : "organizer",
+    showNames: record.showNames === true,
+    topN: Math.max(1, Math.round(readNonNegativeNumber(record.topN) || 20)),
   };
 }
 

@@ -1,7 +1,8 @@
 /**
  * 每個請求共用的東西：服務帳號、Firestore 客戶端、平台狀態。
  */
-import { FirestoreClient } from "./google/firestore";
+import { verifyRequestToken } from "./auth/verifyIdToken";
+import { FirestoreClient, SERVER_TIMESTAMP } from "./google/firestore";
 import { loadServiceAccount, type ServiceAccount } from "./google/serviceAccount";
 
 export type PlatformMode = "practice" | "contest" | "maintenance";
@@ -20,6 +21,8 @@ export interface ContestDoc {
   startAt?: string;
   endAt?: string;
   maxSubmissionsPerProblem?: number;
+  accountCount?: number;
+  problemCount?: number;
 }
 
 export interface ContestAccountDoc {
@@ -28,8 +31,10 @@ export interface ContestAccountDoc {
   name: string;
   schoolId: string;
   schoolName: string;
+  note?: string;
   status: "active" | "disabled";
   uid: string;
+  batchId?: string;
   firstLoginAt?: string;
   lastLoginAt?: string;
   deviceFingerprint?: string;
@@ -58,6 +63,34 @@ export class RequestContext {
 
   async getContest(contestId: string) {
     return this.db.getDoc<ContestDoc>(`contests/${contestId}`);
+  }
+
+  /** 超管專用路由：驗 ID token，再確認 admins/{uid}.role == super 且未停用。 */
+  async requireSuperAdmin(request: Request): Promise<{ uid: string; name: string }> {
+    const verified = await verifyRequestToken(request, this.projectId);
+    if (!verified) {
+      throw new HttpError(401, "unauthorized", "請先以超級管理者登入");
+    }
+    if (verified.claims.accountType === "contest") {
+      throw new HttpError(403, "forbidden", "競賽帳號不能執行此操作");
+    }
+    const admin = await this.db.getDoc<{ role?: string; status?: string; displayName?: string }>(`admins/${verified.uid}`);
+    const role = admin?.data.role;
+    const isSuper = admin && (!role || role === "super") && admin.data.status !== "disabled";
+    if (!isSuper) {
+      throw new HttpError(403, "forbidden", "只有超級管理者可以執行此操作");
+    }
+    return { uid: verified.uid, name: String(admin.data.displayName || verified.claims.name || verified.uid) };
+  }
+
+  async writeAuditLog(actor: { uid: string; name: string }, entry: { action: string; targetType: string; targetId: string; summary: string }) {
+    await this.db.setDoc(`auditLogs/${crypto.randomUUID()}`, {
+      ...entry,
+      actorUid: actor.uid,
+      actorName: actor.name,
+      via: "worker",
+      createdAt: SERVER_TIMESTAMP,
+    });
   }
 }
 

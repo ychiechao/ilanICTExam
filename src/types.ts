@@ -179,11 +179,48 @@ export interface ContestEvent {
   schoolCount?: number;
   rosterNote?: string;
   resultNote?: string;
+  /** 組別代碼：E 國小、J 國中；競賽帳號前綴用。 */
+  division?: string;
+  /** 每題提交上限，預設 10。 */
+  maxSubmissionsPerProblem?: number;
   /** 已匯入的競賽帳號數與題數；由 Worker 匯入時寫入，切換競賽模式前檢查用。 */
   accountCount?: number;
   problemCount?: number;
+  casesSyncedAt?: string;
+  dashboard?: ContestDashboardSettings;
+  publishedAt?: string;
+  releasedToPractice?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type DashboardVisibility = "organizer" | "participants" | "public";
+
+export interface ContestDashboardSettings {
+  visibility: DashboardVisibility;
+  showNames: boolean;
+  topN: number;
+}
+
+export type ContestAccountStatus = "active" | "disabled";
+
+/** contestAccounts：主辦單位匯入的競賽帳號（密碼雜湊存 KV，不在這裡）。 */
+export interface ContestAccount {
+  id: string;
+  contestId: string;
+  username: string;
+  name: string;
+  schoolId: string;
+  schoolName: string;
+  note?: string;
+  status: ContestAccountStatus;
+  uid: string;
+  firstLoginAt?: string;
+  lastLoginAt?: string;
+  deviceFingerprint?: string;
+  batchId?: string;
+  createdAt?: string;
+  createdBy?: string;
 }
 
 export interface School {

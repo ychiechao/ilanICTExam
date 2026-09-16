@@ -1,5 +1,10 @@
 import { HttpError, RequestContext } from "./context";
 import { AuthError } from "./auth/verifyIdToken";
+import {
+  handleImportContestAccounts,
+  handleResetContestAccountPassword,
+  handleSetContestAccountStatus,
+} from "./routes/contestAccounts";
 import { handleLogin, handleRefresh } from "./routes/login";
 import { handleTime } from "./routes/time";
 
@@ -49,6 +54,15 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
   }
   if (method === "POST" && path === "/refresh") {
     return handleRefresh(request, ctx);
+  }
+
+  // 超管：競賽帳號
+  const accountsMatch = /^\/contest-accounts\/([A-Za-z0-9_-]+)(?:\/(reset-password|status))?$/.exec(path);
+  if (method === "POST" && accountsMatch) {
+    const [, contestId, action] = accountsMatch;
+    if (!action) return handleImportContestAccounts(request, ctx, contestId);
+    if (action === "reset-password") return handleResetContestAccountPassword(request, ctx, contestId);
+    if (action === "status") return handleSetContestAccountStatus(request, ctx, contestId);
   }
 
   throw new HttpError(404, "not_found", "找不到此路徑");

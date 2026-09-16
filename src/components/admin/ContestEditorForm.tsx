@@ -60,6 +60,23 @@ export function ContestEditorForm({
             <option value="hybrid">競賽＋練習</option>
           </select>
         </label>
+        <label className="problem-form-field">
+          組別（帳號前綴）
+          <select value={contest.division || "E"} onChange={(event) => updateContest("division", event.target.value)}>
+            <option value="E">E 國小組</option>
+            <option value="J">J 國中組</option>
+          </select>
+        </label>
+        <label className="problem-form-field">
+          每題提交上限
+          <input
+            type="number"
+            min={1}
+            max={50}
+            value={contest.maxSubmissionsPerProblem ?? 10}
+            onChange={(event) => updateContest("maxSubmissionsPerProblem", Math.max(1, Number(event.target.value) || 10))}
+          />
+        </label>
       </div>
 
       <div className="contest-form-grid secondary">

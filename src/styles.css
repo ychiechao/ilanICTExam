@@ -2080,3 +2080,152 @@ pre {
   margin: 2px 0 0;
   font-weight: 700;
 }
+
+/* ---- 競賽帳號 ---- */
+.contest-account-preview-row,
+.issued-account-row,
+.contest-account-row {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #d9eef2;
+  padding: 8px 10px;
+}
+
+.contest-account-preview-row {
+  grid-template-columns: 50px minmax(140px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(160px, 1.2fr);
+  min-width: 700px;
+}
+
+.contest-account-preview-row.invalid {
+  background: #fff6f4;
+}
+
+.issued-account-row {
+  grid-template-columns: 110px 120px minmax(100px, 1fr) minmax(140px, 1fr) minmax(120px, 1fr);
+  min-width: 700px;
+}
+
+.contest-account-row {
+  grid-template-columns: 100px minmax(100px, 1fr) minmax(140px, 1fr) minmax(100px, 1fr) 80px 160px 190px;
+  min-width: 960px;
+}
+
+.mono {
+  font-family: "Consolas", "SFMono-Regular", "Menlo", monospace;
+  letter-spacing: 0.04em;
+}
+
+.issued-accounts {
+  border-color: #f0c987;
+  background: #fffaf0;
+}
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.file-button .hidden-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 帳號卡：螢幕預覽與列印共用；列印時 A4 一頁 8 張（2 欄 × 4 列） */
+.account-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.account-card-print {
+  border: 1px dashed #8aa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #123;
+  display: grid;
+  gap: 6px;
+  break-inside: avoid;
+}
+
+.account-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  border-bottom: 1px solid #cdd;
+  padding-bottom: 4px;
+}
+
+.account-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.account-card-field {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.account-card-field span {
+  color: #567;
+  font-size: 12px;
+  width: 2.2em;
+}
+
+.account-card-field strong {
+  font-size: 18px;
+}
+
+.account-card-foot {
+  font-size: 11px;
+  color: #567;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 8mm;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 62mm;
+    gap: 4mm;
+    background: #fff;
+  }
+
+  .account-card-print {
+    border: 1px dashed #666;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+}
