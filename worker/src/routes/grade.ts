@@ -219,15 +219,9 @@ async function updateLeaderboardEntry(
 ): Promise<LeaderboardEntryDoc> {
   const path = `contestLeaderboards/${contestId}_${username}`;
   const existing = await ctx.db.getDoc<LeaderboardEntryDoc>(path);
+  // 成績以「最後一次提交」為準：每次提交直接覆蓋該題成績（欄位名沿用 bestByProblem，儀表板與投影畫面共用）。
   const bestByProblem = { ...(existing?.data.bestByProblem ?? {}) };
-  const previous = bestByProblem[problemId];
-  const better =
-    !previous ||
-    result.score > previous.score ||
-    (result.score === previous.score && result.passRate > previous.passRate);
-  if (better) {
-    bestByProblem[problemId] = { score: result.score, maxScore: result.maxScore, passRate: result.passRate, at: result.at };
-  }
+  bestByProblem[problemId] = { score: result.score, maxScore: result.maxScore, passRate: result.passRate, at: result.at };
   const bests = Object.values(bestByProblem);
   const totalScore = bests.reduce((sum, item) => sum + item.score, 0);
   const solvedCount = bests.filter((item) => item.maxScore > 0 && item.score >= item.maxScore).length;

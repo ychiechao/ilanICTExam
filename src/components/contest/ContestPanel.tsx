@@ -134,11 +134,8 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
     return grouped;
   }, [submissions]);
   const currentSubmissions = selected ? (submissionsByProblem.get(selected.problemId) ?? []) : [];
-  const bestOf = (problemId: string) =>
-    (submissionsByProblem.get(problemId) ?? []).reduce<ContestSubmissionView | null>(
-      (best, item) => (!best || item.score > best.score ? item : best),
-      null,
-    );
+  // 成績以最後一次提交為準（submissions 已依時間新到舊排序）。
+  const bestOf = (problemId: string) => submissionsByProblem.get(problemId)?.[0] ?? null;
   const remaining = selected ? Math.max(0, maxSubmissions - currentSubmissions.length) : 0;
   // 顯示在「評分」頁的結果：剛提交的那一次，否則是這一題最近一次（換題、重新整理後仍看得到）。
   const shownResult = lastResult && lastResult.problemId === selected?.problemId ? lastResult : (currentSubmissions[0] ?? null);
@@ -216,7 +213,8 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
       setMessage("目前沒有可執行的積木，請確認工作區已有程式積木。");
       return;
     }
-    if (!window.confirm(`確定提交「${selected.title}」？這一題還剩 ${remaining} 次機會。`)) return;
+    if (!window.confirm(`確定提交「${selected.title}」？這一題還剩 ${remaining} 次機會。
+成績以最後一次提交為準，若這次分數比之前低，會以這次的分數計算。`)) return;
     setBusy(true);
     setMessage("評分中…");
     try {
@@ -263,7 +261,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
       <aside className="problem-rail">
         <button className="rail-title">題目列表</button>
         <div className="rail-filters">
-          <span>{problems.length} 題 · 每題最多提交 {maxSubmissions} 次</span>
+          <span>{problems.length} 題 · 每題最多提交 {maxSubmissions} 次 · 成績以最後一次提交為準</span>
         </div>
         {problems.map((problem) => {
           const best = bestOf(problem.problemId);
@@ -279,7 +277,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                 {best?.isFullScore && <CheckCircle2 size={14} className="ok-text" />}
               </span>
               <small>
-                {best ? `最佳 ${best.score}/${problem.maxScore} 分` : "尚未提交"} · 已提交 {used}/{maxSubmissions}
+                {best ? `最近 ${best.score}/${problem.maxScore} 分` : "尚未提交"} · 已提交 {used}/{maxSubmissions}
               </small>
             </button>
           );
@@ -478,7 +476,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                           </span>
                           <span className="practice-row-meta">
                             <span className={best?.isFullScore ? "status-pill" : used > 0 ? "status-pill warning" : "status-pill disabled"}>
-                              {best?.isFullScore ? "全對" : used > 0 ? `最佳 ${best?.score ?? 0} 分` : "未提交"}
+                              {best?.isFullScore ? "全對" : used > 0 ? `最近 ${best?.score ?? 0} 分` : "未提交"}
                             </span>
                             <small>
                               {used}/{maxSubmissions} 次
