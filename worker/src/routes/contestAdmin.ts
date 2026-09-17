@@ -98,8 +98,17 @@ export async function handleDeleteContest(request: Request, ctx: RequestContext,
   return json({ ok: true, contestId });
 }
 
-/** 刪除該場在各集合與 KV 的所有資料，回傳各集合刪除筆數。 */
+/** 刪除該場在各集合與 KV 的所有資料，並從平台啟用清單移除，回傳各集合刪除筆數。 */
 async function purgeContestData(ctx: RequestContext, contestId: string): Promise<Record<ScopedCollection, number>> {
+  const platform = await ctx.getPlatform();
+  if (platform.activeContestIds.includes(contestId)) {
+    await ctx.db.setDoc(
+      "settings/platform",
+      { activeContestIds: platform.activeContestIds.filter((id) => id !== contestId) },
+      { merge: true },
+    );
+  }
+
   const deleted = {} as Record<ScopedCollection, number>;
   for (const collection of CONTEST_SCOPED_COLLECTIONS) {
     const docs = await ctx.db.query<{ problemId?: string }>(collection, {

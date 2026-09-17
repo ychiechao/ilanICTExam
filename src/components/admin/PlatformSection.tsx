@@ -44,11 +44,14 @@ export function PlatformSection({
   const [saving, setSaving] = useState(false);
 
   // 其他超管或另一個分頁改了模式時，把表單同步成最新狀態。
+  // 已刪除的賽事 ID 直接從勾選清單拿掉（賽事清單載入後才判斷），儲存時就會一併清掉。
   useEffect(() => {
     setMode(platform.mode);
-    setSelectedContestIds(platform.activeContestIds);
+    setSelectedContestIds(
+      contests.length > 0 ? platform.activeContestIds.filter((id) => contests.some((contest) => contest.id === id)) : platform.activeContestIds,
+    );
     setAnnouncement(platform.announcement);
-  }, [platform.activeContestIds, platform.announcement, platform.mode]);
+  }, [contests, platform.activeContestIds, platform.announcement, platform.mode]);
 
   const candidateContests = contests.filter((contest) => contest.status !== "archived");
   const activeContests = platform.activeContestIds
