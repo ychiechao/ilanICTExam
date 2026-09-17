@@ -1683,6 +1683,21 @@ pre {
   gap: 3px;
 }
 
+/* 紀錄列裡的文字型按鈕（例如「看結果」）。 */
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #1f7a8c;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: #155e6b;
+}
+
 .history-row span,
 .leader-row small {
   color: var(--muted);

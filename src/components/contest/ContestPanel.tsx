@@ -8,7 +8,9 @@ import { GraderError, graderRequest } from "../../services/grader";
 import type { ContestProblem } from "../../services/contestProblemStore";
 import type { AppUser, WorkspaceMode } from "../../types";
 import { formatContestDateTime } from "../../utils/format";
+import { runInteractiveProgram } from "../../utils/practice";
 import BlocklyWorkspace from "../BlocklyWorkspace";
+import { Metric } from "../ui";
 
 interface ContestPanelProps {
   user: AppUser;
@@ -41,13 +43,15 @@ interface ContestSubmissionView {
   isFullScore: boolean;
   createdAt: string;
   caseResults: CaseResultView[];
+  blocklyXml: string;
 }
 
-type SideTab = "statement" | "test" | "submit" | "board";
+type SideTab = "statement" | "test" | "submit" | "history" | "board";
 
 /**
- * 參賽者作答區：左側題目清單、中央積木、右側題目說明／自行測試／提交。
- * 提交送 Worker /grade；提交紀錄以 onSnapshot 訂閱自己的 contestSubmissions。
+ * 參賽者作答區：左側題目清單、中央積木、右側題目說明／自行測試／評分／評分紀錄（／排行榜）。
+ * 與練習模式同樣有「執行程式」（互動輸入）。提交送 Worker /grade；
+ * 評分結果與紀錄都來自 onSnapshot 訂閱自己的 contestSubmissions，換題、重新整理都會保留。
  */
 export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: ContestPanelProps) {
   const contestId = user.contestId ?? "";
@@ -58,6 +62,8 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
   const [tab, setTab] = useState<SideTab>("statement");
   const [generatedCode, setGeneratedCode] = useState("");
   const [blocklyXml, setBlocklyXml] = useState("");
+  /** 從評分紀錄「載入」時塞回工作區的 XML；換題時清空。 */
+  const [recordXml, setRecordXml] = useState("");
   const [testInput, setTestInput] = useState("");
   const [testOutput, setTestOutput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -110,6 +116,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
             isFullScore: data.isFullScore === true,
             createdAt: String(data.createdAtIso ?? ""),
             caseResults: Array.isArray(data.caseResults) ? (data.caseResults as CaseResultView[]) : [],
+            blocklyXml: typeof data.blocklyXml === "string" ? data.blocklyXml : "",
           } satisfies ContestSubmissionView;
         });
         list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -133,12 +140,17 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
       null,
     );
   const remaining = selected ? Math.max(0, maxSubmissions - currentSubmissions.length) : 0;
+  // 顯示在「評分」頁的結果：剛提交的那一次，否則是這一題最近一次（換題、重新整理後仍看得到）。
+  const shownResult = lastResult && lastResult.problemId === selected?.problemId ? lastResult : (currentSubmissions[0] ?? null);
+  const solvedCount = problems.filter((problem) => bestOf(problem.problemId)?.isFullScore).length;
+  const attemptedCount = problems.filter((problem) => (submissionsByProblem.get(problem.problemId)?.length ?? 0) > 0).length;
 
   useEffect(() => {
     if (selected) {
       setTestInput(selected.examples[0]?.input ?? "");
       setTestOutput("");
       setLastResult(null);
+      setRecordXml("");
       setMessage("");
     }
   }, [selected?.problemId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -147,6 +159,40 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
     setGeneratedCode(payload.code);
     setBlocklyXml(payload.xml);
   }, []);
+
+  /** 與練習模式相同的「執行程式」：每個輸入積木跳出對話框讓參賽者輸入。 */
+  async function handleInteractiveRun() {
+    if (!generatedCode.trim()) {
+      setTab("test");
+      setTestOutput("目前沒有可執行的積木，請確認工作區已有程式積木。");
+      return;
+    }
+    setBusy(true);
+    setTab("test");
+    setTestOutput("執行中…");
+    try {
+      const result = await runInteractiveProgram(generatedCode, (prompt) => {
+        const value = window.prompt(prompt.trim() || "請輸入資料");
+        if (value === null) throw new Error("執行已取消。");
+        return value;
+      });
+      setTestOutput(result.error ? `${result.output}\n[錯誤] ${result.error}`.trim() : result.output || "(沒有輸出)");
+    } catch (error) {
+      setTestOutput(error instanceof Error ? error.message : "執行失敗。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleLoadRecord(item: ContestSubmissionView) {
+    if (!item.blocklyXml) {
+      setMessage("這筆紀錄沒有保存積木內容。");
+      return;
+    }
+    if (!window.confirm(`載入第 ${item.attempt} 次提交的積木？目前工作區的內容會被取代。`)) return;
+    setRecordXml("");
+    window.setTimeout(() => setRecordXml(item.blocklyXml), 0);
+  }
 
   async function handleTest() {
     if (!generatedCode.trim()) {
@@ -207,7 +253,8 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
   const tabs: Array<{ key: SideTab; label: string; icon: typeof Play }> = [
     { key: "statement", label: "題目說明", icon: FileJson },
     { key: "test", label: "自行測試", icon: Play },
-    { key: "submit", label: "提交", icon: Send },
+    { key: "submit", label: "評分", icon: Send },
+    { key: "history", label: "評分紀錄", icon: History },
     ...(boardOpen ? [{ key: "board" as SideTab, label: "排行榜", icon: Trophy }] : []),
   ];
 
@@ -260,9 +307,9 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                 </button>
               </div>
               <div className="toolbar-actions">
-                <button className="primary-button" onClick={() => void handleTest()} disabled={busy}>
+                <button className="primary-button" onClick={() => void handleInteractiveRun()} disabled={busy}>
                   <Play size={16} />
-                  用範例執行
+                  執行程式
                 </button>
                 <button className="danger-button" onClick={() => void handleSubmit()} disabled={busy || remaining === 0}>
                   <Send size={16} />
@@ -273,7 +320,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
             <BlocklyWorkspace
               mode={mode}
               storageKey={`contest-workspace-${contestId}-${selected.problemId}`}
-              recordXml=""
+              recordXml={recordXml}
               onChange={handleWorkspaceChange}
             />
           </section>
@@ -335,10 +382,16 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                     onChange={(event) => setTestInput(event.target.value)}
                     placeholder="輸入測試資料，空白或換行都會依序餵給輸入積木。"
                   />
-                  <button className="primary-button wide" onClick={() => void handleTest()} disabled={busy}>
-                    <Play size={17} />
-                    用測試資料執行
-                  </button>
+                  <div className="test-action-grid">
+                    <button className="primary-button wide" onClick={() => void handleInteractiveRun()} disabled={busy}>
+                      <Play size={17} />
+                      執行程式
+                    </button>
+                    <button className="ghost-button wide" onClick={() => void handleTest()} disabled={busy}>
+                      <Play size={17} />
+                      用測試資料執行
+                    </button>
+                  </div>
                   <div className="output-box">
                     <span>輸出結果</span>
                     <pre>{testOutput || "尚未執行"}</pre>
@@ -371,19 +424,72 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
               {tab === "submit" && (
                 <div className="panel-stack">
                   <div className="panel-heading">
-                    <h2>提交評分</h2>
-                    <span>剩餘 {remaining} 次</span>
+                    <h2>正式評分</h2>
+                    <span>
+                      {currentSubmissions.length}/{maxSubmissions} 次
+                    </span>
                   </div>
                   <button className="danger-button wide" onClick={() => void handleSubmit()} disabled={busy || remaining === 0}>
                     <Send size={17} />
                     {busy ? "評分中…" : remaining === 0 ? "已用完提交次數" : "提交這一題"}
                   </button>
                   {message && <p className={lastResult?.isFullScore ? "ok-text" : "warning-text"}>{message}</p>}
-                  {lastResult && <SubmissionResult submission={lastResult} />}
+                  {shownResult ? (
+                    <>
+                      <p className="muted">
+                        第 {shownResult.attempt} 次提交 · {formatContestDateTime(shownResult.createdAt)}
+                      </p>
+                      <SubmissionResult submission={shownResult} />
+                    </>
+                  ) : (
+                    <p className="muted">這一題還沒有提交。提交後這裡會顯示評分結果，換題或重新整理也會保留。</p>
+                  )}
+                </div>
+              )}
+
+              {tab === "history" && (
+                <div className="panel-stack">
                   <div className="panel-heading">
-                    <h2>
-                      <History size={16} /> 提交紀錄
-                    </h2>
+                    <h2>評分紀錄</h2>
+                    <span>
+                      {solvedCount}/{problems.length} 題全對
+                    </span>
+                  </div>
+                  <div className="practice-summary-grid">
+                    <Metric label="全對" value={`${solvedCount} 題`} />
+                    <Metric label="已提交" value={`${attemptedCount} 題`} />
+                    <Metric label="未提交" value={`${problems.length - attemptedCount} 題`} />
+                  </div>
+                  <div className="practice-list">
+                    {problems.map((problem) => {
+                      const best = bestOf(problem.problemId);
+                      const used = submissionsByProblem.get(problem.problemId)?.length ?? 0;
+                      return (
+                        <button
+                          key={problem.problemId}
+                          className={problem.problemId === selectedId ? "practice-row active" : "practice-row"}
+                          onClick={() => setSelectedId(problem.problemId)}
+                        >
+                          <span>
+                            <strong>
+                              {problem.order}. {problem.title}
+                            </strong>
+                            <small>{problem.maxScore} 分</small>
+                          </span>
+                          <span className="practice-row-meta">
+                            <span className={best?.isFullScore ? "status-pill" : used > 0 ? "status-pill warning" : "status-pill disabled"}>
+                              {best?.isFullScore ? "全對" : used > 0 ? `最佳 ${best?.score ?? 0} 分` : "未提交"}
+                            </span>
+                            <small>
+                              {used}/{maxSubmissions} 次
+                            </small>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="panel-heading compact-heading">
+                    <h2>本題提交紀錄</h2>
                     <span>{currentSubmissions.length} 次</span>
                   </div>
                   {currentSubmissions.length === 0 && <p className="muted">這一題還沒有提交。</p>}
@@ -395,9 +501,23 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                         </strong>
                         <span>
                           {formatContestDateTime(item.createdAt)} · 通過 {item.passedCases}/{item.totalCases}
+                          {" · "}
+                          <button
+                            className="link-button"
+                            type="button"
+                            onClick={() => {
+                              setLastResult(item);
+                              setMessage("");
+                              setTab("submit");
+                            }}
+                          >
+                            看結果
+                          </button>
                         </span>
                       </div>
-                      <span className={item.isFullScore ? "status-pill" : "status-pill warning"}>{item.isFullScore ? "全對" : item.status}</span>
+                      <button className="ghost-button" type="button" onClick={() => handleLoadRecord(item)}>
+                        載入
+                      </button>
                     </div>
                   ))}
                 </div>
