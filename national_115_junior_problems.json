@@ -1,0 +1,737 @@
+{
+  "year": "115",
+  "group": "國中組",
+  "problem_count": 10,
+  "problems": [
+    {
+      "id": "national-115-j-01",
+      "year": "115",
+      "title": "三角形分類",
+      "description": "【難度 ★】\n\n問題描述\n數學課學到：三條邊要能組成三角形，任兩邊的和必須大於第三邊。組成三角形後，三邊都相等叫等邊三角形，恰好兩邊相等叫等腰三角形，否則是一般三角形。\n\n題目說明\n輸入三個邊長 a、b、c，請判斷並輸出「不是三角形」、「等邊三角形」、「等腰三角形」或「一般三角形」。",
+      "inputFormat": "一行：三個正整數 a、b、c，以空格隔開（1 ≤ a, b, c ≤ 1000）。",
+      "outputFormat": "一行：「不是三角形」、「等邊三角形」、「等腰三角形」或「一般三角形」。",
+      "difficulty": "easy",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "1",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3 4 5",
+          "output": "一般三角形",
+          "description": "3、4、5 可以組成三角形，且三邊都不相等，所以是一般三角形。"
+        },
+        {
+          "title": "範例 2",
+          "input": "5 5 5",
+          "output": "等邊三角形",
+          "description": "5、5、5 可以組成三角形，且三邊相等，所以是等邊三角形。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3 4 5",
+          "output": "一般三角形",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "5 5 5",
+          "output": "等邊三角形",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5 5 8",
+          "output": "等腰三角形",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1 2 3",
+          "output": "不是三角形",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "2 2 5",
+          "output": "不是三角形",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-02",
+      "year": "115",
+      "title": "階梯電費",
+      "description": "【難度 ★】\n\n問題描述\n家裡的電費採階梯計價：前 120 度每度 2 元，第 121 到 330 度每度 3 元，第 331 度以上每度 5 元。\n\n題目說明\n輸入本月用電度數 D，請輸出應繳的電費。",
+      "inputFormat": "一行：整數 D，用電度數（0 ≤ D ≤ 100000）。",
+      "outputFormat": "一行：一個整數，電費金額。",
+      "difficulty": "easy",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "2",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "100",
+          "output": "200",
+          "description": "100×2 = 200。"
+        },
+        {
+          "title": "範例 2",
+          "input": "200",
+          "output": "480",
+          "description": "120×2 + 80×3 = 480。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "100",
+          "output": "200",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "200",
+          "output": "480",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "330",
+          "output": "870",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "500",
+          "output": "1720",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "0",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-03",
+      "year": "115",
+      "title": "數字根",
+      "description": "【難度 ★★】\n\n問題描述\n把一個整數的每個位數加起來，若結果不是一位數就再加一次，直到剩下一位數為止，這個一位數稱為「數字根」。例如 1234 → 1+2+3+4 = 10 → 1+0 = 1。\n\n題目說明\n輸入正整數 N，請輸出「各位數字第一次相加的和」與「數字根」。",
+      "inputFormat": "一行：正整數 N（1 ≤ N ≤ 999999999）。",
+      "outputFormat": "一行：兩個整數，第一次相加的和與數字根，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "3",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "1234",
+          "output": "10 1",
+          "description": "1+2+3+4 = 10，1+0 = 1，所以輸出 10 1。"
+        },
+        {
+          "title": "範例 2",
+          "input": "999",
+          "output": "27 9",
+          "description": "9+9+9 = 27，2+7 = 9，所以輸出 27 9。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "1234",
+          "output": "10 1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "999",
+          "output": "27 9",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "5",
+          "output": "5 5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "987654321",
+          "output": "45 9",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "100000",
+          "output": "1 1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-04",
+      "year": "115",
+      "title": "二進位轉換",
+      "description": "【難度 ★★】\n\n問題描述\n電腦內部只用 0 和 1 表示數字。把十進位整數不斷除以 2、記下餘數，再把餘數倒過來排列，就能得到二進位表示。\n\n題目說明\n輸入一個十進位整數 N，請輸出它的二進位表示。",
+      "inputFormat": "一行：整數 N（0 ≤ N ≤ 1000000）。",
+      "outputFormat": "一行：N 的二進位表示（N 為 0 時輸出 0）。",
+      "difficulty": "easy",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "4",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "10",
+          "output": "1010",
+          "description": "10 連續除以 2 的餘數依序是 0、1、0、1，倒過來排列得到 1010。"
+        },
+        {
+          "title": "範例 2",
+          "input": "1",
+          "output": "1",
+          "description": "1 連續除以 2 的餘數依序是 1，倒過來排列得到 1。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "10",
+          "output": "1010",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "1",
+          "output": "1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "255",
+          "output": "11111111",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "0",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1000000",
+          "output": "11110100001001000000",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-05",
+      "year": "115",
+      "title": "最大公因數與最小公倍數",
+      "description": "【難度 ★★★】\n\n問題描述\n社團要把 N 種長度的緞帶都剪成一樣長的小段且不能有剩，最長可以剪多長？另外，N 個不同週期的燈要多久才會再同時亮起？這兩個問題分別要用最大公因數與最小公倍數來解。\n\n題目說明\n輸入 N 個正整數，請輸出它們的最大公因數（GCD）與最小公倍數（LCM）。",
+      "inputFormat": "第一行：整數 N（1 ≤ N ≤ 10）。\n第二行：N 個正整數，以空格隔開（每個 ≤ 1000，且保證最小公倍數不超過 10^15）。",
+      "outputFormat": "一行：兩個整數，最大公因數與最小公倍數，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "5",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3\n12 18 24",
+          "output": "6 72",
+          "description": "12、18、24 的最大公因數是 6，最小公倍數是 72。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2\n7 5",
+          "output": "1 35",
+          "description": "7、5 的最大公因數是 1，最小公倍數是 35。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3\n12 18 24",
+          "output": "6 72",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2\n7 5",
+          "output": "1 35",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "4\n4 8 16 32",
+          "output": "4 32",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "5\n6 10 15 21 35",
+          "output": "1 210",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n42",
+          "output": "42 42",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-06",
+      "year": "115",
+      "title": "班長選舉",
+      "description": "【難度 ★★★】\n\n問題描述\n班上選班長，有 K 位候選人（編號 1 到 K），全班 N 位同學每人投一票。得票最多的人當選；若有多人同票，編號最小的當選。\n\n題目說明\n輸入每張選票投給的候選人編號，請輸出當選者的編號與得票數。",
+      "inputFormat": "第一行：整數 N，選票數（1 ≤ N ≤ 100）。\n第二行：整數 K，候選人數（1 ≤ K ≤ 20）。\n第三行：N 個整數，每張選票投給的候選人編號（1 到 K），以空格隔開。",
+      "outputFormat": "一行：兩個整數，當選者編號與得票數，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "6",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "7\n3\n1 2 2 3 1 2 3",
+          "output": "2 3",
+          "description": "各候選人得票：1 號 2 票、2 號 3 票、3 號 2 票，所以輸出 2 3。"
+        },
+        {
+          "title": "範例 2",
+          "input": "6\n4\n4 1 4 1 2 2",
+          "output": "1 2",
+          "description": "各候選人得票：1 號 2 票、2 號 2 票、3 號 0 票、4 號 2 票；有多人同票，取編號最小者，所以輸出 1 2。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "7\n3\n1 2 2 3 1 2 3",
+          "output": "2 3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "6\n4\n4 1 4 1 2 2",
+          "output": "1 2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n5\n5",
+          "output": "5 1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "10\n2\n2 2 2 2 2 1 1 1 1 1",
+          "output": "1 5",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "9\n3\n3 3 3 3 1 1 1 2 2",
+          "output": "3 4",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-07",
+      "year": "115",
+      "title": "方陣對角線",
+      "description": "【難度 ★★★】\n\n問題描述\n老師在黑板畫了一個 N×N 的數字方陣，要同學算出「主對角線」（左上到右下）與「副對角線」（右上到左下）各自的總和。\n\n題目說明\n輸入 N 與 N×N 的整數方陣，請輸出主對角線的和與副對角線的和。",
+      "inputFormat": "第一行：整數 N（1 ≤ N ≤ 20）。\n接下來 N 行：每行 N 個整數，以空格隔開（−1000 ≤ 每個值 ≤ 1000）。",
+      "outputFormat": "一行：兩個整數，主對角線和與副對角線和，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "7",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3\n1 2 3\n4 5 6\n7 8 9",
+          "output": "15 15",
+          "description": "主對角線 1 + 5 + 9 = 15，副對角線 3 + 5 + 7 = 15。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2\n10 -3\n4 8",
+          "output": "18 1",
+          "description": "主對角線 10 + 8 = 18，副對角線 -3 + 4 = 1。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3\n1 2 3\n4 5 6\n7 8 9",
+          "output": "15 15",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2\n10 -3\n4 8",
+          "output": "18 1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n99",
+          "output": "99 99",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n1 0 0 2\n0 3 4 0\n0 5 6 0\n7 0 0 8",
+          "output": "18 18",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "5\n5 1 1 1 5\n1 5 1 5 1\n1 1 5 1 1\n1 5 1 5 1\n5 1 1 1 5",
+          "output": "25 25",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-08",
+      "year": "115",
+      "title": "圍圈報數",
+      "description": "【難度 ★★★★】\n\n問題描述\nN 位同學圍成一圈，編號 1 到 N。從 1 號開始順時針報數，每報到第 K 個人就要離開圓圈，下一個人再從 1 重新報數，直到只剩一個人為止。\n\n題目說明\n輸入 N 與 K，請輸出最後留下來的同學編號。",
+      "inputFormat": "一行：兩個整數 N、K，以空格隔開（1 ≤ N ≤ 100，1 ≤ K ≤ 100）。",
+      "outputFormat": "一行：一個整數，最後留下的編號。",
+      "difficulty": "hard",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "8",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5 2",
+          "output": "3",
+          "description": "離開的順序為 2、4、1、5，最後留下 3 號。"
+        },
+        {
+          "title": "範例 2",
+          "input": "7 3",
+          "output": "4",
+          "description": "離開的順序為 3、6、2、7、5、1，最後留下 4 號。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5 2",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "7 3",
+          "output": "4",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1 1",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "10 1",
+          "output": "10",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "41 3",
+          "output": "31",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-09",
+      "year": "115",
+      "title": "最少硬幣",
+      "description": "【難度 ★★★★】\n\n問題描述\n某個國家有 K 種硬幣面額。店員想用最少的硬幣數量湊出金額 M。注意：從大面額開始拿不一定最好，例如面額 1、3、4 要湊 6 元，拿 4+1+1 要 3 枚，但 3+3 只要 2 枚。\n\n題目說明\n輸入硬幣面額與金額 M，請輸出湊出 M 所需的最少硬幣數；若無法剛好湊出，輸出 -1。",
+      "inputFormat": "第一行：整數 K，硬幣種類數（1 ≤ K ≤ 10）。\n第二行：K 個正整數，各種硬幣面額，以空格隔開（每個 ≤ 1000）。\n第三行：整數 M，目標金額（1 ≤ M ≤ 1000）。",
+      "outputFormat": "一行：一個整數，最少硬幣數或 -1。",
+      "difficulty": "hard",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "9",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3\n1 5 10\n28",
+          "output": "6",
+          "description": "28 = 10 + 10 + 5 + 1 + 1 + 1，共 6 枚，是最少的組合。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n1 3 4\n6",
+          "output": "2",
+          "description": "6 = 3 + 3，共 2 枚，是最少的組合。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3\n1 5 10\n28",
+          "output": "6",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n1 3 4\n6",
+          "output": "2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "2\n3 7\n11",
+          "output": "-1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4\n2 5 10 20\n37",
+          "output": "4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "5\n7 11 13 50 90\n1000",
+          "output": "12",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-j-10",
+      "year": "115",
+      "title": "迷宮最短路",
+      "description": "【難度 ★★★★★】\n\n問題描述\n校慶闖關活動有一座 R 列 C 行的迷宮，「.」代表可以走的格子，「#」代表牆壁。參賽者從左上角出發，每步可以往上、下、左、右移動一格，要走到右下角。\n\n題目說明\n輸入迷宮地圖，請輸出從左上角走到右下角的最少步數；若走不到，輸出 -1。（左上角與右下角保證是「.」）",
+      "inputFormat": "第一行：兩個整數 R、C，以空格隔開（1 ≤ R, C ≤ 20）。\n接下來 R 行：每行是長度為 C 的字串，只包含「.」和「#」。",
+      "outputFormat": "一行：一個整數，最少步數或 -1。",
+      "difficulty": "hard",
+      "category": "115全國賽國中",
+      "categories": [
+        "115全國賽國中",
+        "難度★★★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國中）",
+      "sourceId": "10",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3 3\n...\n.#.\n...",
+          "output": "4",
+          "description": "3×3 的迷宮中，避開牆壁的最短路徑需要 4 步（例如沿著外圍走）。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3 3\n.#.\n.#.\n.#.",
+          "output": "-1",
+          "description": "被牆壁擋住，從左上角無法走到右下角，輸出 -1。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3 3\n...\n.#.\n...",
+          "output": "4",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3 3\n.#.\n.#.\n.#.",
+          "output": "-1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1 1\n.",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "4 5\n.....\n.###.\n...#.\n##...",
+          "output": "7",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "6 7\n..#....\n.##.##.\n....#..\n.##.#.#\n.#..#..\n...##..",
+          "output": "17",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import {
   type IssuedContestAccount,
 } from "../../services/contestAccountStore";
 import { GraderError, hasGraderConfig } from "../../services/grader";
+import { createSchoolDraft, saveSchool } from "../../services/schoolStore";
 import type { ContestAccount, ContestEvent, School } from "../../types";
 import { csvDateStamp, downloadCsv } from "../../utils/csv";
 import { formatContestDateTime } from "../../utils/format";
@@ -27,6 +28,10 @@ interface ContestAccountsSectionProps {
 interface PreviewRow extends ContestAccountImportRow {
   line: number;
   error?: string;
+  /** 學校名稱不是完全一致、由系統自動對應時的提示。 */
+  hint?: string;
+  /** 「學校管理」裡沒有這所學校，匯入時會自動新增。 */
+  newSchool?: boolean;
 }
 
 const SAMPLE_CSV = "學校,姓名\n大福國小,王小明\n大福國小,陳小華\n順安國小,林小三";
@@ -36,6 +41,8 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
   const candidateContests = contests.filter((contest) => contest.status !== "archived");
   const [contestId, setContestId] = useState(initialContestId || candidateContests[0]?.id || "");
   const [csvText, setCsvText] = useState("");
+  /** 預設學校：名單只有姓名（或學校欄空白）時自動帶入。 */
+  const [defaultSchoolId, setDefaultSchoolId] = useState("");
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [accounts, setAccounts] = useState<ContestAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
@@ -46,7 +53,8 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
   const [qrByUsername, setQrByUsername] = useState<Record<string, string>>({});
 
   const contest = contests.find((item) => item.id === contestId);
-  const schoolByName = useMemo(() => new Map(schools.map((school) => [school.name.trim(), school])), [schools]);
+  const enabledSchools = useMemo(() => schools.filter((school) => school.enabled !== false), [schools]);
+  const defaultSchool = schools.find((school) => school.id === defaultSchoolId);
 
   useEffect(() => {
     if (!contestId && candidateContests[0]) {
@@ -92,23 +100,44 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
   function handlePreview() {
     const rows = parseCsv(csvText);
     if (rows.length === 0) {
-      onStatus("請先貼上名單（學校,姓名）。");
+      onStatus("請先貼上名單（學校,姓名 或 只有姓名）。");
       return;
     }
     setPreview(
       rows.map(({ line, cells }) => {
-        const [schoolName = "", name = "", note = ""] = cells;
-        const school = schoolByName.get(schoolName.trim());
+        // 只有一欄時視為姓名（除非它本身就是學校名稱），學校用預設學校帶入。
+        const singleIsSchool = cells.length === 1 && matchSchool(cells[0], schools).kind === "exact";
+        const [schoolName = "", name = "", note = ""] = cells.length === 1 && !singleIsSchool ? ["", cells[0]] : cells;
         const errors: string[] = [];
+        let hint: string | undefined;
+        let school: School | undefined;
+        let newSchool = false;
         if (!name.trim()) errors.push("缺姓名");
-        if (!schoolName.trim()) errors.push("缺學校");
-        else if (!school) errors.push(`找不到學校「${schoolName.trim()}」`);
+        if (!schoolName.trim()) {
+          school = defaultSchool;
+          if (school) hint = "帶入預設學校";
+          else errors.push("缺學校（可在上方選預設學校）");
+        } else {
+          const matched = matchSchool(schoolName, schools);
+          if (matched.kind === "exact") school = matched.school;
+          else if (matched.kind === "fuzzy") {
+            school = matched.school;
+            hint = `「${schoolName.trim()}」自動對應為「${school.name}」`;
+          } else if (matched.kind === "ambiguous") errors.push(`「${schoolName.trim()}」符合多所學校：${matched.candidates.map((item) => item.name).join("、")}`);
+          else {
+            // 學校管理裡沒有這所學校：匯入時自動新增，不擋匯入。
+            newSchool = true;
+            hint = `將自動新增學校「${schoolName.trim()}」`;
+          }
+        }
         return {
           line,
           name: name.trim(),
           schoolId: school?.id ?? "",
           schoolName: school?.name ?? schoolName.trim(),
           note: note.trim(),
+          hint,
+          newSchool,
           error: errors.length > 0 ? errors.join("、") : undefined,
         };
       }),
@@ -122,12 +151,26 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
       onStatus("沒有可匯入的列，請先修正錯誤。");
       return;
     }
-    if (!window.confirm(`確定為「${contest.title}」匯入 ${valid.length} 個帳號？密碼只會顯示這一次。`)) {
+    const newSchoolNames = Array.from(new Set(valid.filter((row) => row.newSchool).map((row) => row.schoolName)));
+    const newSchoolText = newSchoolNames.length > 0 ? `，並在「學校管理」新增 ${newSchoolNames.length} 所學校（${newSchoolNames.join("、")}）` : "";
+    if (!window.confirm(`確定為「${contest.title}」匯入 ${valid.length} 個帳號${newSchoolText}？密碼只會顯示這一次。`)) {
       return;
     }
     setWorking(true);
     try {
-      const result = await importContestAccounts(contest.id, valid.map(({ name, schoolId, schoolName, note }) => ({ name, schoolId, schoolName, note })));
+      // 先把名單裡不存在的學校建立起來，帳號才會綁到正式的學校 ID。
+      const createdSchoolIds = new Map<string, string>();
+      for (const [index, name] of newSchoolNames.entries()) {
+        const school = await saveSchool({ ...createSchoolDraft(), id: `school-${Date.now()}-${index}`, name });
+        createdSchoolIds.set(name, school.id);
+      }
+      const rows = valid.map(({ name, schoolId, schoolName, note }) => ({
+        name,
+        schoolId: schoolId || createdSchoolIds.get(schoolName) || "",
+        schoolName,
+        note,
+      }));
+      const result = await importContestAccounts(contest.id, rows);
       setIssued(result.accounts);
       setIssuedLabel(`${contest.title}｜批次 ${result.batchId}`);
       setPreview(null);
@@ -254,8 +297,27 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
           <div className="admin-subsection">
             <h4>批次匯入</h4>
             <p className="muted">
-              每列「學校,姓名」，用逗號或 Tab 分隔，可直接從 Excel 貼上；第一列若是標題會自動略過。學校名稱必須與「學校管理」中的名稱完全一致。系統會自動產生帳號、密碼與各校序號。
+              每列「學校,姓名」，用逗號或 Tab 分隔，可直接從 Excel 貼上；第一列若是標題會自動略過。學校名稱會自動對應「學校管理」中的學校（可省略縣市、簡稱如「大福」），沒有的學校會在匯入時自動新增；
+              若名單只有姓名，請先選「預設學校」。系統會自動產生帳號、密碼與各校序號。
             </p>
+            <label className="inline-admin-select">
+              預設學校
+              <select
+                value={defaultSchoolId}
+                onChange={(event) => {
+                  setDefaultSchoolId(event.target.value);
+                  setPreview(null);
+                }}
+                disabled={disabled}
+              >
+                <option value="">（不指定，每列都要填學校）</option>
+                {enabledSchools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <textarea
               className="json-input"
               rows={8}
@@ -312,7 +374,7 @@ export function ContestAccountsSection({ contests, schools, busy, onStatus, onCo
                     <span>{row.schoolName || "-"}</span>
                     <span>{row.name || "-"}</span>
                     <span>{row.note || "-"}</span>
-                    <span className={row.error ? "warning-text" : "ok-text"}>{row.error ?? "可匯入"}</span>
+                    <span className={row.error ? "warning-text" : "ok-text"}>{row.error ?? (row.hint ? `可匯入（${row.hint}）` : "可匯入")}</span>
                   </div>
                 ))}
               </div>
@@ -456,6 +518,42 @@ function parseCsv(text: string): Array<{ line: number; cells: string[] }> {
     if (looksLikeHeader) rows.shift();
   }
   return rows;
+}
+
+/**
+ * 學校名稱對應：先完全一致，再比對正規化後的名稱（去空白、去「○○縣／市」前綴、去「立」字），
+ * 最後允許唯一的包含關係（「大福」→「大福國小」、「宜蘭縣大福國民小學」→「大福國小」）。
+ */
+function matchSchool(
+  input: string,
+  schools: School[],
+): { kind: "exact" | "fuzzy"; school: School } | { kind: "ambiguous"; candidates: School[] } | { kind: "none" } {
+  const raw = input.trim();
+  const exact = schools.find((school) => school.name.trim() === raw);
+  if (exact) return { kind: "exact", school: exact };
+
+  const target = normalizeSchoolName(raw);
+  if (!target) return { kind: "none" };
+  const normalized = schools.map((school) => ({ school, key: normalizeSchoolName(school.name) }));
+
+  const same = normalized.filter((item) => item.key === target);
+  if (same.length === 1) return { kind: "fuzzy", school: same[0].school };
+  if (same.length > 1) return { kind: "ambiguous", candidates: same.map((item) => item.school) };
+
+  const partial = normalized.filter((item) => item.key.includes(target) || target.includes(item.key));
+  if (partial.length === 1) return { kind: "fuzzy", school: partial[0].school };
+  if (partial.length > 1) return { kind: "ambiguous", candidates: partial.map((item) => item.school) };
+  return { kind: "none" };
+}
+
+function normalizeSchoolName(value: string) {
+  return value
+    .replace(/\s+/g, "")
+    .replace(/^(臺|台)?[一-龥]{1,2}(縣|市)(立)?/, "")
+    .replace(/^(縣|市|國|私)立/, "")
+    .replace(/國民小學$/, "國小")
+    .replace(/國民中學$/, "國中")
+    .toLowerCase();
 }
 
 function splitCommaLine(line: string) {

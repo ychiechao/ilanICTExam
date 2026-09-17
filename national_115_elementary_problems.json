@@ -1,0 +1,737 @@
+{
+  "year": "115",
+  "group": "國小組",
+  "problem_count": 10,
+  "problems": [
+    {
+      "id": "national-115-e-01",
+      "year": "115",
+      "title": "園遊會找零",
+      "description": "【難度 ★】\n\n問題描述\n學校園遊會的攤位由小朋友自己當老闆。客人買東西時，老闆要算出該找多少零錢。\n\n題目說明\n輸入商品價格 P 與客人付的金額 M（M 一定大於或等於 P），請輸出要找給客人的零錢。",
+      "inputFormat": "第一行：整數 P，商品價格。\n第二行：整數 M，客人付的金額。",
+      "outputFormat": "一行：一個整數，找零金額。",
+      "difficulty": "easy",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "1",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "35\n100",
+          "output": "65",
+          "description": "100 − 35 = 65。"
+        },
+        {
+          "title": "範例 2",
+          "input": "120\n200",
+          "output": "80",
+          "description": "200 − 120 = 80。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "35\n100",
+          "output": "65",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "120\n200",
+          "output": "80",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "99\n100",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "250\n250",
+          "output": "0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "480\n1000",
+          "output": "520",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-02",
+      "year": "115",
+      "title": "閏年查詢",
+      "description": "【難度 ★】\n\n問題描述\n小華想知道自己出生那一年的二月有沒有 29 日。西元年份若是 4 的倍數就是閏年，但 100 的倍數不是閏年，除非它同時是 400 的倍數。\n\n題目說明\n輸入一個西元年份 Y，若是閏年輸出「閏年」，否則輸出「平年」。",
+      "inputFormat": "一行：整數 Y，西元年份（1 ≤ Y ≤ 9999）。",
+      "outputFormat": "一行：「閏年」或「平年」。",
+      "difficulty": "easy",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "2",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "2024",
+          "output": "閏年",
+          "description": "2024 是 4 的倍數，所以是閏年。"
+        },
+        {
+          "title": "範例 2",
+          "input": "1900",
+          "output": "平年",
+          "description": "1900 是 100 的倍數但不是 400 的倍數，所以是平年。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "2024",
+          "output": "閏年",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "1900",
+          "output": "平年",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "2000",
+          "output": "閏年",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "2023",
+          "output": "平年",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "2100",
+          "output": "平年",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-03",
+      "year": "115",
+      "title": "跳繩比賽",
+      "description": "【難度 ★★】\n\n問題描述\n班上舉辦一分鐘跳繩比賽，老師記錄了每位同學的次數，想知道最厲害與最需要加油的同學差多少下。\n\n題目說明\n輸入 N 位同學的跳繩次數，請輸出最高次數、最低次數，以及兩者的差。",
+      "inputFormat": "第一行：整數 N，同學人數（1 ≤ N ≤ 50）。\n第二行：N 個整數，每位同學的跳繩次數，以空格隔開。",
+      "outputFormat": "一行：三個整數，最高次數、最低次數、差距，以空格隔開。",
+      "difficulty": "easy",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "3",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n120 85 143 97 110",
+          "output": "143 85 58",
+          "description": "最高 143 下、最低 85 下，差距 143 − 85 = 58。"
+        },
+        {
+          "title": "範例 2",
+          "input": "3\n60 60 60",
+          "output": "60 60 0",
+          "description": "最高 60 下、最低 60 下，差距 60 − 60 = 0。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n120 85 143 97 110",
+          "output": "143 85 58",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "3\n60 60 60",
+          "output": "60 60 0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1\n77",
+          "output": "77 77 0",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n15 200 33 199 1 100",
+          "output": "200 1 199",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "8\n50 51 52 53 54 55 56 57",
+          "output": "57 50 7",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-04",
+      "year": "115",
+      "title": "數字倒著念",
+      "description": "【難度 ★★】\n\n問題描述\n妹妹喜歡把數字倒過來念，例如 1234 會念成 4321。可是遇到像 1200 這種尾巴有 0 的數字，倒過來應該是 21 才對。\n\n題目說明\n輸入一個正整數 N，請輸出把它的數字順序反過來後得到的整數（不能有多餘的前導 0）。",
+      "inputFormat": "一行：正整數 N（1 ≤ N ≤ 999999999）。",
+      "outputFormat": "一行：一個整數，反轉後的數。",
+      "difficulty": "easy",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "4",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "1234",
+          "output": "4321",
+          "description": "1234 反過來寫是 4321，去掉前導 0 得到 4321。"
+        },
+        {
+          "title": "範例 2",
+          "input": "1200",
+          "output": "21",
+          "description": "1200 反過來寫是 0021，去掉前導 0 得到 21。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "1234",
+          "output": "4321",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "1200",
+          "output": "21",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "7",
+          "output": "7",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "90000",
+          "output": "9",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "120021",
+          "output": "120021",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-05",
+      "year": "115",
+      "title": "不能說七",
+      "description": "【難度 ★★★】\n\n問題描述\n同學們玩「不能說七」遊戲：從 1 開始輪流報數，遇到 7 的倍數或數字裡含有 7 的數（例如 7、14、17、70）都要拍手代替，不能說出來。\n\n題目說明\n輸入 N，請輸出從 1 數到 N 的過程中，真正可以「說出來」的數有幾個。",
+      "inputFormat": "一行：整數 N（1 ≤ N ≤ 1000）。",
+      "outputFormat": "一行：一個整數，可以說出來的數的個數。",
+      "difficulty": "medium",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "5",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "10",
+          "output": "9",
+          "description": "1 到 10 中要拍手的數有 7，共 1 個，所以可以說的有 10 − 1 = 9 個。"
+        },
+        {
+          "title": "範例 2",
+          "input": "20",
+          "output": "17",
+          "description": "1 到 20 中要拍手的數有 7、14、17，共 3 個，所以可以說的有 20 − 3 = 17 個。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "10",
+          "output": "9",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "20",
+          "output": "17",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "100",
+          "output": "70",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6",
+          "output": "6",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1000",
+          "output": "626",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-06",
+      "year": "115",
+      "title": "小明的名次",
+      "description": "【難度 ★★★】\n\n問題描述\n期中考結束後，老師公布了全班的分數，小明想知道自己是第幾名。名次的算法是：比自己分數高的人數再加 1（同分同名次）。\n\n題目說明\n輸入 N 位同學的分數以及小明的分數 X（X 一定是其中一位同學的分數），請輸出小明的名次。",
+      "inputFormat": "第一行：整數 N，同學人數（1 ≤ N ≤ 50）。\n第二行：N 個整數，每位同學的分數，以空格隔開。\n第三行：整數 X，小明的分數。",
+      "outputFormat": "一行：一個整數，小明的名次。",
+      "difficulty": "medium",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "6",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n88 92 75 92 60\n88",
+          "output": "3",
+          "description": "比 88 分高的有 92、92，共 2 個，名次為 2 + 1 = 3。"
+        },
+        {
+          "title": "範例 2",
+          "input": "4\n100 100 100 100\n100",
+          "output": "1",
+          "description": "比 100 分高的有 0 個，名次為 0 + 1 = 1。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n88 92 75 92 60\n88",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "4\n100 100 100 100\n100",
+          "output": "1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "6\n55 70 65 90 80 95\n55",
+          "output": "6",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "1\n73\n73",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "7\n81 79 81 90 79 88 81\n79",
+          "output": "6",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-07",
+      "year": "115",
+      "title": "質數探險",
+      "description": "【難度 ★★★】\n\n問題描述\n質數是只能被 1 和自己整除、且大於 1 的整數，例如 2、3、5、7。小美想知道某個範圍裡藏了幾個質數。\n\n題目說明\n輸入 N，請輸出 2 到 N 之間（含）質數的個數，以及其中最大的質數。",
+      "inputFormat": "一行：整數 N（2 ≤ N ≤ 1000）。",
+      "outputFormat": "一行：兩個整數，質數個數與最大的質數，以空格隔開。",
+      "difficulty": "medium",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "7",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "10",
+          "output": "4 7",
+          "description": "2 到 10 的質數有 2、3、5、7，共 4 個，最大的是 7。"
+        },
+        {
+          "title": "範例 2",
+          "input": "2",
+          "output": "1 2",
+          "description": "2 到 2 的質數有 2，共 1 個，最大的是 2。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "10",
+          "output": "4 7",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "2",
+          "output": "1 2",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "30",
+          "output": "10 29",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "100",
+          "output": "25 97",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1000",
+          "output": "168 997",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-08",
+      "year": "115",
+      "title": "樓梯走法",
+      "description": "【難度 ★★★★】\n\n問題描述\n小傑每次上樓梯可以一次跨 1 階或 2 階。他很好奇：走完 N 階樓梯，總共有幾種不同的走法？例如 3 階有「1+1+1」、「1+2」、「2+1」三種。\n\n題目說明\n輸入樓梯階數 N，請輸出走法的總數。提示：走到第 N 階的方法數 = 走到第 N−1 階的方法數 + 走到第 N−2 階的方法數。",
+      "inputFormat": "一行：整數 N（1 ≤ N ≤ 40）。",
+      "outputFormat": "一行：一個整數，走法總數。",
+      "difficulty": "hard",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "8",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "3",
+          "output": "3",
+          "description": "第 1 階到第 3 階的走法數依序為 1、2、3，所以答案是 3。"
+        },
+        {
+          "title": "範例 2",
+          "input": "5",
+          "output": "8",
+          "description": "第 1 階到第 5 階的走法數依序為 1、2、3、5、8，所以答案是 8。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "3",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "5",
+          "output": "8",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "1",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "10",
+          "output": "89",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "40",
+          "output": "165580141",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-09",
+      "year": "115",
+      "title": "最長連續晴天",
+      "description": "【難度 ★★★★】\n\n問題描述\n氣象社記錄了連續 N 天的天氣，1 代表晴天、0 代表雨天。社長想知道這段期間最長連續晴了幾天，好安排戶外觀測活動。\n\n題目說明\n輸入 N 天的天氣紀錄，請輸出最長的連續晴天天數；若完全沒有晴天，輸出 0。",
+      "inputFormat": "第一行：整數 N，天數（1 ≤ N ≤ 100）。\n第二行：N 個整數，每個是 0 或 1，以空格隔開。",
+      "outputFormat": "一行：一個整數，最長連續晴天天數。",
+      "difficulty": "hard",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "9",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "10\n1 1 0 1 1 1 0 0 1 0",
+          "output": "3",
+          "description": "連續晴天的段落長度分別是 2、3、1，最長的是 3 天。"
+        },
+        {
+          "title": "範例 2",
+          "input": "5\n0 0 0 0 0",
+          "output": "0",
+          "description": "這段期間沒有晴天，所以輸出 0。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "10\n1 1 0 1 1 1 0 0 1 0",
+          "output": "3",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "5\n0 0 0 0 0",
+          "output": "0",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "6\n1 1 1 1 1 1",
+          "output": "6",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "12\n1 0 1 0 1 1 0 1 1 1 1 0",
+          "output": "4",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "1\n1",
+          "output": "1",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    },
+    {
+      "id": "national-115-e-10",
+      "year": "115",
+      "title": "連續進步最多",
+      "description": "【難度 ★★★★★】\n\n問題描述\n小婷每天練習心算，並把當天比前一天「多答對」或「少答對」的題數記下來（可能是負數）。她想找出一段連續的日子，讓這段期間累積的進步題數最大。\n\n題目說明\n輸入 N 天的紀錄，請輸出「連續一段日子（至少 1 天）」的加總最大值。",
+      "inputFormat": "第一行：整數 N，天數（1 ≤ N ≤ 100）。\n第二行：N 個整數（−100 ≤ 每個值 ≤ 100），以空格隔開。",
+      "outputFormat": "一行：一個整數，連續區段加總的最大值。",
+      "difficulty": "hard",
+      "category": "115全國賽國小",
+      "categories": [
+        "115全國賽國小",
+        "難度★★★★★"
+      ],
+      "status": "published",
+      "source": "全國賽115題庫（國小）",
+      "sourceId": "10",
+      "examples": [
+        {
+          "title": "範例 1",
+          "input": "5\n3 -4 5 -1 4",
+          "output": "8",
+          "description": "取第 3 天到第 5 天：5 − 1 + 4 = 8，是所有連續區段中最大的。"
+        },
+        {
+          "title": "範例 2",
+          "input": "4\n-2 -5 -1 -3",
+          "output": "-1",
+          "description": "只取第 3 天：-1，是所有連續區段中最大的。"
+        }
+      ],
+      "cases": [
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C1",
+          "input": "5\n3 -4 5 -1 4",
+          "output": "8",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C2",
+          "input": "4\n-2 -5 -1 -3",
+          "output": "-1",
+          "score": 20,
+          "visibility": "public"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C3",
+          "input": "8\n2 -1 2 3 -9 4 -1 2",
+          "output": "6",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C4",
+          "input": "6\n1 2 3 4 5 6",
+          "output": "21",
+          "score": 20,
+          "visibility": "hidden"
+        },
+        {
+          "groupTitle": "測資",
+          "caseTitle": "C5",
+          "input": "10\n-3 7 -2 -2 8 -10 5 5 -20 3",
+          "output": "11",
+          "score": 20,
+          "visibility": "hidden"
+        }
+      ]
+    }
+  ]
+}
