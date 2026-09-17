@@ -214,6 +214,16 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // 參賽者端異常事件（切分頁、離開全螢幕、貼上…）：本人只能新增自己的，超管可讀，不可改刪。
+    match /contestEvents/{eventId} {
+      allow read: if isSuperAdmin();
+      allow create: if isContestAccount() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.contestId == request.auth.token.get("contestId", "") &&
+        request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
     // 超管操作紀錄：只能新增，不能修改或刪除。
     match /auditLogs/{logId} {
       allow read: if isSuperAdmin();

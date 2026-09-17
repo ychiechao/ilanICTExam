@@ -60,6 +60,11 @@ export function DashboardSection({ contests, currentUser, busy, onStatus, onCont
     [now, presence],
   );
   const everOnline = presence.length;
+  const awayCount = useMemo(
+    () => presence.filter((item) => now - item.lastSeenMs < PRESENCE_ONLINE_WINDOW_MS && !item.inFullscreen).length,
+    [now, presence],
+  );
+  const leaveTotal = presence.reduce((sum, item) => sum + item.leaveCount, 0);
   const showNames = contest?.dashboard?.showNames ?? false;
   const visibility = contest?.dashboard?.visibility ?? "organizer";
   const boardToken = (contest?.dashboard as { boardToken?: string } | undefined)?.boardToken ?? "";
@@ -121,6 +126,8 @@ export function DashboardSection({ contests, currentUser, busy, onStatus, onCont
         <Metric label="帳號數" value={`${contest?.accountCount ?? dashboard?.accountCount ?? 0} 人`} />
         <Metric label="目前線上" value={`${onlineCount} 人`} />
         <Metric label="登入過" value={`${everOnline} 人`} />
+        <Metric label="離開考試畫面中" value={`${awayCount} 人`} />
+        <Metric label="離開次數合計" value={`${leaveTotal} 次`} />
         <Metric label="已提交" value={`${dashboard?.submittedCount ?? 0} 人`} />
         <Metric label="提交次數" value={`${dashboard?.submissionCount ?? 0} 次`} />
         <Metric label="平均總分" value={`${Math.round(dashboard?.averageScore ?? 0)} 分`} />

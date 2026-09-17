@@ -9,6 +9,7 @@ import { formatCountdown, useServerNow } from "../../services/serverClock";
 import type { AppUser, PlatformState } from "../../types";
 import { formatContestDateTime } from "../../utils/format";
 import { GuishanIslandIcon } from "../ui";
+import { ContestLockGuard } from "./ContestLockGuard";
 import { ContestPanel } from "./ContestPanel";
 
 interface ContestShellProps {
@@ -93,6 +94,8 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
       </header>
 
       {platform.announcement && <div className="platform-banner">{platform.announcement}</div>}
+
+      <ContestLockGuard user={user} active={phase === "running"} />
 
       {phase === "running" && (
         <ContestPanel

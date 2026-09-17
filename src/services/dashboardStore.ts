@@ -32,6 +32,10 @@ export interface PresenceRecord {
   name: string;
   schoolId: string;
   lastSeenMs: number;
+  /** 是否在考試畫面（全螢幕）；舊資料沒有這欄視為 true。 */
+  inFullscreen: boolean;
+  /** 離開考試畫面的累計次數。 */
+  leaveCount: number;
 }
 
 export interface RecentSubmission {
@@ -93,6 +97,8 @@ export function subscribePresence(contestId: string, callback: (records: Presenc
             name: String(data.name ?? ""),
             schoolId: String(data.schoolId ?? ""),
             lastSeenMs: typeof data.lastSeenMs === "number" ? data.lastSeenMs : 0,
+            inFullscreen: data.inFullscreen !== false,
+            leaveCount: typeof data.leaveCount === "number" ? data.leaveCount : 0,
           };
         }),
       );

@@ -2458,3 +2458,39 @@ pre {
   font-size: 0.78rem;
   align-self: center;
 }
+
+/* ---- 競賽全螢幕軟鎖遮罩 ---- */
+.contest-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8, 48, 56, 0.86);
+  backdrop-filter: blur(6px);
+}
+
+.contest-lock-card {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px;
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
+}
+
+.contest-lock-card h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.contest-lock-card p {
+  margin: 0;
+  color: #2c4650;
+  line-height: 1.6;
+}
