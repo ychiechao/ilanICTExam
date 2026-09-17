@@ -11,7 +11,7 @@ export function hasGraderConfig() {
 }
 
 interface GraderRequestOptions {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "DELETE";
   body?: unknown;
   /** 帶目前登入者的 Firebase ID token（預設帶）。 */
   withAuth?: boolean;

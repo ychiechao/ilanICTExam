@@ -63,6 +63,8 @@ export function AdminPanel({
   onSelectContestForEdit,
   onSaveEditedContest,
   onMoveContestStatus,
+  onResetContest,
+  onDeleteContest,
   onCreateSchool,
   onSelectSchoolForEdit,
   onSaveEditedSchool,
@@ -121,6 +123,10 @@ export function AdminPanel({
   onSelectContestForEdit: (contestId: string) => void;
   onSaveEditedContest: (contest: ContestEvent) => void;
   onMoveContestStatus: (contest: ContestEvent, nextStatus: ContestStatus) => void;
+  /** 清空該場所有資料、退回草稿（Worker 執行）。 */
+  onResetContest: (contest: ContestEvent) => void;
+  /** 只有空的草稿可刪。 */
+  onDeleteContest: (contest: ContestEvent) => void;
   onCreateSchool: () => void;
   onSelectSchoolForEdit: (schoolId: string) => void;
   onSaveEditedSchool: (school: School) => void;
@@ -471,6 +477,34 @@ export function AdminPanel({
                           >
                             複製明年
                           </button>
+                          {contest.status !== "active" && contest.status !== "paused" && !isEmptyDraft(contest) && (
+                            <button
+                              className="danger-button"
+                              type="button"
+                              disabled={adminBusy}
+                              title="刪除帳號、題庫、作答紀錄與排行榜，保留設定並退回草稿"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onResetContest(contest);
+                              }}
+                            >
+                              重置
+                            </button>
+                          )}
+                          {isEmptyDraft(contest) && (
+                            <button
+                              className="danger-button"
+                              type="button"
+                              disabled={adminBusy}
+                              title="只有沒有帳號、題庫的草稿可以刪除"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onDeleteContest(contest);
+                              }}
+                            >
+                              刪除
+                            </button>
+                          )}
                         </div>
                       </div>
                       {expanded && editingContestDraft && (
@@ -984,4 +1018,9 @@ export function AdminPanel({
       )}
     </div>
   );
+}
+
+/** 空的草稿：沒有帳號也沒有題庫，可以直接刪除；其他情況先重置。 */
+function isEmptyDraft(contest: ContestEvent) {
+  return contest.status === "draft" && !(contest.accountCount ?? 0) && !(contest.problemCount ?? 0);
 }

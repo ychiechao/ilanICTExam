@@ -20,7 +20,7 @@ import { getEffectiveRole, inferUserRoleFromEmail, isPendingTeacher, loadUserPro
 import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserSchool, setManagedUserTeacherSchool } from "./services/adminService";
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
-import { createContestDraft, loadContests, saveContest } from "./services/contestStore";
+import { createContestDraft, deleteContest, loadContests, resetContestData, saveContest } from "./services/contestStore";
 import { writeAuditLog } from "./services/auditStore";
 import { DEFAULT_PLATFORM_STATE, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
@@ -875,6 +875,57 @@ export default function App() {
     }
   }
 
+  async function handleResetContest(contest: ContestEvent) {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以重置賽事。");
+      return;
+    }
+    const typed = window.prompt(
+      `重置「${contest.title}」會刪除：所有競賽帳號（${contest.accountCount ?? 0}）、題庫（${contest.problemCount ?? 0} 題）、作答紀錄、排行榜與儀表板資料，狀態退回草稿。賽事設定會保留。
+此操作無法復原，請輸入賽事名稱確認：`,
+    );
+    if (typed === null) return;
+    if (typed.trim() !== contest.title.trim()) {
+      setStatusMessage("輸入的賽事名稱不符，已取消重置。");
+      return;
+    }
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const result = await resetContestData(contest.id);
+      await refreshContestList(contest.id);
+      const d = result.deleted;
+      setStatusMessage(
+        `已重置「${contest.title}」：刪除帳號 ${d.contestAccounts ?? 0}、題目 ${d.contestProblems ?? 0}、作答 ${d.contestSubmissions ?? 0} 筆，狀態退回草稿。`,
+      );
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "重置賽事失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleDeleteContest(contest: ContestEvent) {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以刪除賽事。");
+      return;
+    }
+    if (!window.confirm(`確定刪除草稿賽事「${contest.title}」？此操作無法復原。`)) return;
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      await deleteContest(contest.id);
+      setEditingContestId("");
+      setEditingContestDraft(null);
+      await refreshContestList();
+      setStatusMessage(`已刪除賽事「${contest.title}」。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "刪除賽事失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
   async function refreshSchoolList(preferredSchoolId?: string) {
     if (!superAdmin) {
       setSchools([]);
@@ -1611,6 +1662,8 @@ export default function App() {
                 onEditingContestDraftChange={setEditingContestDraft}
                 onSaveEditedContest={handleSaveEditedContest}
                 onMoveContestStatus={handleMoveContestStatus}
+                onResetContest={handleResetContest}
+                onDeleteContest={handleDeleteContest}
                 onCreateSchool={handleCreateSchoolDraft}
                 onSelectSchoolForEdit={handleSelectSchoolForEdit}
                 onEditingSchoolDraftChange={setEditingSchoolDraft}

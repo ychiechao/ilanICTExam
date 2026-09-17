@@ -1,5 +1,6 @@
 import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { graderRequest } from "./grader";
 import type { ContestEvent } from "../types";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
@@ -46,6 +47,21 @@ export async function saveContest(contest: ContestEvent) {
     ]),
   );
   return normalized;
+}
+
+export interface ContestResetResult {
+  contestId: string;
+  deleted: Record<string, number>;
+}
+
+/** 重置：由 Worker 清掉帳號、題庫、作答、排行榜與 KV，保留設定並退回草稿。 */
+export function resetContestData(contestId: string) {
+  return graderRequest<ContestResetResult>(`/contests/${encodeURIComponent(contestId)}/reset`, { body: {}, timeoutMs: 120000 });
+}
+
+/** 刪除：只允許空的草稿賽事；Worker 會再檢查一次。 */
+export function deleteContest(contestId: string) {
+  return graderRequest<{ contestId: string }>(`/contests/${encodeURIComponent(contestId)}`, { method: "DELETE", timeoutMs: 60000 });
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   handleSetContestAccountStatus,
 } from "./routes/contestAccounts";
 import { handleImportContestProblems } from "./routes/contestProblems";
+import { handleDeleteContest, handleResetContest } from "./routes/contestAdmin";
 import { handleBoard } from "./routes/board";
 import { handleGrade } from "./routes/grade";
 import { handleLogin, handleRefresh } from "./routes/login";
@@ -83,6 +84,14 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
     return handleImportContestProblems(request, ctx, problemsMatch[1]);
   }
 
+  // 超管：重置／刪除賽事
+  const contestMatch = /^\/contests\/([A-Za-z0-9_-]+)(?:\/(reset))?$/.exec(path);
+  if (contestMatch) {
+    const [, contestId, action] = contestMatch;
+    if (method === "POST" && action === "reset") return handleResetContest(request, ctx, contestId);
+    if (method === "DELETE" && !action) return handleDeleteContest(request, ctx, contestId);
+  }
+
   throw new HttpError(404, "not_found", "找不到此路徑");
 }
 
@@ -109,7 +118,7 @@ function corsHeaders(origin: string, allowed: string): Record<string, string> {
   const allowOrigin = allowList.includes(origin) ? origin : allowList[0] ?? "";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
