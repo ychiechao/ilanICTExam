@@ -530,36 +530,35 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
 
 function SubmissionResult({ submission }: { submission: ContestSubmissionView }) {
   return (
-    <div className="score-card">
-      <div className="metric-grid">
-        <div className="metric">
-          <span>分數</span>
-          <strong>
-            {submission.score}/{submission.maxScore}
-          </strong>
-        </div>
-        <div className="metric">
-          <span>通過</span>
-          <strong>
-            {submission.passedCases}/{submission.totalCases}
-          </strong>
-        </div>
+    <>
+      <div className="score-card">
+        <strong>
+          {submission.score} / {submission.maxScore}
+        </strong>
+        <span>
+          通過 {submission.passedCases} / {submission.totalCases} 筆測資
+        </span>
       </div>
       <div className="case-list">
         {submission.caseResults.map((item) => (
-          <div className={item.passed ? "case-row" : "case-row failed"} key={item.caseTitle}>
-            <strong>
-              {item.caseTitle} {item.visibility === "hidden" ? "（隱藏）" : ""}
-            </strong>
-            <span>{item.passed ? `通過 +${item.earnedScore}` : item.error ? `未通過：${item.error}` : "未通過"}</span>
-            {item.visibility === "public" && !item.passed && item.expected !== undefined && (
-              <small className="muted">
-                預期 {item.expected} ／ 實際 {item.actual || "(無輸出)"}
-              </small>
-            )}
+          <div className={item.passed ? "case-row contest-case passed" : "case-row contest-case"} key={item.caseTitle}>
+            <span>
+              {item.caseTitle}
+              {item.visibility === "hidden" ? "（隱藏）" : ""}
+            </span>
+            <strong>{item.passed ? `通過 +${item.earnedScore}` : "未通過"}</strong>
+            <small>
+              {item.passed
+                ? ""
+                : item.error
+                  ? item.error
+                  : item.visibility === "public" && item.expected !== undefined
+                    ? `預期 ${item.expected} ／ 實際 ${item.actual || "(無輸出)"}`
+                    : "隱藏測資不顯示內容"}
+            </small>
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }

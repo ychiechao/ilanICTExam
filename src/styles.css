@@ -1659,6 +1659,15 @@ pre {
   border-color: #a8ecc8;
 }
 
+/* 競賽評分結果：測資名稱含「（隱藏）」，第一欄放寬。 */
+.case-row.contest-case {
+  grid-template-columns: 90px 90px 1fr;
+}
+
+.case-row.contest-case strong {
+  font-size: 14px;
+}
+
 .case-row small {
   min-width: 0;
   overflow: hidden;
