@@ -1290,7 +1290,8 @@ pre {
 
 .contest-form-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 100px minmax(240px, 1.2fr) 150px 150px;
+  /* 年度 / 賽事名稱 / 組別 */
+  grid-template-columns: 90px minmax(320px, 2fr) 200px;
   gap: 10px;
 }
 
