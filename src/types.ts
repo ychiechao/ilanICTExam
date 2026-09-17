@@ -97,6 +97,20 @@ export interface SubmissionRecord extends GradeResult {
   isFullScore?: boolean;
 }
 
+/** userProblemStats/{uid}_{problemId}：每位使用者每題的彙總，後台統計用，不含程式碼。 */
+export interface UserProblemStat {
+  uid: string;
+  problemId: string;
+  displayName?: string;
+  bestScore: number;
+  bestPassRate: number;
+  submitCount: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  bestSolveDurationMs?: number;
+  updatedAt?: string;
+}
+
 export interface LeaderboardEntry {
   uid: string;
   displayName: string;

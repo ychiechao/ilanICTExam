@@ -8,9 +8,10 @@ import { ContestProblemsSection } from "./ContestProblemsSection";
 import { DashboardSection } from "./DashboardSection";
 import { PlatformSection } from "./PlatformSection";
 import { getRoleLabel } from "../../services/accountService";
+import { loadUserSubmissions } from "../../services/submissionService";
 import type { ProblemImportMode } from "../../services/problemStore";
-import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SubmissionRecord } from "../../types";
-import { buildUserProgressRows, countSubmissionsByUser, getManagedUserDirectoryRole, getManagedUserDirectoryRoleLabel, getManagedUserSchoolIds, normalizeEmailForLookup } from "../../utils/adminUsers";
+import type { AdminProfile, AppUser, ContestEvent, ContestStatus, ManagedUser, PlatformState, Problem, School, SubmissionRecord, UserProblemStat } from "../../types";
+import { buildUserProgressRows, countSubmissionsByUser, countTotalSubmissions, getManagedUserDirectoryRole, getManagedUserDirectoryRoleLabel, getManagedUserSchoolIds, normalizeEmailForLookup } from "../../utils/adminUsers";
 import { getContestStatusLabel, getContestTransitions } from "../../utils/drafts";
 import { formatContestDateTime, formatManagedTimestamp } from "../../utils/format";
 import { getProblemCaseSummary, isFullScoreSubmission } from "../../utils/practice";
@@ -27,7 +28,7 @@ export function AdminPanel({
   adminProfile,
   adminProfiles,
   adminDataBusy,
-  adminSubmissions,
+  adminStats,
   adminUids,
   contests,
   currentUser,
@@ -87,7 +88,8 @@ export function AdminPanel({
   adminProfile: AdminProfile | null;
   adminProfiles: AdminProfile[];
   adminDataBusy: boolean;
-  adminSubmissions: SubmissionRecord[];
+  /** userProblemStats 彙總；展開某人時才另外讀他的提交紀錄。 */
+  adminStats: UserProblemStat[];
   adminUids: Set<string>;
   contests: ContestEvent[];
   currentUser: AppUser | null;
@@ -142,8 +144,8 @@ export function AdminPanel({
   onClearUserSubmissions: (user: ManagedUser) => void;
   onDeleteUser: (user: ManagedUser) => void;
 }) {
-  const progressRows = buildUserProgressRows(users, problems, adminSubmissions, adminUids);
-  const userSubmissionCounts = countSubmissionsByUser(adminSubmissions);
+  const progressRows = buildUserProgressRows(users, problems, adminStats, adminUids);
+  const userSubmissionCounts = countSubmissionsByUser(adminStats);
   const adminProfileByUid = useMemo(
     () => new Map(adminProfiles.map((profile) => [profile.uid, profile])),
     [adminProfiles],
@@ -165,6 +167,31 @@ export function AdminPanel({
   const [userRoleFilter, setUserRoleFilter] = useState<UserDirectoryRoleFilter>("all");
   const [userSchoolFilterId, setUserSchoolFilterId] = useState("all");
   const [expandedProgressUserId, setExpandedProgressUserId] = useState("");
+  const [expandedUserSubmissions, setExpandedUserSubmissions] = useState<SubmissionRecord[]>([]);
+  const [expandedUserLoading, setExpandedUserLoading] = useState(false);
+
+  // 展開某位使用者時才讀他的提交紀錄（只查該 uid，不整包讀）。
+  useEffect(() => {
+    if (!expandedProgressUserId) {
+      setExpandedUserSubmissions([]);
+      return;
+    }
+    let cancelled = false;
+    setExpandedUserLoading(true);
+    loadUserSubmissions(expandedProgressUserId)
+      .then((items) => {
+        if (!cancelled) setExpandedUserSubmissions(items);
+      })
+      .catch(() => {
+        if (!cancelled) setExpandedUserSubmissions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setExpandedUserLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [expandedProgressUserId]);
   const adminSections: Array<{ key: AdminSectionKey; label: string }> = superAdmin
     ? [
         { key: "platform", label: "平台狀態" },
@@ -943,7 +970,7 @@ export function AdminPanel({
                 <h3>使用者答題狀況</h3>
                 <p>依每位使用者各題最佳答題率彙整，並列出最近提交紀錄。</p>
               </div>
-              <span className="section-pill">{adminSubmissions.length} 筆提交</span>
+              <span className="section-pill">{countTotalSubmissions(adminStats)} 筆提交</span>
             </div>
             <div className="admin-table">
               <div className="admin-table-head progress-table-row">
@@ -959,9 +986,7 @@ export function AdminPanel({
               {progressRows.length === 0 && <p className="muted table-empty">尚無答題紀錄。</p>}
               {progressRows.map((row) => {
                 const expanded = expandedProgressUserId === row.uid;
-                const userSubmissions = adminSubmissions.filter(
-                  (item) => (item.uid || "guest") === row.uid,
-                );
+                const userSubmissions = expanded ? expandedUserSubmissions : [];
                 return (
                   <div className="progress-table-item" key={row.uid}>
                     <div
@@ -994,8 +1019,9 @@ export function AdminPanel({
                           <span>{"\u5206\u6578"}</span>
                           <span>{"\u72c0\u614b"}</span>
                         </div>
-                        {userSubmissions.length === 0 && (
-                          <p className="muted table-empty">{"\u5c1a\u7121\u63d0\u4ea4\u7d00\u9304\u3002"}</p>
+                        {expandedUserLoading && <p className="muted table-empty">讀取中…</p>}
+                        {!expandedUserLoading && userSubmissions.length === 0 && (
+                          <p className="muted table-empty">尚無提交紀錄。</p>
                         )}
                         {userSubmissions.map((item) => (
                           <div className="submission-table-row" key={item.id}>

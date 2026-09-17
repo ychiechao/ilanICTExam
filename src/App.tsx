@@ -28,8 +28,8 @@ import { loadGlobalLeaderboard, removeUserFromLeaderboards, updateGlobalLeaderbo
 import { deleteProblemIfUnused, exportProblemsToCsv, getProblemCsvTemplate, importProblemsFromCsv, importProblemsFromJson, loadAllProblemsForAdmin, loadProblems, saveProblem } from "./services/problemStore";
 import type { ProblemImportMode } from "./services/problemStore";
 import { createSchoolDraft, loadSchools, loadSchoolsByIds, saveSchool } from "./services/schoolStore";
-import { deleteSubmissionsForUser, loadAllSubmissions, loadSubmissions, loadUserSubmissions, saveSubmission } from "./services/submissionService";
-import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SubmissionRecord, WorkspaceMode } from "./types";
+import { deleteSubmissionsForUser, loadAllUserProblemStats, loadSubmissions, loadUserSubmissions, saveSubmission } from "./services/submissionService";
+import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SubmissionRecord, WorkspaceMode, UserProblemStat } from "./types";
 import { countSubmissionsByProblem } from "./utils/adminUsers";
 import { cloneContest, cloneProblem, cloneSchool, getContestStatusLabel, getContestTransitions, sanitizeContestDraft, sanitizeProblemDraft, sanitizeSchoolDraft } from "./utils/drafts";
 import { getFirebaseAdminErrorMessage, getLoginErrorMessage, getSchoolWriteErrorMessage, loadAdminDataset, runAdminMutationStep } from "./utils/errors";
@@ -60,7 +60,7 @@ export default function App() {
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [practiceSubmissions, setPracticeSubmissions] = useState<SubmissionRecord[]>([]);
-  const [adminSubmissions, setAdminSubmissions] = useState<SubmissionRecord[]>([]);
+  const [adminStats, setAdminStats] = useState<UserProblemStat[]>([]);
   const [adminProblems, setAdminProblems] = useState<Problem[]>([]);
   const [contests, setContests] = useState<ContestEvent[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
@@ -378,13 +378,13 @@ export default function App() {
           setStatusMessage(failures.join("；"));
         }
 
-        // 練習模式的全站答題紀錄（含程式碼）很大，放到最後、給較長的逾時，讀不到只影響「答題進度」統計。
+        // 答題統計讀 userProblemStats（每人每題一筆、不含程式碼），不再整包讀 submissions。
         setAdminDataBusy(false);
-        void loadAllSubmissions({ timeoutMs: 60000 })
-          .then((nextSubmissions) => setAdminSubmissions(nextSubmissions))
-          .catch(() => {
+        void loadAllUserProblemStats()
+          .then((nextStats) => setAdminStats(nextStats))
+          .catch((error) => {
             setStatusMessage((current) =>
-              [current, "答題紀錄讀取逾時（資料量較大），其餘後台資料已載入；答題進度統計稍後按「重新整理」再試。"].filter(Boolean).join("；"),
+              [current, `答題統計讀取失敗（${error instanceof Error ? error.message : "未知錯誤"}），其餘後台資料已載入。`].filter(Boolean).join("；"),
             );
           });
         return;
@@ -395,7 +395,7 @@ export default function App() {
       setManagedUsers([]);
       setAdminProfiles(adminProfile ? [adminProfile] : []);
       setManagedAdminUids(adminProfile ? new Set([adminProfile.uid]) : new Set());
-      setAdminSubmissions([]);
+      setAdminStats([]);
       setAdminProblems([]);
       setContests([]);
       setSchools(nextSchools);
@@ -1649,7 +1649,7 @@ export default function App() {
                 adminProfile={adminProfile}
                 adminProfiles={adminProfiles}
                 adminDataBusy={adminDataBusy}
-                adminSubmissions={adminSubmissions}
+                adminStats={adminStats}
                 adminUids={managedAdminUids}
                 contests={contests}
                 currentUser={user}
@@ -1665,7 +1665,7 @@ export default function App() {
                 editingContestDraft={editingContestDraft}
                 editingSchoolId={editingSchoolId}
                 editingSchoolDraft={editingSchoolDraft}
-                problemSubmissionCounts={countSubmissionsByProblem(adminSubmissions)}
+                problemSubmissionCounts={countSubmissionsByProblem(adminStats)}
                 onImportJsonChange={setImportJson}
                 onImportCsvChange={setImportCsv}
                 onImportModeChange={setProblemImportMode}

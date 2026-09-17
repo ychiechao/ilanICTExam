@@ -9,7 +9,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import type { AppUser, GradeResult, Problem, SubmissionRecord, WorkspaceMode } from "../types";
+import type { AppUser, GradeResult, Problem, SubmissionRecord, WorkspaceMode, UserProblemStat } from "../types";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
 import { updateLeaderboard } from "./leaderboardService";
@@ -54,6 +54,58 @@ export async function loadUserSubmissions(uid: string | undefined) {
   return readJson<SubmissionRecord[]>(LOCAL_SUBMISSIONS_KEY, [])
     .filter((item) => (item.uid || "guest") === resolvedUid)
     .sort(compareSubmissionTime);
+}
+
+/** 後台統計用：整個 userProblemStats（每人每題一筆，不含程式碼），比整包 submissions 小很多。 */
+export async function loadAllUserProblemStats(): Promise<UserProblemStat[]> {
+  if (db) {
+    const snapshot = await withRemoteTimeout(
+      getDocs(collection(db, "userProblemStats")),
+      "Firestore 答題統計讀取",
+      30000,
+    );
+    return snapshot.docs.map((item) => normalizeUserProblemStat(item.data()));
+  }
+
+  // 本機模式：從本機提交紀錄現算。
+  const stats = new Map<string, UserProblemStat>();
+  for (const record of readJson<SubmissionRecord[]>(LOCAL_SUBMISSIONS_KEY, [])) {
+    const uid = record.uid || "guest";
+    const key = `${uid}_${record.problemId}`;
+    const current = stats.get(key) ?? {
+      uid,
+      problemId: record.problemId,
+      displayName: record.displayName,
+      bestScore: 0,
+      bestPassRate: 0,
+      submitCount: 0,
+      isCompleted: false,
+    };
+    current.bestScore = Math.max(current.bestScore, record.score);
+    current.bestPassRate = Math.max(current.bestPassRate, record.passRate);
+    current.submitCount += 1;
+    current.isCompleted = current.isCompleted || isFullScoreSubmission(record);
+    current.updatedAt = [current.updatedAt ?? "", record.createdAt].sort().pop();
+    stats.set(key, current);
+  }
+  return Array.from(stats.values());
+}
+
+function normalizeUserProblemStat(data: Record<string, unknown>): UserProblemStat {
+  const text = (value: unknown) => (typeof value === "string" ? value : undefined);
+  const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
+  return {
+    uid: text(data.uid) ?? "guest",
+    problemId: text(data.problemId) ?? "",
+    displayName: text(data.displayName),
+    bestScore: num(data.bestScore),
+    bestPassRate: num(data.bestPassRate),
+    submitCount: num(data.submitCount),
+    isCompleted: data.isCompleted === true,
+    completedAt: text(data.completedAt),
+    bestSolveDurationMs: typeof data.bestSolveDurationMs === "number" ? data.bestSolveDurationMs : undefined,
+    updatedAt: text(data.updatedAt),
+  };
 }
 
 export async function loadAllSubmissions(options: { timeoutMs?: number } = {}) {
@@ -212,6 +264,7 @@ export async function saveSubmission(
         removeUndefinedFields({
           uid: user.uid,
           problemId: problem.id,
+          displayName: user.displayName || "",
           bestScore: Math.max(result.score, ...previous.map((item) => item.score)),
           bestPassRate: Math.max(result.passRate, ...previous.map((item) => item.passRate)),
           submitCount: previous.length + 1,

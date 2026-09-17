@@ -1,20 +1,22 @@
-import type { AdminProfile, ManagedUser, Problem, SubmissionRecord, UserRole } from "../types";
+import type { AdminProfile, ManagedUser, Problem, UserProblemStat, UserRole } from "../types";
 import { formatManagedTimestamp, formatProblemStatusSummary } from "./format";
-import { getBetterSubmission, isFullScoreSubmission } from "./practice";
 
-export function countSubmissionsByProblem(records: SubmissionRecord[]) {
-  return records.reduce<Record<string, number>>((counts, record) => {
-    counts[record.problemId] = (counts[record.problemId] || 0) + 1;
+export function countSubmissionsByProblem(stats: UserProblemStat[]) {
+  return stats.reduce<Record<string, number>>((counts, stat) => {
+    counts[stat.problemId] = (counts[stat.problemId] || 0) + stat.submitCount;
     return counts;
   }, {});
 }
 
-export function countSubmissionsByUser(records: SubmissionRecord[]) {
-  return records.reduce<Record<string, number>>((counts, record) => {
-    const uid = record.uid || "guest";
-    counts[uid] = (counts[uid] || 0) + 1;
+export function countSubmissionsByUser(stats: UserProblemStat[]) {
+  return stats.reduce<Record<string, number>>((counts, stat) => {
+    counts[stat.uid] = (counts[stat.uid] || 0) + stat.submitCount;
     return counts;
   }, {});
+}
+
+export function countTotalSubmissions(stats: UserProblemStat[]) {
+  return stats.reduce((sum, stat) => sum + stat.submitCount, 0);
 }
 
 export function getManagedUserDirectoryRole(item: ManagedUser, profile?: AdminProfile): UserRole {
@@ -60,42 +62,39 @@ export function normalizeEmailForLookup(email?: string | null) {
 export function buildUserProgressRows(
   users: ManagedUser[],
   problems: Problem[],
-  records: SubmissionRecord[],
+  stats: UserProblemStat[],
   adminUids: Set<string>,
 ) {
   const usersById = new Map(users.map((item) => [item.uid, item]));
-  for (const record of records) {
-    if (!usersById.has(record.uid || "")) {
-      usersById.set(record.uid || "guest", {
-        uid: record.uid || "guest",
-        displayName: record.displayName || "訪客",
+  for (const stat of stats) {
+    if (!usersById.has(stat.uid)) {
+      usersById.set(stat.uid, {
+        uid: stat.uid,
+        displayName: stat.displayName || (stat.uid === "guest" ? "訪客" : stat.uid),
       });
     }
   }
 
   return Array.from(usersById.values())
     .map((item) => {
-      const userRecords = records.filter((record) => (record.uid || "guest") === item.uid);
-      const bestByProblem = new Map<string, SubmissionRecord>();
-      for (const record of userRecords) {
-        bestByProblem.set(record.problemId, getBetterSubmission(bestByProblem.get(record.problemId), record));
-      }
-
-      const bestRecords = Array.from(bestByProblem.values());
-      const completedProblems = problems.filter((problem) => {
-        const best = bestByProblem.get(problem.id);
-        return best && isFullScoreSubmission(best);
-      });
+      const userStats = stats.filter((stat) => stat.uid === item.uid);
+      const statByProblem = new Map(userStats.map((stat) => [stat.problemId, stat]));
+      const completedProblems = problems.filter((problem) => statByProblem.get(problem.id)?.isCompleted);
       const attemptedProblems = problems.filter(
-        (problem) => bestByProblem.has(problem.id) && !completedProblems.some((item) => item.id === problem.id),
+        (problem) => statByProblem.has(problem.id) && !statByProblem.get(problem.id)?.isCompleted,
       );
       const untouchedCount = Math.max(0, problems.length - completedProblems.length - attemptedProblems.length);
       const averagePassRate =
         problems.length === 0
           ? 0
-          : bestRecords.reduce((sum, record) => sum + record.passRate, 0) / problems.length;
+          : problems.reduce((sum, problem) => sum + (statByProblem.get(problem.id)?.bestPassRate ?? 0), 0) / problems.length;
       const completedTitles = completedProblems.map((problem) => problem.title);
       const attemptedTitles = attemptedProblems.map((problem) => problem.title);
+      const lastSubmittedAt = userStats
+        .map((stat) => stat.updatedAt ?? "")
+        .filter(Boolean)
+        .sort()
+        .pop();
 
       return {
         uid: item.uid,
@@ -104,8 +103,8 @@ export function buildUserProgressRows(
         lastLoginAt: formatManagedTimestamp(item.lastLoginAt),
         completedCount: completedProblems.length,
         averagePassRate,
-        submitCount: userRecords.length,
-        lastSubmittedAt: userRecords[0]?.createdAt,
+        submitCount: userStats.reduce((sum, stat) => sum + stat.submitCount, 0),
+        lastSubmittedAt,
         problemStatusText: formatProblemStatusSummary(completedTitles, attemptedTitles, untouchedCount),
       };
     })
