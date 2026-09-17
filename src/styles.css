@@ -1134,8 +1134,14 @@ pre {
 }
 
 .contest-table-row {
-  grid-template-columns: 60px minmax(180px, 1.2fr) 56px 126px 150px 150px 60px 60px minmax(330px, 1.4fr);
+  /* 年份縮窄、賽事名稱加寬（名稱通常是「115 宜蘭縣資訊科技創意實作競賽 國小組」這種長度）。 */
+  grid-template-columns: 44px minmax(280px, 2fr) 48px 110px 140px 140px 52px 52px minmax(330px, 1.2fr);
   min-width: 1220px;
+}
+
+.contest-table-row > span:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .problem-table-item {
