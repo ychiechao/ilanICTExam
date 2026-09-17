@@ -355,19 +355,38 @@ export default function App() {
     setAdminDataBusy(true);
     try {
       if (superAdmin) {
-        const nextUsers = await loadAdminDataset("使用者資料", loadManagedUsers);
-        const nextAdminProfiles = await loadAdminDataset("管理者權限資料", loadAdminProfiles);
-        const nextSubmissions = await loadAdminDataset("答題紀錄", loadAllSubmissions);
-        const nextAdminProblems = await loadAdminDataset("題目管理資料", loadAllProblemsForAdmin);
-        const nextContests = await loadAdminDataset("賽事資料", loadContests);
-        const nextSchools = await loadAdminDataset("學校資料", loadSchools);
-        setManagedUsers(nextUsers);
-        setAdminProfiles(nextAdminProfiles);
-        setManagedAdminUids(new Set(nextAdminProfiles.map((item) => item.uid)));
-        setAdminSubmissions(nextSubmissions);
-        setAdminProblems(nextAdminProblems);
-        setContests(nextContests);
-        setSchools(nextSchools);
+        // 各資料集平行讀、各自失敗不互相拖累：賽事、學校、帳號等操作不該因為答題紀錄逾時而整個不能用。
+        const [users, profiles, adminProblems, contestList, schoolList] = await Promise.allSettled([
+          loadAdminDataset("使用者資料", loadManagedUsers),
+          loadAdminDataset("管理者權限資料", loadAdminProfiles),
+          loadAdminDataset("題目管理資料", loadAllProblemsForAdmin),
+          loadAdminDataset("賽事資料", loadContests),
+          loadAdminDataset("學校資料", loadSchools),
+        ]);
+        if (users.status === "fulfilled") setManagedUsers(users.value);
+        if (profiles.status === "fulfilled") {
+          setAdminProfiles(profiles.value);
+          setManagedAdminUids(new Set(profiles.value.map((item) => item.uid)));
+        }
+        if (adminProblems.status === "fulfilled") setAdminProblems(adminProblems.value);
+        if (contestList.status === "fulfilled") setContests(contestList.value);
+        if (schoolList.status === "fulfilled") setSchools(schoolList.value);
+        const failures = [users, profiles, adminProblems, contestList, schoolList]
+          .filter((item): item is PromiseRejectedResult => item.status === "rejected")
+          .map((item) => (item.reason instanceof Error ? item.reason.message : String(item.reason)));
+        if (failures.length > 0) {
+          setStatusMessage(failures.join("；"));
+        }
+
+        // 練習模式的全站答題紀錄（含程式碼）很大，放到最後、給較長的逾時，讀不到只影響「答題進度」統計。
+        setAdminDataBusy(false);
+        void loadAllSubmissions({ timeoutMs: 60000 })
+          .then((nextSubmissions) => setAdminSubmissions(nextSubmissions))
+          .catch(() => {
+            setStatusMessage((current) =>
+              [current, "答題紀錄讀取逾時（資料量較大），其餘後台資料已載入；答題進度統計稍後按「重新整理」再試。"].filter(Boolean).join("；"),
+            );
+          });
         return;
       }
 

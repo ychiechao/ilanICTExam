@@ -56,11 +56,12 @@ export async function loadUserSubmissions(uid: string | undefined) {
     .sort(compareSubmissionTime);
 }
 
-export async function loadAllSubmissions() {
+export async function loadAllSubmissions(options: { timeoutMs?: number } = {}) {
   if (db) {
     const snapshot = await withRemoteTimeout(
       getDocs(collection(db, "submissions")),
       "Firestore 全站提交紀錄讀取",
+      options.timeoutMs,
     );
     return sortSubmissions(snapshot.docs.map((item) => item.data() as SubmissionRecord));
   }
