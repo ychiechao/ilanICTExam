@@ -143,7 +143,7 @@ export async function backfillUserStats(input: {
   users: ManagedUser[];
   stats: UserProblemStat[];
   problems: Problem[];
-  classMembers: Array<{ studentUid: string; classId: string; status: string }>;
+  classMembers: Array<{ studentUid: string; classId: string; status: string; schoolId?: string; schoolName?: string }>;
 }) {
   if (!db) throw new Error("目前未連接 Firestore。");
   const publishedProblems = input.problems.filter((problem) => problem.status === "published");
@@ -157,11 +157,16 @@ export async function backfillUserStats(input: {
     statsByUid.set(stat.uid, list);
   }
   const classIdsByUid = new Map<string, string[]>();
+  // 使用者資料沒有學校時，用班級的學校（加入班級即視同該校學生）。
+  const classSchoolByUid = new Map<string, { schoolId: string; schoolName: string }>();
   for (const member of input.classMembers) {
     if (member.status === "removed") continue;
     const list = classIdsByUid.get(member.studentUid) ?? [];
     if (!list.includes(member.classId)) list.push(member.classId);
     classIdsByUid.set(member.studentUid, list);
+    if (member.schoolId && !classSchoolByUid.has(member.studentUid)) {
+      classSchoolByUid.set(member.studentUid, { schoolId: member.schoolId, schoolName: member.schoolName ?? "" });
+    }
   }
   const userByUid = new Map(input.users.map((user) => [user.uid, user]));
 
@@ -174,7 +179,11 @@ export async function backfillUserStats(input: {
     entries.push(
       buildEntry(
         { uid, displayName: profile?.displayName || stats[0]?.displayName || "使用者" },
-        { schoolId: profile?.schoolId, schoolName: profile?.schoolName, classIds: classIdsByUid.get(uid) ?? [] },
+        {
+          schoolId: profile?.schoolId || classSchoolByUid.get(uid)?.schoolId,
+          schoolName: profile?.schoolName || classSchoolByUid.get(uid)?.schoolName,
+          classIds: classIdsByUid.get(uid) ?? [],
+        },
         {
           totalScore: stats.reduce((sum, stat) => sum + stat.bestScore, 0),
           totalMaxScore: [...maxByProblem.values()].reduce((sum, value) => sum + value, 0),

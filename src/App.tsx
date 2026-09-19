@@ -162,8 +162,10 @@ export default function App() {
   const scoreRecordingEnabled = Boolean(user) && hasSchool;
 
   /** 排行榜用的學校與班級：學生取已加入的班級，教師取自己開的班。 */
-  const membershipSchoolId = accountProfile?.schoolId || adminProfile?.schoolId || adminProfile?.schoolIds?.[0] || "";
-  const membershipSchoolName = accountProfile?.schoolName || adminProfile?.schoolName || schools.find((item) => item.id === membershipSchoolId)?.name || "";
+  const classSchool = studentClassMembers.find((member) => member.status !== "removed" && member.schoolId);
+  const membershipSchoolId = accountProfile?.schoolId || adminProfile?.schoolId || adminProfile?.schoolIds?.[0] || classSchool?.schoolId || "";
+  const membershipSchoolName =
+    accountProfile?.schoolName || adminProfile?.schoolName || schools.find((item) => item.id === membershipSchoolId)?.name || classSchool?.schoolName || "";
   const leaderboardClassOptions = useMemo(
     () =>
       effectiveRole === "teacher"
@@ -459,7 +461,8 @@ export default function App() {
   }, [activeTab, admin, loadAdminData]);
 
   useEffect(() => {
-    if (activeTab === "classes" || activeTab === "account") {
+    // 排行榜的班級／學校分頁也需要班級資料。
+    if (activeTab === "classes" || activeTab === "account" || activeTab === "leaderboard") {
       loadClassData();
     }
   }, [activeTab, loadClassData]);
