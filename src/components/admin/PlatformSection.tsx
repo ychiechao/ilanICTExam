@@ -40,6 +40,7 @@ export function PlatformSection({
 }: PlatformSectionProps) {
   const [mode, setMode] = useState<PlatformMode>(platform.mode);
   const [selectedContestIds, setSelectedContestIds] = useState<string[]>(platform.activeContestIds);
+  const [rehearsalIds, setRehearsalIds] = useState<string[]>(platform.rehearsalContestIds);
   const [announcement, setAnnouncement] = useState(platform.announcement);
   const [saving, setSaving] = useState(false);
 
@@ -50,19 +51,30 @@ export function PlatformSection({
     setSelectedContestIds(
       contests.length > 0 ? platform.activeContestIds.filter((id) => contests.some((contest) => contest.id === id)) : platform.activeContestIds,
     );
+    setRehearsalIds(
+      contests.length > 0 ? platform.rehearsalContestIds.filter((id) => contests.some((contest) => contest.id === id)) : platform.rehearsalContestIds,
+    );
     setAnnouncement(platform.announcement);
-  }, [contests, platform.activeContestIds, platform.announcement, platform.mode]);
+  }, [contests, platform.activeContestIds, platform.announcement, platform.mode, platform.rehearsalContestIds]);
 
   const candidateContests = contests.filter((contest) => contest.status !== "archived");
   const activeContests = platform.activeContestIds
     .map((id) => contests.find((contest) => contest.id === id))
     .filter((contest): contest is ContestEvent => Boolean(contest));
-  const blockers = mode === "contest" ? validateContestActivation(contests, selectedContestIds) : [];
+  const rehearsalContests = platform.rehearsalContestIds
+    .map((id) => contests.find((contest) => contest.id === id))
+    .filter((contest): contest is ContestEvent => Boolean(contest));
+  const blockers = [
+    ...(mode === "contest" ? validateContestActivation(contests, selectedContestIds) : []),
+    ...(rehearsalIds.length > 0 ? validateContestActivation(contests, rehearsalIds).map((item) => `演練：${item}`) : []),
+  ];
   const warnings = mode === "contest" ? getContestActivationWarnings(contests, selectedContestIds) : [];
+  const sameIds = (a: string[], b: string[]) => a.slice().sort().join(",") === b.slice().sort().join(",");
   const dirty =
     mode !== platform.mode ||
     announcement.trim() !== platform.announcement ||
-    selectedContestIds.slice().sort().join(",") !== platform.activeContestIds.slice().sort().join(",");
+    !sameIds(selectedContestIds, platform.activeContestIds) ||
+    !sameIds(rehearsalIds, platform.rehearsalContestIds);
 
   function toggleContest(contestId: string) {
     setSelectedContestIds((current) =>
@@ -71,15 +83,18 @@ export function PlatformSection({
   }
 
   async function handleSave() {
-    if (mode === "contest" && blockers.length > 0) {
+    if (blockers.length > 0) {
       onStatus(blockers[0]);
       return;
     }
     const nextLabel = PLATFORM_MODE_LABELS[mode];
+    const modeChanged = mode !== platform.mode;
     const confirmed = window.confirm(
-      mode === "contest"
+      modeChanged && mode === "contest"
         ? `確定切換為${nextLabel}？教師與學生帳號會立即失效，所有線上使用者畫面會馬上改變。`
-        : `確定切換為${nextLabel}？`,
+        : modeChanged
+          ? `確定切換為${nextLabel}？`
+          : "確定套用平台設定？",
     );
     if (!confirmed) {
       return;
@@ -87,8 +102,19 @@ export function PlatformSection({
 
     setSaving(true);
     try {
-      const next: PlatformState = { mode, activeContestIds: selectedContestIds, announcement };
+      const next: PlatformState = { mode, activeContestIds: selectedContestIds, rehearsalContestIds: rehearsalIds, announcement };
       await savePlatformState(next, currentUser);
+      if (!sameIds(rehearsalIds, platform.rehearsalContestIds)) {
+        await writeAuditLog(
+          {
+            action: "platform.rehearsal",
+            targetType: "platform",
+            targetId: "platform",
+            summary: rehearsalIds.length > 0 ? `演練賽事：${rehearsalIds.join(", ")}` : "關閉演練賽事",
+          },
+          currentUser,
+        );
+      }
 
       // 切回練習模式時，仍在「競賽中」的賽事自動結束（規格 4.4）。
       if (mode !== "contest") {
@@ -110,7 +136,7 @@ export function PlatformSection({
         },
         currentUser,
       );
-      onStatus(`已切換為${nextLabel}。`);
+      onStatus(modeChanged ? `已切換為${nextLabel}。` : "平台設定已套用。");
     } catch (error) {
       onStatus(error instanceof Error ? error.message : "平台模式切換失敗。");
     } finally {
@@ -190,9 +216,50 @@ export function PlatformSection({
         </div>
       )}
 
-      {platform.mode === "contest" && activeContests.length > 0 && (
+      <div className="admin-subsection">
+        <h4>演練賽事（練習模式下也開放參賽者登入）</h4>
+        <p className="muted">
+          勾選後首頁會多一個「模擬賽登入」入口，該場的競賽帳號可以登入作答；教師、學生照常使用練習平台。
+          開始／暫停／結束同樣在下方「比賽控制」操作，比賽長度可設到 14 天。演練結束後取消勾選，再到賽事管理「重置」清掉作答資料。
+        </p>
+        {candidateContests.length === 0 ? (
+          <p className="muted">還沒有賽事可以演練。</p>
+        ) : (
+          <div className="platform-contest-list">
+            {candidateContests.map((contest) => (
+              <label key={contest.id} className="platform-contest-item">
+                <input
+                  type="checkbox"
+                  checked={rehearsalIds.includes(contest.id)}
+                  onChange={() =>
+                    setRehearsalIds((current) => (current.includes(contest.id) ? current.filter((id) => id !== contest.id) : [...current, contest.id]))
+                  }
+                />
+                <span className="platform-contest-title">{contest.title}</span>
+                <span className="muted">
+                  {getContestStatusLabel(contest.status)} · 題目 {contest.problemCount ?? 0} · 帳號 {contest.accountCount ?? 0} · 長度{" "}
+                  {contest.durationMinutes ?? 0} 分鐘
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+        {blockers.filter((item) => item.startsWith("演練：")).length > 0 && (
+          <ul className="platform-check-list">
+            {blockers
+              .filter((item) => item.startsWith("演練："))
+              .map((item) => (
+                <li key={item} className="warning-text">
+                  {item}
+                </li>
+              ))}
+          </ul>
+        )}
+      </div>
+
+      {((platform.mode === "contest" && activeContests.length > 0) || rehearsalContests.length > 0) && (
         <ContestControlPanel
-          contests={activeContests}
+          contests={[...(platform.mode === "contest" ? activeContests : []), ...rehearsalContests.filter((item) => !activeContests.includes(item))]}
           currentUser={currentUser}
           busy={busy}
           onStatus={onStatus}
@@ -214,9 +281,9 @@ export function PlatformSection({
         <button
           className="primary-button"
           onClick={handleSave}
-          disabled={busy || saving || !dirty || (mode === "contest" && blockers.length > 0)}
+          disabled={busy || saving || !dirty || blockers.length > 0}
         >
-          {saving ? "切換中…" : `套用：${PLATFORM_MODE_LABELS[mode]}`}
+          {saving ? "套用中…" : mode !== platform.mode ? `套用：${PLATFORM_MODE_LABELS[mode]}` : "套用設定"}
         </button>
       </div>
     </section>

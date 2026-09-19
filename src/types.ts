@@ -321,6 +321,8 @@ export type PlatformMode = "practice" | "contest" | "maintenance";
 export interface PlatformState {
   mode: PlatformMode;
   activeContestIds: string[];
+  /** 演練賽：練習模式下也開放這些賽事的競賽帳號登入作答（不影響教師、學生）。 */
+  rehearsalContestIds: string[];
   announcement: string;
   updatedAt?: string;
   updatedBy?: string;
@@ -328,6 +330,7 @@ export interface PlatformState {
 
 export type AuditAction =
   | "platform.mode"
+  | "platform.rehearsal"
   | "contest.status"
   | "contest.save"
   | "contest.accounts.import"

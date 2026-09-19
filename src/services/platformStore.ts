@@ -10,8 +10,15 @@ const PLATFORM_DOC = ["settings", "platform"] as const;
 export const DEFAULT_PLATFORM_STATE: PlatformState = {
   mode: "practice",
   activeContestIds: [],
+  rehearsalContestIds: [],
   announcement: "",
 };
+
+/** 這場賽事目前是否對競賽帳號開放：競賽模式的啟用賽事，或任何模式下的演練賽事。 */
+export function isContestOpen(platform: PlatformState, contestId: string | undefined) {
+  if (!contestId) return false;
+  return (platform.mode === "contest" && platform.activeContestIds.includes(contestId)) || platform.rehearsalContestIds.includes(contestId);
+}
 
 export const PLATFORM_MODE_LABELS: Record<PlatformMode, string> = {
   practice: "練習模式",
@@ -51,6 +58,7 @@ export async function savePlatformState(next: PlatformState, actor: AppUser | nu
   const payload = {
     mode: next.mode,
     activeContestIds: next.mode === "contest" ? next.activeContestIds : [],
+    rehearsalContestIds: next.rehearsalContestIds,
     announcement: next.announcement.trim(),
     updatedBy: actor?.uid || "local",
   };
@@ -122,6 +130,9 @@ function normalizePlatformState(data: Record<string, unknown>): PlatformState {
     mode: mode === "contest" || mode === "maintenance" ? mode : "practice",
     activeContestIds: Array.isArray(data.activeContestIds)
       ? data.activeContestIds.filter((item): item is string => typeof item === "string")
+      : [],
+    rehearsalContestIds: Array.isArray(data.rehearsalContestIds)
+      ? data.rehearsalContestIds.filter((item): item is string => typeof item === "string")
       : [],
     announcement: typeof data.announcement === "string" ? data.announcement : "",
     updatedAt:

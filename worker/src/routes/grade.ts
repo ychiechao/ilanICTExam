@@ -11,7 +11,7 @@
  */
 import { scoreCase, splitInputs, summarizeOutcomes, type CaseOutcome, type GradeCase } from "../../../shared/grading";
 import { verifyRequestToken } from "../auth/verifyIdToken";
-import { HttpError, readJsonBody, type ContestDoc, type RequestContext } from "../context";
+import { HttpError, openContestIds, readJsonBody, type ContestDoc, type RequestContext } from "../context";
 import { SERVER_TIMESTAMP } from "../google/firestore";
 import { json } from "../index";
 import { runProgram } from "../grading/runner";
@@ -78,7 +78,7 @@ export async function handleGrade(request: Request, ctx: RequestContext): Promis
   lastSubmitAt.set(uid, now);
 
   const [platform, contestDoc] = await Promise.all([ctx.getPlatform(), ctx.getContest(contestId)]);
-  if (platform.mode !== "contest" || !platform.activeContestIds.includes(contestId)) {
+  if (!openContestIds(platform).includes(contestId)) {
     throw new HttpError(403, "contest_closed", "目前不是競賽時間");
   }
   if (!contestDoc) throw new HttpError(404, "contest_not_found", "找不到賽事");

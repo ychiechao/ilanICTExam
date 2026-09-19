@@ -28,6 +28,12 @@ service cloud.firestore {
         : "practice";
     }
 
+    // 演練賽：練習模式下也開放的賽事清單（settings/platform.rehearsalContestIds）。
+    function isRehearsalContest(contestId) {
+      return exists(/databases/$(database)/documents/settings/platform) &&
+        get(/databases/$(database)/documents/settings/platform).data.get("rehearsalContestIds", []).hasAny([contestId]);
+    }
+
     // 競賽帳號由 Worker 簽發的自訂 token 帶 claims，不查任何名單文件。
     function isContestAccount() {
       return signedIn() && request.auth.token.get("accountType", "") == "contest";
@@ -180,10 +186,11 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // 競賽題庫公開部分（無隱藏測資）：超管，或競賽模式下該場的競賽帳號。
+    // 競賽題庫公開部分（無隱藏測資）：超管，或競賽模式／演練賽下該場的競賽帳號。
     match /contestProblems/{docId} {
       allow read: if isSuperAdmin() ||
-        (platformMode() == "contest" && isContestAccountFor(resource.data.contestId));
+        (isContestAccountFor(resource.data.contestId) &&
+          (platformMode() == "contest" || isRehearsalContest(resource.data.contestId)));
       allow create, update, delete: if false;
     }
 

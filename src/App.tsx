@@ -7,6 +7,7 @@ import { AdminPanel } from "./components/admin/AdminPanel";
 import { AnnouncementScreen } from "./components/AnnouncementScreen";
 import { ContestLoginForm } from "./components/contest/ContestLoginForm";
 import { ContestShell } from "./components/contest/ContestShell";
+import { RehearsalLoginScreen } from "./components/contest/RehearsalLoginScreen";
 import { AccountPanel } from "./components/panels/AccountPanel";
 import { ClassesPanel } from "./components/panels/ClassesPanel";
 import { HistoryPanel } from "./components/panels/HistoryPanel";
@@ -22,7 +23,7 @@ import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeTo
 import { createLearningClass, joinClassByCode, loadAllClassMembers, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
 import { archiveContest, createContestDraft, deleteContest, loadContests, releaseContestToPractice, resetContestData, saveContest, unarchiveContest } from "./services/contestStore";
 import { writeAuditLog } from "./services/auditStore";
-import { DEFAULT_PLATFORM_STATE, subscribePlatform } from "./services/platformStore";
+import { DEFAULT_PLATFORM_STATE, isContestOpen, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
 import { backfillUserStats, computeUserStats, removeUserFromLeaderboards, saveUserStats, syncUserStatsMembership } from "./services/leaderboardService";
 import { deleteProblemIfUnused, exportProblemsToCsv, getProblemCsvTemplate, importProblemsFromCsv, importProblemsFromJson, loadAllProblemsForAdmin, loadProblems, saveProblem } from "./services/problemStore";
@@ -66,6 +67,7 @@ export default function App() {
   const [schools, setSchools] = useState<School[]>([]);
   // 排行榜由 LeaderboardPanel 自己查；提交後遞增讓它重讀。
   const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0);
+  const [showRehearsalLogin, setShowRehearsalLogin] = useState(false);
   const [importJson, setImportJson] = useState(defaultImportJson);
   const [importCsv, setImportCsv] = useState(getProblemCsvTemplate());
   const [problemImportMode, setProblemImportMode] = useState<ProblemImportMode>("append");
@@ -1450,12 +1452,17 @@ export default function App() {
     );
   }
 
-  // 競賽帳號：只在競賽模式有畫面；其他模式登出並回到公告。
+  // 競賽帳號：該場開放中（競賽模式啟用，或演練賽）才有畫面；否則登出。
   if (user?.accountType === "contest") {
-    if (platform.mode === "contest" && user.contestId && platform.activeContestIds.includes(user.contestId)) {
+    if (isContestOpen(platform, user.contestId)) {
       return <ContestShell platform={platform} user={user} onLogout={() => logout()} />;
     }
     void logout();
+  }
+
+  // 練習模式下的演練賽入口：未登入者按「模擬賽登入」進來。
+  if (platform.mode === "practice" && !user && showRehearsalLogin && platform.rehearsalContestIds.length > 0) {
+    return <RehearsalLoginScreen platform={platform} contests={contests} onBack={() => setShowRehearsalLogin(false)} />;
   }
 
   // 競賽或維護模式：非超管只看到公告（規格 4.3、5.3）。
@@ -1505,10 +1512,17 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <button className="primary-button" onClick={handleLogin} disabled={loginBusy}>
-              <LogIn size={17} />
-              {loginBusy ? "登入中" : "Gmail 登入"}
-            </button>
+            <>
+              {platform.rehearsalContestIds.length > 0 && (
+                <button className="ghost-button" onClick={() => setShowRehearsalLogin(true)} disabled={loginBusy}>
+                  模擬賽登入
+                </button>
+              )}
+              <button className="primary-button" onClick={handleLogin} disabled={loginBusy}>
+                <LogIn size={17} />
+                {loginBusy ? "登入中" : "Gmail 登入"}
+              </button>
+            </>
           )}
         </div>
       </header>

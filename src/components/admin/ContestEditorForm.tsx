@@ -46,11 +46,11 @@ export function ContestEditorForm({
 
       <div className="contest-form-grid secondary">
         <label className="problem-form-field">
-          比賽長度（分鐘）
+          比賽長度（分鐘；演練賽可設到 20160＝14 天）
           <input
             type="number"
             min={5}
-            max={600}
+            max={20160}
             value={contest.durationMinutes ?? 120}
             onChange={(event) => updateContest("durationMinutes", Math.max(5, Number(event.target.value) || 120))}
           />

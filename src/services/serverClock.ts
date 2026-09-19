@@ -49,9 +49,11 @@ export function useServerNow(tickMs = 1000) {
 
 export function formatCountdown(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
-  const hours = Math.floor(total / 3600);
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
   const pad = (value: number) => String(value).padStart(2, "0");
+  if (days > 0) return `${days} 天 ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
 }

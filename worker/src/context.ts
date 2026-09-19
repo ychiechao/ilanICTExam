@@ -10,7 +10,18 @@ export type PlatformMode = "practice" | "contest" | "maintenance";
 export interface PlatformState {
   mode: PlatformMode;
   activeContestIds: string[];
+  /** 演練賽：練習模式下也開放這些賽事的競賽帳號登入作答。 */
+  rehearsalContestIds: string[];
   announcement: string;
+}
+
+/** 目前對競賽帳號開放的賽事：競賽模式的啟用賽事，加上任何模式下的演練賽事。 */
+export function openContestIds(platform: PlatformState): string[] {
+  const ids = platform.mode === "contest" ? [...platform.activeContestIds] : [];
+  for (const id of platform.rehearsalContestIds) {
+    if (!ids.includes(id)) ids.push(id);
+  }
+  return ids;
 }
 
 export interface ContestDoc {
@@ -58,6 +69,7 @@ export class RequestContext {
     return {
       mode: data.mode === "contest" || data.mode === "maintenance" ? data.mode : "practice",
       activeContestIds: Array.isArray(data.activeContestIds) ? (data.activeContestIds as string[]) : [],
+      rehearsalContestIds: Array.isArray(data.rehearsalContestIds) ? (data.rehearsalContestIds as string[]) : [],
       announcement: typeof data.announcement === "string" ? data.announcement : "",
     };
   }

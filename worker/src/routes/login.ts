@@ -8,7 +8,7 @@ import { contestUid, createCustomToken, type ContestClaims } from "../auth/custo
 import { verifyPassword } from "../auth/password";
 import { verifyRequestToken } from "../auth/verifyIdToken";
 import { SERVER_TIMESTAMP } from "../google/firestore";
-import { HttpError, readJsonBody, type ContestAccountDoc, type RequestContext } from "../context";
+import { HttpError, openContestIds, readJsonBody, type ContestAccountDoc, type RequestContext } from "../context";
 import { json } from "../index";
 
 interface LoginBody {
@@ -33,13 +33,14 @@ export async function handleLogin(request: Request, ctx: RequestContext): Promis
   checkRateLimit(username);
 
   const platform = await ctx.getPlatform();
-  if (platform.mode !== "contest" || platform.activeContestIds.length === 0) {
+  const openIds = openContestIds(platform);
+  if (openIds.length === 0) {
     throw new HttpError(403, "not_contest_mode", "目前不是競賽時間，競賽帳號無法登入");
   }
 
-  // 帳號名稱在同一場內唯一（E-001），跨場靠 contestId 區分；最多查兩場。
+  // 帳號名稱在同一場內唯一（E-001），跨場靠 contestId 區分；逐場查（競賽兩場＋演練）。
   let found: { id: string; data: ContestAccountDoc } | null = null;
-  for (const contestId of platform.activeContestIds) {
+  for (const contestId of openIds) {
     const doc = await ctx.db.getDoc<ContestAccountDoc>(`contestAccounts/${accountDocId(contestId, username)}`);
     if (doc) {
       found = { id: doc.id, data: doc.data };
@@ -113,7 +114,7 @@ export async function handleRefresh(request: Request, ctx: RequestContext): Prom
   const username = String(verified.claims.username ?? "");
 
   const platform = await ctx.getPlatform();
-  if (platform.mode !== "contest" || !platform.activeContestIds.includes(contestId)) {
+  if (!openContestIds(platform).includes(contestId)) {
     throw new HttpError(403, "contest_closed", "賽事已結束，競賽帳號不再有效");
   }
   const account = await ctx.db.getDoc<ContestAccountDoc>(`contestAccounts/${accountDocId(contestId, username)}`);
