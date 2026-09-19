@@ -24,7 +24,7 @@ interface GradeBody {
   mode?: string;
 }
 
-interface LeaderboardEntryDoc {
+export interface LeaderboardEntryDoc {
   contestId: string;
   uid: string;
   username: string;
@@ -252,12 +252,64 @@ async function updateLeaderboardEntry(
   return entry;
 }
 
-/** 儀表板快照：每 3 秒最多重算一次，避免同時大量提交時寫入爆量。 */
-async function refreshDashboard(ctx: RequestContext, contestId: string, contest: ContestDoc) {
+/**
+ * 作廢／恢復後，用該人所有未作廢的提交重算排行榜 entry（每題取最後一次未作廢的提交）。
+ * 沒有任何有效提交時刪掉 entry。
+ */
+export async function recomputeLeaderboardEntry(ctx: RequestContext, contestId: string, uid: string, username: string) {
+  const path = `contestLeaderboards/${contestId}_${username}`;
+  const [existing, submissions, account] = await Promise.all([
+    ctx.db.getDoc<LeaderboardEntryDoc>(path),
+    ctx.db.query<{ problemId: string; score: number; maxScore: number; passRate: number; createdAtIso?: string; voided?: boolean }>("contestSubmissions", {
+      where: [
+        { field: "contestId", op: "EQUAL", value: contestId },
+        { field: "uid", op: "EQUAL", value: uid },
+      ],
+    }),
+    ctx.db.getDoc<{ name?: string; schoolId?: string; schoolName?: string }>(`contestAccounts/${contestId}_${username}`),
+  ]);
+  const valid = submissions
+    .map((doc) => doc.data)
+    .filter((item) => item.voided !== true)
+    .sort((a, b) => (a.createdAtIso ?? "").localeCompare(b.createdAtIso ?? ""));
+  if (valid.length === 0) {
+    if (existing) await ctx.db.deleteDoc(path);
+    return null;
+  }
+  const bestByProblem: LeaderboardEntryDoc["bestByProblem"] = {};
+  for (const item of valid) {
+    bestByProblem[item.problemId] = { score: item.score, maxScore: item.maxScore, passRate: item.passRate, at: item.createdAtIso ?? "" };
+  }
+  const bests = Object.values(bestByProblem);
+  const completedAt = bests
+    .filter((item) => item.maxScore > 0 && item.score >= item.maxScore)
+    .map((item) => item.at)
+    .sort()
+    .pop();
+  const entry: LeaderboardEntryDoc = {
+    contestId,
+    uid,
+    username,
+    name: existing?.data.name ?? account?.data.name ?? username,
+    schoolId: existing?.data.schoolId ?? account?.data.schoolId ?? "",
+    schoolName: existing?.data.schoolName ?? account?.data.schoolName ?? "",
+    totalScore: bests.reduce((sum, item) => sum + item.score, 0),
+    solvedCount: bests.filter((item) => item.maxScore > 0 && item.score >= item.maxScore).length,
+    submitCount: valid.length,
+    bestByProblem,
+    lastSubmittedAt: valid[valid.length - 1].createdAtIso ?? "",
+    ...(completedAt ? { completedAt } : {}),
+  };
+  await ctx.db.setDoc(path, { ...entry, updatedAt: SERVER_TIMESTAMP });
+  return entry;
+}
+
+/** 儀表板快照：每 3 秒最多重算一次，避免同時大量提交時寫入爆量；force 用於作廢後立即重算。 */
+export async function refreshDashboard(ctx: RequestContext, contestId: string, contest: ContestDoc, options: { force?: boolean } = {}) {
   const path = `contestDashboards/${contestId}`;
   const current = await ctx.db.getDoc<{ computedAtMs?: number }>(path);
   const nowMs = Date.now();
-  if (current && typeof current.data.computedAtMs === "number" && nowMs - current.data.computedAtMs < DASHBOARD_THROTTLE_MS) {
+  if (!options.force && current && typeof current.data.computedAtMs === "number" && nowMs - current.data.computedAtMs < DASHBOARD_THROTTLE_MS) {
     return;
   }
   const [entries, accountCount] = await Promise.all([

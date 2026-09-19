@@ -6,6 +6,7 @@ import type { AdminSectionKey, UserDirectoryRoleFilter } from "../../app/constan
 import { ContestAccountsSection } from "./ContestAccountsSection";
 import { ContestProblemsSection } from "./ContestProblemsSection";
 import { DashboardSection } from "./DashboardSection";
+import { ReviewSection } from "./ReviewSection";
 import { PlatformSection } from "./PlatformSection";
 import { getRoleLabel } from "../../services/accountService";
 import { loadUserSubmissions } from "../../services/submissionService";
@@ -196,6 +197,7 @@ export function AdminPanel({
     ? [
         { key: "platform", label: "平台狀態" },
         { key: "dashboard", label: "儀表板" },
+        { key: "review", label: "成績審核" },
         { key: "contests", label: "賽事管理" },
         { key: "contestAccounts", label: "競賽帳號" },
         { key: "contestProblems", label: "競賽題庫" },
@@ -560,6 +562,10 @@ export function AdminPanel({
               onStatus={onStatusMessage}
               onContestsChanged={onRefreshAdminData}
             />
+          )}
+
+          {superAdmin && activeAdminSection === "review" && (
+            <ReviewSection contests={contests} busy={adminBusy} onStatus={onStatusMessage} />
           )}
 
           {superAdmin && activeAdminSection === "contestAccounts" && (

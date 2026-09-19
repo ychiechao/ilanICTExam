@@ -7,6 +7,7 @@ import {
 } from "./routes/contestAccounts";
 import { handleImportContestProblems } from "./routes/contestProblems";
 import { handleDeleteContest, handleResetContest } from "./routes/contestAdmin";
+import { handleVoidSubmission } from "./routes/contestReview";
 import { handleBoard } from "./routes/board";
 import { handleGrade } from "./routes/grade";
 import { handleLogin, handleRefresh } from "./routes/login";
@@ -84,11 +85,12 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
     return handleImportContestProblems(request, ctx, problemsMatch[1]);
   }
 
-  // 超管：重置／刪除賽事
-  const contestMatch = /^\/contests\/([A-Za-z0-9_-]+)(?:\/(reset))?$/.exec(path);
+  // 超管：重置／刪除賽事、作廢提交
+  const contestMatch = /^\/contests\/([A-Za-z0-9_-]+)(?:\/(reset|void))?$/.exec(path);
   if (contestMatch) {
     const [, contestId, action] = contestMatch;
     if (method === "POST" && action === "reset") return handleResetContest(request, ctx, contestId);
+    if (method === "POST" && action === "void") return handleVoidSubmission(request, ctx, contestId);
     if (method === "DELETE" && !action) return handleDeleteContest(request, ctx, contestId);
   }
 

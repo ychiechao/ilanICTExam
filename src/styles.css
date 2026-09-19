@@ -2494,3 +2494,130 @@ pre {
   color: #2c4650;
   line-height: 1.6;
 }
+
+/* ---- 成績審核 ---- */
+.review-filters {
+  margin: 8px 0 12px;
+  align-items: center;
+}
+
+.review-search {
+  min-width: 220px;
+  padding: 6px 10px;
+  border: 1px solid #cfe0e6;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.review-row {
+  display: grid;
+  grid-template-columns: 40px 80px minmax(140px, 1.2fr) 60px 50px 90px 50px minmax(200px, 2fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #d9eef2;
+}
+
+.review-row-button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #d9eef2;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.review-row-button:hover,
+.review-row-button.open {
+  background: #eef6f8;
+}
+
+.review-row span small {
+  display: block;
+  font-size: 0.78rem;
+  color: #5b7480;
+}
+
+.review-row .mono {
+  font-family: "Consolas", "Menlo", monospace;
+}
+
+.review-detail {
+  padding: 8px 12px 14px 48px;
+  background: #f7fbfc;
+  border-bottom: 1px solid #d9eef2;
+}
+
+.review-submission-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) 40px 150px 80px 60px minmax(160px, 1.5fr) 150px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e3eef2;
+  font-size: 0.9rem;
+}
+
+.review-submission-row.voided {
+  color: #8a9aa3;
+  text-decoration: line-through;
+}
+
+.review-submission-row.voided .review-actions,
+.review-submission-row.voided .warning-text {
+  text-decoration: none;
+}
+
+.review-submission-row small {
+  margin-left: 4px;
+  font-size: 0.75rem;
+}
+
+.review-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.review-actions button {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+.review-code-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 42, 58, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.review-code-dialog {
+  width: min(900px, 100%);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.review-code {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  background: #0f2a3a;
+  color: #eaf4f8;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
