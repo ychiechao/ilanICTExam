@@ -2621,3 +2621,28 @@ pre {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ---- 三層排行榜 ---- */
+.leaderboard-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.leaderboard-scope select {
+  padding: 6px 10px;
+  border: 1px solid #cfe0e6;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.leaderboard-my-rank {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+.leader-item.me > .leader-row {
+  outline: 2px solid #1f7a8c;
+  border-radius: 10px;
+}

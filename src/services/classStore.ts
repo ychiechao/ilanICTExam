@@ -66,6 +66,15 @@ export async function loadClassMembers(classIds: string[]): Promise<ClassMember[
   );
 }
 
+/** 超管回填排行榜用：全部班級成員。 */
+export async function loadAllClassMembers(): Promise<ClassMember[]> {
+  if (!db) {
+    return readJson<ClassMember[]>(LOCAL_CLASS_MEMBERS_KEY, []);
+  }
+  const snapshot = await withRemoteTimeout(getDocs(collection(db, "classMembers")), "Firestore 班級成員讀取", 60000);
+  return snapshot.docs.map((item) => normalizeClassMember(item.data()));
+}
+
 export async function loadStudentClassMembers(studentUid?: string): Promise<ClassMember[]> {
   if (!studentUid) {
     return [];

@@ -19,17 +19,17 @@ import { hasFirebaseConfig } from "./firebase";
 import { getEffectiveRole, inferUserRoleFromEmail, isPendingTeacher, loadUserProfile, saveAccountSchoolSelection } from "./services/accountService";
 import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserSchool, setManagedUserTeacherSchool } from "./services/adminService";
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
-import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
+import { createLearningClass, joinClassByCode, loadAllClassMembers, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
 import { archiveContest, createContestDraft, deleteContest, loadContests, releaseContestToPractice, resetContestData, saveContest, unarchiveContest } from "./services/contestStore";
 import { writeAuditLog } from "./services/auditStore";
 import { DEFAULT_PLATFORM_STATE, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
-import { loadGlobalLeaderboard, removeUserFromLeaderboards, updateGlobalLeaderboard } from "./services/leaderboardService";
+import { backfillUserStats, computeUserStats, removeUserFromLeaderboards, saveUserStats, syncUserStatsMembership } from "./services/leaderboardService";
 import { deleteProblemIfUnused, exportProblemsToCsv, getProblemCsvTemplate, importProblemsFromCsv, importProblemsFromJson, loadAllProblemsForAdmin, loadProblems, saveProblem } from "./services/problemStore";
 import type { ProblemImportMode } from "./services/problemStore";
 import { createSchoolDraft, loadSchools, loadSchoolsByIds, saveSchool } from "./services/schoolStore";
 import { deleteSubmissionsForUser, loadAllUserProblemStats, loadSubmissions, loadUserSubmissions, saveSubmission } from "./services/submissionService";
-import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LeaderboardEntry, LearningClass, ManagedUser, PlatformState, Problem, School, SubmissionRecord, WorkspaceMode, UserProblemStat } from "./types";
+import type { AdminProfile, AppUser, ClassMember, ClassSubmissionView, ContestEvent, ContestStatus, GradeResult, LearningClass, ManagedUser, PlatformState, Problem, School, SubmissionRecord, WorkspaceMode, UserProblemStat } from "./types";
 import { countSubmissionsByProblem } from "./utils/adminUsers";
 import { cloneContest, cloneProblem, cloneSchool, getContestStatusLabel, getContestTransitions, sanitizeContestDraft, sanitizeProblemDraft, sanitizeSchoolDraft } from "./utils/drafts";
 import { getFirebaseAdminErrorMessage, getLoginErrorMessage, getSchoolWriteErrorMessage, loadAdminDataset, runAdminMutationStep } from "./utils/errors";
@@ -64,7 +64,8 @@ export default function App() {
   const [adminProblems, setAdminProblems] = useState<Problem[]>([]);
   const [contests, setContests] = useState<ContestEvent[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  // 排行榜由 LeaderboardPanel 自己查；提交後遞增讓它重讀。
+  const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0);
   const [importJson, setImportJson] = useState(defaultImportJson);
   const [importCsv, setImportCsv] = useState(getProblemCsvTemplate());
   const [problemImportMode, setProblemImportMode] = useState<ProblemImportMode>("append");
@@ -160,6 +161,20 @@ export default function App() {
   );
   const scoreRecordingEnabled = Boolean(user) && hasSchool;
 
+  /** 排行榜用的學校與班級：學生取已加入的班級，教師取自己開的班。 */
+  const membershipSchoolId = accountProfile?.schoolId || adminProfile?.schoolId || adminProfile?.schoolIds?.[0] || "";
+  const membershipSchoolName = accountProfile?.schoolName || adminProfile?.schoolName || schools.find((item) => item.id === membershipSchoolId)?.name || "";
+  const leaderboardClassOptions = useMemo(
+    () =>
+      effectiveRole === "teacher"
+        ? teacherClasses.filter((item) => !item.archived).map((item) => ({ id: item.id, name: item.name }))
+        : studentClassMembers.filter((member) => member.status !== "removed").map((member) => ({ id: member.classId, name: member.className })),
+    [effectiveRole, studentClassMembers, teacherClasses],
+  );
+  function currentMembership() {
+    return { schoolId: membershipSchoolId, schoolName: membershipSchoolName, classIds: leaderboardClassOptions.map((item) => item.id) };
+  }
+
   const managementMaximized =
     (activeTab === "admin" && admin) ||
     (activeTab === "classes" && effectiveRole === "teacher");
@@ -208,9 +223,6 @@ export default function App() {
         setCustomInput((current) => current || getDefaultTestInput(loaded[0]));
       })
       .catch((error) => console.info("題目讀取失敗", error));
-    loadGlobalLeaderboard()
-      .then(setLeaderboard)
-      .catch(() => setLeaderboard([]));
   }, [platform.mode, platformReady, superAdmin]);
 
   useEffect(() => {
@@ -617,12 +629,8 @@ export default function App() {
       setSubmissions((current) => mergeSubmissionRecord(current, record));
       setPracticeSubmissions(nextPracticeSubmissions);
       if (user) {
-        setLeaderboard(
-          await updateGlobalLeaderboard(user, problems, nextPracticeSubmissions, {
-            id: accountProfile?.schoolId,
-            name: accountProfile?.schoolName,
-          }),
-        );
+        await saveUserStats(computeUserStats(user, problems, nextPracticeSubmissions, currentMembership()));
+        setLeaderboardRefreshKey((current) => current + 1);
       }
       setStatusMessage(
         user ? "已完成評分並寫入紀錄。" : "訪客評分已保存於本機，登入後可寫入排行榜。",
@@ -896,6 +904,24 @@ export default function App() {
       setStatusMessage(`賽事狀態已切換為「${getContestStatusLabel(nextStatus)}」。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "賽事狀態切換失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  /** 重建所有人的 userStats（升級到三層排行榜後跑一次；之後每次提交會自行更新）。 */
+  async function handleRebuildLeaderboard() {
+    if (!superAdmin) return;
+    if (!window.confirm("用每人每題統計（userProblemStats）、使用者學校與班級成員重建全部排行榜彙總？已存在的會整份覆寫。")) return;
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const [allUsers, stats, allProblems, members] = await Promise.all([loadManagedUsers(), loadAllUserProblemStats(), loadAllProblemsForAdmin(), loadAllClassMembers()]);
+      const count = await backfillUserStats({ users: allUsers, stats, problems: allProblems, classMembers: members });
+      setLeaderboardRefreshKey((current) => current + 1);
+      setStatusMessage(`已重建 ${count} 位使用者的排行榜彙總。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "重建排行榜失敗。");
     } finally {
       setAdminBusy(false);
     }
@@ -1317,6 +1343,13 @@ export default function App() {
       const nextProfile = await loadUserProfile(user.uid);
       setAccountProfile(nextProfile);
       setAccountSchoolId(nextProfile?.schoolId || "");
+      const nextMembers = await loadStudentClassMembers(user.uid);
+      void syncUserStatsMembership(user.uid, {
+        schoolId: nextProfile?.schoolId || member.schoolId,
+        schoolName: nextProfile?.schoolName || member.schoolName,
+        classIds: nextMembers.filter((item) => item.status !== "removed").map((item) => item.classId),
+      });
+      setLeaderboardRefreshKey((current) => current + 1);
       setStatusMessage(
         member.schoolName ? `已加入班級「${member.className}」，學校設為「${member.schoolName}」。` : `已加入班級「${member.className}」。`,
       );
@@ -1361,7 +1394,7 @@ export default function App() {
         setPracticeSubmissions([]);
         setSubmissions([]);
       }
-      setLeaderboard(await runAdminMutationStep("重新讀取排行榜", loadGlobalLeaderboard));
+      setLeaderboardRefreshKey((current) => current + 1);
       setStatusMessage(`已清除 ${result.submissionsDeleted} 筆答題紀錄。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "答題紀錄清除失敗。");
@@ -1390,7 +1423,7 @@ export default function App() {
       await runAdminMutationStep("更新排行榜", () => removeUserFromLeaderboards(target.uid));
       await runAdminMutationStep("刪除使用者資料", () => deleteManagedUserProfile(target));
       await runAdminMutationStep("重新讀取後台資料", loadAdminData);
-      setLeaderboard(await runAdminMutationStep("重新讀取排行榜", loadGlobalLeaderboard));
+      setLeaderboardRefreshKey((current) => current + 1);
       setStatusMessage(`使用者已刪除，並清除 ${result.submissionsDeleted} 筆答題紀錄。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "使用者刪除失敗。");
@@ -1644,7 +1677,15 @@ export default function App() {
                 }}
               />
             )}
-            {activeTab === "leaderboard" && <LeaderboardPanel leaderboard={leaderboard} />}
+            {activeTab === "leaderboard" && (
+              <LeaderboardPanel
+                user={user}
+                schoolId={membershipSchoolId}
+                schoolName={membershipSchoolName}
+                classOptions={leaderboardClassOptions}
+                refreshKey={leaderboardRefreshKey}
+              />
+            )}
             {activeTab === "account" && (
               <AccountPanel
                 user={user}
@@ -1720,6 +1761,7 @@ export default function App() {
                 onMoveContestStatus={handleMoveContestStatus}
                 onResetContest={handleResetContest}
                 onReleaseContest={handleReleaseContest}
+                onRebuildLeaderboard={handleRebuildLeaderboard}
                 onDeleteContest={handleDeleteContest}
                 onCreateSchool={handleCreateSchoolDraft}
                 onSelectSchoolForEdit={handleSelectSchoolForEdit}

@@ -322,6 +322,14 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // 練習排行榜彙總（計畫 4.11）：每人一份，本人（有學校）可寫自己的；練習模式下登入者可讀。
+    match /userStats/{uid} {
+      allow read: if isSuperAdmin() || (practiceOpen() && signedIn());
+      allow create, update: if isSuperAdmin() ||
+        (practiceOpen() && hasSchool() && accountEnabled() && isOwner(uid) && request.resource.data.uid == uid);
+      allow delete: if isSuperAdmin();
+    }
+
     match /leaderboards/{problemId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (true));
       allow create, update: if isSuperAdmin() || (practiceOpen() && hasSchool() && (isSuperAdmin() || accountEnabled()));

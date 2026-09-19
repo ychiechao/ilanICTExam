@@ -67,6 +67,7 @@ export function AdminPanel({
   onMoveContestStatus,
   onResetContest,
   onReleaseContest,
+  onRebuildLeaderboard,
   onDeleteContest,
   onCreateSchool,
   onSelectSchoolForEdit,
@@ -133,6 +134,8 @@ export function AdminPanel({
   onDeleteContest: (contest: ContestEvent) => void;
   /** 賽後把競賽題庫複製到練習題庫（Worker 執行）。 */
   onReleaseContest: (contest: ContestEvent) => void;
+  /** 重建所有使用者的排行榜彙總 userStats。 */
+  onRebuildLeaderboard: () => void;
   onCreateSchool: () => void;
   onSelectSchoolForEdit: (schoolId: string) => void;
   onSaveEditedSchool: (school: School) => void;
@@ -994,7 +997,14 @@ export function AdminPanel({
                 <h3>使用者答題狀況</h3>
                 <p>依每位使用者各題最佳答題率彙整，並列出最近提交紀錄。</p>
               </div>
-              <span className="section-pill">{countTotalSubmissions(adminStats)} 筆提交</span>
+              <div className="admin-file-actions">
+                <span className="section-pill">{countTotalSubmissions(adminStats)} 筆提交</span>
+                {superAdmin && (
+                  <button className="ghost-button" type="button" disabled={adminBusy} onClick={onRebuildLeaderboard} title="用每人每題統計重建 userStats（班級／學校／全縣排行榜的資料來源）">
+                    重建排行榜彙總
+                  </button>
+                )}
+              </div>
             </div>
             <div className="admin-table">
               <div className="admin-table-head progress-table-row">

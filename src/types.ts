@@ -111,11 +111,17 @@ export interface UserProblemStat {
   updatedAt?: string;
 }
 
+/** 排行榜範圍：全縣、學校、班級（計畫 4.2）。 */
+export type LeaderboardScope = { kind: "county" } | { kind: "school"; schoolId: string } | { kind: "class"; classId: string };
+
+/** userStats/{uid}：每位使用者的練習彙總，也是排行榜的一列。 */
 export interface LeaderboardEntry {
   uid: string;
   displayName: string;
   schoolId?: string;
   schoolName?: string;
+  /** 已加入的班級（array-contains 查班級排行）。 */
+  classIds?: string[];
   score: number;
   maxScore: number;
   passRate: number;

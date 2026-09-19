@@ -12,7 +12,6 @@ import { db } from "../firebase";
 import type { AppUser, GradeResult, Problem, SubmissionRecord, WorkspaceMode, UserProblemStat } from "../types";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
-import { updateLeaderboard } from "./leaderboardService";
 import { saveClassSubmissionViewsForSubmission } from "./classStore";
 
 const LOCAL_SUBMISSIONS_KEY = "yilan-contest-submissions";
@@ -285,7 +284,6 @@ export async function saveSubmission(
       ),
       "Firestore 使用者題目統計儲存",
     );
-    await updateLeaderboard(user, problem, result);
     saveClassSubmissionViewsForSubmission(user, record).catch((error) => {
       console.info("班級答題紀錄同步失敗，已保留原始提交紀錄。", error);
     });
