@@ -4,7 +4,7 @@ import { csvDateStamp, downloadCsv } from "../../utils/csv";
 import { formatContestDateTime } from "../../utils/format";
 import { Metric } from "../ui";
 
-type ClassSection = "classes" | "students" | "submissions";
+type ClassSection = "classes" | "students" | "submissions" | "matrix";
 const ALL_CLASSES = "all";
 
 interface ClassesPanelProps {
@@ -17,6 +17,8 @@ interface ClassesPanelProps {
   onClassNameChange: (value: string) => void;
   onCreateClass: () => void;
   onToggleJoin: (learningClass: LearningClass, joinEnabled: boolean) => void;
+  onRenameClass: (learningClass: LearningClass) => void;
+  onSetClassArchived: (learningClass: LearningClass, archived: boolean) => void;
   onSetMemberStatus: (member: ClassMember, status: ClassMember["status"]) => void;
 }
 
@@ -45,11 +47,21 @@ export function ClassesPanel({
   onClassNameChange,
   onCreateClass,
   onToggleJoin,
+  onRenameClass,
+  onSetClassArchived,
   onSetMemberStatus,
 }: ClassesPanelProps) {
   const [section, setSection] = useState<ClassSection>("classes");
   const [selectedClassId, setSelectedClassId] = useState<string>(ALL_CLASSES);
   const [selectedStudentUid, setSelectedStudentUid] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  // 進度矩陣的篩選：年度、分類、只看有人作答的題目；點格子看該生該題的提交。
+  const [matrixYear, setMatrixYear] = useState("all");
+  const [matrixCategory, setMatrixCategory] = useState("all");
+  const [matrixAttemptedOnly, setMatrixAttemptedOnly] = useState(true);
+  const [matrixCell, setMatrixCell] = useState<{ studentUid: string; problemId: string } | null>(null);
+  const activeClasses = classes.filter((item) => !item.archived);
+  const archivedClasses = classes.filter((item) => item.archived);
 
   // 班級被刪除或還沒載入時，選單退回「全部班級」。
   useEffect(() => {
@@ -155,12 +167,43 @@ export function ClassesPanel({
         <option value={ALL_CLASSES}>全部班級</option>
         {classes.map((item) => (
           <option key={item.id} value={item.id}>
-            {item.name}
+            {item.archived ? `${item.name}（已封存）` : item.name}
           </option>
         ))}
       </select>
     </label>
   );
+
+  // 進度矩陣的題目欄：依年度／分類篩，預設只列有人作答過的題目，避免 150 欄。
+  const matrixYears = Array.from(new Set(problems.map((problem) => problem.year || ""))).filter(Boolean).sort().reverse();
+  const matrixCategories = Array.from(new Set(problems.map((problem) => problem.category || ""))).filter(Boolean).sort();
+  const matrixProblems = problems.filter(
+    (problem) =>
+      (matrixYear === "all" || (problem.year || "") === matrixYear) &&
+      (matrixCategory === "all" || (problem.category || "") === matrixCategory) &&
+      (!matrixAttemptedOnly || progressRows.some((row) => row.bestByProblem.has(problem.id))),
+  );
+  const matrixRows = progressRows.filter((row) => visibleMembers.some((member) => member.studentUid === row.studentUid && member.status !== "removed"));
+  const matrixCellRecords =
+    matrixCell && progressByUid.get(matrixCell.studentUid)
+      ? (progressByUid.get(matrixCell.studentUid)?.records ?? []).filter((item) => item.problemId === matrixCell.problemId)
+      : [];
+
+  function exportMatrixCsv() {
+    downloadCsv(
+      `班級進度矩陣-${exportScope}-${csvDateStamp()}.csv`,
+      ["學生", "班級", "完成題數", ...matrixProblems.map((problem) => problem.title)],
+      matrixRows.map((row) => [
+        row.studentName,
+        row.classNames.join("、"),
+        matrixProblems.filter((problem) => row.bestByProblem.get(problem.id)?.isFullScore).length,
+        ...matrixProblems.map((problem) => {
+          const best = row.bestByProblem.get(problem.id);
+          return best ? (best.isFullScore ? "完成" : `${Math.round(best.passRate * 100)}%`) : "";
+        }),
+      ]),
+    );
+  }
 
   return (
     <div className="panel-stack">
@@ -177,6 +220,7 @@ export function ClassesPanel({
             ["classes", "班級管理"],
             ["students", "學生名單"],
             ["submissions", "答題記錄"],
+            ["matrix", "進度矩陣"],
           ] as Array<[ClassSection, string]>
         ).map(([key, label]) => (
           <button
@@ -228,8 +272,8 @@ export function ClassesPanel({
                 <p>開放或關閉班級代碼加入。關閉後既有學生不受影響，只是新學生無法再用代碼加入。</p>
               </div>
             </div>
-            {classes.length === 0 && <p className="muted">尚未建立班級。</p>}
-            {classes.map((learningClass) => {
+            {activeClasses.length === 0 && <p className="muted">尚未建立班級。</p>}
+            {activeClasses.map((learningClass) => {
               const classMembers = membersByClassId.get(learningClass.id) || [];
               const activeMembers = classMembers.filter((member) => member.status !== "removed");
               const classViews = viewsByClassId.get(learningClass.id) || [];
@@ -272,11 +316,62 @@ export function ClassesPanel({
                     >
                       看答題記錄
                     </button>
+                    <button className="ghost-button" type="button" disabled={busy} onClick={() => onRenameClass(learningClass)}>
+                      改名
+                    </button>
+                    <button className="ghost-button" type="button" disabled={busy} onClick={() => onSetClassArchived(learningClass, true)}>
+                      封存
+                    </button>
                   </div>
                 </div>
               );
             })}
           </section>
+
+          {archivedClasses.length > 0 && (
+            <section className="admin-section">
+              <div className="section-title-row">
+                <div>
+                  <h3>已封存班級</h3>
+                  <p>封存的班級不能加入、不出現在排行榜；答題紀錄仍可在「答題記錄」選到。</p>
+                </div>
+                <button className="ghost-button" type="button" onClick={() => setShowArchived((current) => !current)}>
+                  {showArchived ? "收合" : `顯示 ${archivedClasses.length} 個`}
+                </button>
+              </div>
+              {showArchived &&
+                archivedClasses.map((learningClass) => {
+                  const activeMembers = (membersByClassId.get(learningClass.id) || []).filter((member) => member.status !== "removed");
+                  return (
+                    <div className="class-card archived" key={learningClass.id}>
+                      <div className="class-card-head">
+                        <div>
+                          <h4>{learningClass.name}</h4>
+                          <p>
+                            {learningClass.schoolName || "未設定學校"}｜{activeMembers.length} 位學生｜封存於 {formatContestDateTime(learningClass.updatedAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="class-card-meta">
+                        <button className="ghost-button" type="button" disabled={busy} onClick={() => onSetClassArchived(learningClass, false)}>
+                          取消封存
+                        </button>
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={() => {
+                            setSelectedClassId(learningClass.id);
+                            setSection("submissions");
+                          }}
+                        >
+                          看答題記錄
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </section>
+          )}
         </>
       )}
 
@@ -476,6 +571,139 @@ export function ClassesPanel({
             </div>
           </section>
         </>
+      )}
+      {section === "matrix" && (
+        <section className="admin-section">
+          <div className="section-title-row">
+            <div>
+              <h3>{selectedClass ? `${selectedClass.name} 進度矩陣` : "全部班級進度矩陣"}</h3>
+              <p>一列一位學生、一欄一題：✓ 已完成、百分比為最佳答題率、空白尚未作答。點格子看該生該題的提交。</p>
+            </div>
+            <div className="admin-file-actions">
+              {classSelector}
+              <label className="inline-admin-select">
+                年度
+                <select value={matrixYear} onChange={(event) => setMatrixYear(event.target.value)}>
+                  <option value="all">全部</option>
+                  {matrixYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="inline-admin-select">
+                分類
+                <select value={matrixCategory} onChange={(event) => setMatrixCategory(event.target.value)}>
+                  <option value="all">全部</option>
+                  {matrixCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="inline-check">
+                <input type="checkbox" checked={matrixAttemptedOnly} onChange={(event) => setMatrixAttemptedOnly(event.target.checked)} />
+                只列有人作答的題目
+              </label>
+              <button className="ghost-button" type="button" onClick={exportMatrixCsv} disabled={matrixRows.length === 0 || matrixProblems.length === 0}>
+                匯出矩陣 CSV
+              </button>
+            </div>
+          </div>
+          {matrixRows.length === 0 && <p className="muted">尚無學生。</p>}
+          {matrixRows.length > 0 && matrixProblems.length === 0 && <p className="muted">這個範圍沒有題目（或還沒有人作答）。</p>}
+          {matrixRows.length > 0 && matrixProblems.length > 0 && (
+            <div className="matrix-scroll">
+              <table className="matrix-table">
+                <thead>
+                  <tr>
+                    <th className="matrix-sticky">學生</th>
+                    <th>完成</th>
+                    {matrixProblems.map((problem, index) => (
+                      <th key={problem.id} title={problem.title}>
+                        <span className="matrix-col-index">{index + 1}</span>
+                        <span className="matrix-col-title">{problem.title}</span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {matrixRows.map((row) => {
+                    const done = matrixProblems.filter((problem) => row.bestByProblem.get(problem.id)?.isFullScore).length;
+                    return (
+                      <tr key={row.studentUid}>
+                        <th className="matrix-sticky">
+                          {row.studentName}
+                          {selectedClassId === ALL_CLASSES && <small>{row.classNames.join("、")}</small>}
+                        </th>
+                        <td className="matrix-num">
+                          {done}/{matrixProblems.length}
+                        </td>
+                        {matrixProblems.map((problem) => {
+                          const best = row.bestByProblem.get(problem.id);
+                          const selected = matrixCell?.studentUid === row.studentUid && matrixCell?.problemId === problem.id;
+                          const cls = !best ? "matrix-cell empty" : best.isFullScore ? "matrix-cell done" : "matrix-cell partial";
+                          return (
+                            <td key={problem.id} className={selected ? `${cls} selected` : cls}>
+                              {best && (
+                                <button
+                                  type="button"
+                                  title={`${row.studentName}：${problem.title}`}
+                                  onClick={() => setMatrixCell(selected ? null : { studentUid: row.studentUid, problemId: problem.id })}
+                                >
+                                  {best.isFullScore ? "✓" : `${Math.round(best.passRate * 100)}%`}
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {matrixCell && (
+            <div className="admin-subsection matrix-detail">
+              <div className="section-title-row compact">
+                <div>
+                  <h4>
+                    {progressByUid.get(matrixCell.studentUid)?.studentName}：{problems.find((item) => item.id === matrixCell.problemId)?.title}
+                  </h4>
+                  <p className="muted">{matrixCellRecords.length} 次提交（新到舊）</p>
+                </div>
+                <button className="ghost-button compact" type="button" onClick={() => setMatrixCell(null)}>
+                  關閉
+                </button>
+              </div>
+              <div className="admin-table">
+                <div className="admin-table-head class-submission-table-row">
+                  <span>時間</span>
+                  <span>模式</span>
+                  <span>答題率</span>
+                  <span>分數</span>
+                  <span>狀態</span>
+                  <span></span>
+                </div>
+                {matrixCellRecords.map((item) => (
+                  <div className="class-submission-table-row" key={item.id}>
+                    <span>{formatContestDateTime(item.createdAt)}</span>
+                    <span>{item.mode}</span>
+                    <span>{Math.round(item.passRate * 100)}%</span>
+                    <span>
+                      {item.score}/{item.maxScore}
+                    </span>
+                    <span className={item.isFullScore ? "status-pill" : "status-pill warning"}>{item.isFullScore ? "已完成" : item.status}</span>
+                    <span></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       )}
     </div>
   );

@@ -289,6 +289,8 @@ export interface ClassMember {
   studentName: string;
   studentEmail?: string | null;
   status: ClassMemberStatus;
+  /** 班級封存時同步寫入，學生端排行榜／帳號頁據此隱藏。 */
+  classArchived?: boolean;
   joinedAt?: string;
   updatedAt?: string;
 }

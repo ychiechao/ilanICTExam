@@ -235,6 +235,48 @@ export async function setClassJoinEnabled(learningClass: LearningClass, joinEnab
   return updatedClass;
 }
 
+/**
+ * 改名或封存（計畫 4.8）。封存會一併關閉加入；兩者都同步到該班的 classMembers
+ * （className／classArchived），學生端才看得到新名字、封存的班不再出現在排行榜選項。
+ */
+export async function updateLearningClass(learningClass: LearningClass, patch: { name?: string; archived?: boolean }) {
+  const name = patch.name !== undefined ? patch.name.trim() : learningClass.name;
+  if (!name) {
+    throw new Error("請輸入班級名稱。");
+  }
+  const archived = patch.archived ?? learningClass.archived ?? false;
+  const updatedClass = normalizeClass({
+    ...learningClass,
+    name,
+    archived,
+    joinEnabled: archived ? false : learningClass.joinEnabled,
+    updatedAt: new Date().toISOString(),
+  });
+
+  if (db) {
+    const memberSnapshot = await withRemoteTimeout(
+      getDocs(query(collection(db, "classMembers"), where("classId", "==", learningClass.id))),
+      "Firestore 班級成員讀取",
+    );
+    const batch = writeBatch(db);
+    batch.set(doc(db, "classes", updatedClass.id), updatedClass, { merge: true });
+    for (const member of memberSnapshot.docs) {
+      batch.set(member.ref, { className: updatedClass.name, classArchived: archived, updatedAt: updatedClass.updatedAt }, { merge: true });
+    }
+    await withRemoteTimeout(batch.commit(), "Firestore 班級更新");
+    return updatedClass;
+  }
+
+  const current = readJson<LearningClass[]>(LOCAL_CLASSES_KEY, []);
+  writeJson(LOCAL_CLASSES_KEY, sortClasses([...current.filter((item) => item.id !== updatedClass.id), updatedClass]));
+  const members = readJson<ClassMember[]>(LOCAL_CLASS_MEMBERS_KEY, []);
+  writeJson(
+    LOCAL_CLASS_MEMBERS_KEY,
+    members.map((member) => (member.classId === updatedClass.id ? { ...member, className: updatedClass.name, classArchived: archived } : member)),
+  );
+  return updatedClass;
+}
+
 export async function setClassMemberStatus(member: ClassMember, status: ClassMember["status"]) {
   const updatedMember = normalizeClassMember({
     ...member,
@@ -390,6 +432,7 @@ function normalizeClassMember(input: unknown): ClassMember {
     studentName: readText(record.studentName, readText(record.studentEmail, "未命名學生")),
     studentEmail: readText(record.studentEmail),
     status: record.status === "removed" ? "removed" : "active",
+    classArchived: record.classArchived === true,
     joinedAt: readText(record.joinedAt),
     updatedAt: readText(record.updatedAt),
   };

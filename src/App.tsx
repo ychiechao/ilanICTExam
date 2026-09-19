@@ -20,7 +20,7 @@ import { hasFirebaseConfig } from "./firebase";
 import { getEffectiveRole, inferUserRoleFromEmail, isPendingTeacher, loadUserProfile, saveAccountSchoolSelection } from "./services/accountService";
 import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserSchool, setManagedUserTeacherSchool } from "./services/adminService";
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
-import { createLearningClass, joinClassByCode, loadAllClassMembers, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
+import { createLearningClass, joinClassByCode, loadAllClassMembers, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus, updateLearningClass } from "./services/classStore";
 import { archiveContest, createContestDraft, deleteContest, loadContests, releaseContestToPractice, resetContestData, saveContest, unarchiveContest } from "./services/contestStore";
 import { writeAuditLog } from "./services/auditStore";
 import { DEFAULT_PLATFORM_STATE, isContestOpen, subscribePlatform } from "./services/platformStore";
@@ -172,7 +172,7 @@ export default function App() {
     () =>
       effectiveRole === "teacher"
         ? teacherClasses.filter((item) => !item.archived).map((item) => ({ id: item.id, name: item.name }))
-        : studentClassMembers.filter((member) => member.status !== "removed").map((member) => ({ id: member.classId, name: member.className })),
+        : studentClassMembers.filter((member) => member.status !== "removed" && !member.classArchived).map((member) => ({ id: member.classId, name: member.className })),
     [effectiveRole, studentClassMembers, teacherClasses],
   );
   function currentMembership() {
@@ -1315,6 +1315,43 @@ export default function App() {
     }
   }
 
+  async function handleRenameClass(learningClass: LearningClass) {
+    const name = window.prompt("新的班級名稱：", learningClass.name);
+    if (name === null) return;
+    if (!name.trim() || name.trim() === learningClass.name) return;
+    setClassBusy(true);
+    setStatusMessage("");
+    try {
+      await updateLearningClass(learningClass, { name });
+      await loadClassData();
+      setStatusMessage(`班級已改名為「${name.trim()}」。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "班級改名失敗。");
+    } finally {
+      setClassBusy(false);
+    }
+  }
+
+  async function handleSetClassArchived(learningClass: LearningClass, archived: boolean) {
+    if (
+      archived &&
+      !window.confirm(`封存「${learningClass.name}」？封存後會關閉加入、不出現在排行榜選項，學生答題紀錄保留，之後可取消封存。`)
+    ) {
+      return;
+    }
+    setClassBusy(true);
+    setStatusMessage("");
+    try {
+      await updateLearningClass(learningClass, { archived });
+      await loadClassData();
+      setStatusMessage(archived ? `已封存「${learningClass.name}」。` : `已取消封存「${learningClass.name}」。`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "班級封存狀態更新失敗。");
+    } finally {
+      setClassBusy(false);
+    }
+  }
+
   async function handleSetClassMemberStatus(member: ClassMember, status: ClassMember["status"]) {
     setClassBusy(true);
     setStatusMessage("");
@@ -1732,6 +1769,8 @@ export default function App() {
                 onClassNameChange={setClassNameDraft}
                 onCreateClass={handleCreateLearningClass}
                 onToggleJoin={handleToggleClassJoin}
+                onRenameClass={handleRenameClass}
+                onSetClassArchived={handleSetClassArchived}
                 onSetMemberStatus={handleSetClassMemberStatus}
               />
             )}

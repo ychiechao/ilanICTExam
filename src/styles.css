@@ -2646,3 +2646,113 @@ pre {
   outline: 2px solid #1f7a8c;
   border-radius: 10px;
 }
+
+/* ---- 班級進度矩陣 ---- */
+.matrix-scroll {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid #d9eef2;
+  border-radius: 10px;
+}
+
+.matrix-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  min-width: 100%;
+}
+
+.matrix-table th,
+.matrix-table td {
+  border-bottom: 1px solid #e3eef2;
+  border-right: 1px solid #eef4f6;
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+  background: #fff;
+}
+
+.matrix-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #eef6f8;
+  color: #0f2a3a;
+  font-weight: 600;
+  vertical-align: bottom;
+  max-width: 96px;
+}
+
+.matrix-table thead th .matrix-col-index {
+  display: block;
+  font-size: 0.7rem;
+  color: #5b7480;
+}
+
+.matrix-table thead th .matrix-col-title {
+  display: block;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+}
+
+.matrix-table .matrix-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  text-align: left;
+  min-width: 120px;
+  background: #f7fbfc;
+}
+
+.matrix-table thead .matrix-sticky {
+  z-index: 4;
+  background: #eef6f8;
+}
+
+.matrix-table tbody th.matrix-sticky small {
+  display: block;
+  font-weight: 400;
+  color: #5b7480;
+  font-size: 0.72rem;
+}
+
+.matrix-num {
+  font-variant-numeric: tabular-nums;
+  color: #5b7480;
+}
+
+.matrix-cell button {
+  width: 44px;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.matrix-cell.done button {
+  background: #d6f2e3;
+  color: #14603a;
+  font-weight: 700;
+}
+
+.matrix-cell.partial button {
+  background: #fff0cc;
+  color: #7a5200;
+}
+
+.matrix-cell.selected button {
+  outline: 2px solid #1f7a8c;
+}
+
+.matrix-detail {
+  margin-top: 12px;
+}
+
+.class-card.archived {
+  opacity: 0.85;
+  background: #f4f7f9;
+}
