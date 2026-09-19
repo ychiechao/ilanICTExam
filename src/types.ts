@@ -328,6 +328,7 @@ export type AuditAction =
   | "contest.problems.import"
   | "contest.dashboard"
   | "contest.void"
+  | "contest.release"
   | "maintenance.backfill";
 
 /** auditLogs：超管操作紀錄，只能新增不能改刪（規格 8.10）。 */

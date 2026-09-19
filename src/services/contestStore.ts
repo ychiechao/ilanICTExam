@@ -1,7 +1,7 @@
 import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { graderRequest } from "./grader";
-import type { ContestEvent } from "../types";
+import type { ContestStatus, ContestEvent } from "../types";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
 
@@ -57,6 +57,27 @@ export interface ContestResetResult {
 /** 重置：由 Worker 清掉帳號、題庫、作答、排行榜與 KV，保留設定並退回草稿。 */
 export function resetContestData(contestId: string) {
   return graderRequest<ContestResetResult>(`/contests/${encodeURIComponent(contestId)}/reset`, { body: {}, timeoutMs: 120000 });
+}
+
+/** 封存：Worker 記住原階段並停用該場全部競賽帳號。 */
+export function archiveContest(contestId: string) {
+  return graderRequest<{ contestId: string; disabledAccounts: number }>(`/contests/${encodeURIComponent(contestId)}/archive`, { body: {}, timeoutMs: 60000 });
+}
+
+/** 解封存：回到指定階段，恢復因封存而停用的帳號。 */
+export function unarchiveContest(contestId: string, status: ContestStatus) {
+  return graderRequest<{ contestId: string; status: ContestStatus; enabledAccounts: number }>(`/contests/${encodeURIComponent(contestId)}/unarchive`, {
+    body: { status },
+    timeoutMs: 60000,
+  });
+}
+
+/** 賽後把競賽題庫（含測資）複製到練習題庫，存成草稿；已存在的題目略過。 */
+export function releaseContestToPractice(contestId: string) {
+  return graderRequest<{ contestId: string; created: number; skipped: string[]; missingCases: string[] }>(`/contests/${encodeURIComponent(contestId)}/release`, {
+    body: {},
+    timeoutMs: 120000,
+  });
 }
 
 /** 刪除：只允許空的草稿賽事；Worker 會再檢查一次。 */

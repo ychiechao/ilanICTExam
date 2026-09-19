@@ -6,7 +6,7 @@ import {
   handleSetContestAccountStatus,
 } from "./routes/contestAccounts";
 import { handleImportContestProblems } from "./routes/contestProblems";
-import { handleDeleteContest, handleResetContest } from "./routes/contestAdmin";
+import { handleArchiveContest, handleDeleteContest, handleReleaseContest, handleResetContest, handleUnarchiveContest } from "./routes/contestAdmin";
 import { handleVoidSubmission } from "./routes/contestReview";
 import { handleBoard } from "./routes/board";
 import { handleGrade } from "./routes/grade";
@@ -85,12 +85,15 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
     return handleImportContestProblems(request, ctx, problemsMatch[1]);
   }
 
-  // 超管：重置／刪除賽事、作廢提交
-  const contestMatch = /^\/contests\/([A-Za-z0-9_-]+)(?:\/(reset|void))?$/.exec(path);
+  // 超管：重置／刪除／封存／解封存／釋出題庫、作廢提交
+  const contestMatch = /^\/contests\/([A-Za-z0-9_-]+)(?:\/(reset|void|archive|unarchive|release))?$/.exec(path);
   if (contestMatch) {
     const [, contestId, action] = contestMatch;
     if (method === "POST" && action === "reset") return handleResetContest(request, ctx, contestId);
     if (method === "POST" && action === "void") return handleVoidSubmission(request, ctx, contestId);
+    if (method === "POST" && action === "archive") return handleArchiveContest(request, ctx, contestId);
+    if (method === "POST" && action === "unarchive") return handleUnarchiveContest(request, ctx, contestId);
+    if (method === "POST" && action === "release") return handleReleaseContest(request, ctx, contestId);
     if (method === "DELETE" && !action) return handleDeleteContest(request, ctx, contestId);
   }
 

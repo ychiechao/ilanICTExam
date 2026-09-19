@@ -66,6 +66,7 @@ export function AdminPanel({
   onSaveEditedContest,
   onMoveContestStatus,
   onResetContest,
+  onReleaseContest,
   onDeleteContest,
   onCreateSchool,
   onSelectSchoolForEdit,
@@ -130,6 +131,8 @@ export function AdminPanel({
   onResetContest: (contest: ContestEvent) => void;
   /** 只有空的草稿可刪。 */
   onDeleteContest: (contest: ContestEvent) => void;
+  /** 賽後把競賽題庫複製到練習題庫（Worker 執行）。 */
+  onReleaseContest: (contest: ContestEvent) => void;
   onCreateSchool: () => void;
   onSelectSchoolForEdit: (schoolId: string) => void;
   onSaveEditedSchool: (school: School) => void;
@@ -506,6 +509,21 @@ export function AdminPanel({
                           >
                             複製明年
                           </button>
+                          {(contest.status === "ended" || contest.status === "review" || contest.status === "published" || contest.status === "archived") &&
+                            (contest.problemCount ?? 0) > 0 && (
+                              <button
+                                className="ghost-button"
+                                type="button"
+                                disabled={adminBusy}
+                                title={contest.releasedToPractice ? "已釋出過；再按會只新增練習題庫還沒有的題目" : "把競賽題庫複製到練習題庫（草稿）"}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onReleaseContest(contest);
+                                }}
+                              >
+                                {contest.releasedToPractice ? "已釋出題庫" : "釋出到練習題庫"}
+                              </button>
+                            )}
                           {contest.status !== "active" && contest.status !== "paused" && !isEmptyDraft(contest) && (
                             <button
                               className="danger-button"

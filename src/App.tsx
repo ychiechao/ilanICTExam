@@ -20,7 +20,7 @@ import { getEffectiveRole, inferUserRoleFromEmail, isPendingTeacher, loadUserPro
 import { deleteManagedUserProfile, loadAdminProfile, loadAdminProfiles, loadManagedUsers, setManagedUserAdmin, setManagedUserDisabled, setManagedUserSchool, setManagedUserTeacherSchool } from "./services/adminService";
 import { initializeFirstAdmin, isDemoAdmin, loginWithGoogle, logout, subscribeToAuth } from "./services/authStore";
 import { createLearningClass, joinClassByCode, loadClassMembers, loadClassSubmissionViews, loadStudentClassMembers, loadTeacherClasses, setClassJoinEnabled, setClassMemberStatus } from "./services/classStore";
-import { createContestDraft, deleteContest, loadContests, resetContestData, saveContest } from "./services/contestStore";
+import { archiveContest, createContestDraft, deleteContest, loadContests, releaseContestToPractice, resetContestData, saveContest, unarchiveContest } from "./services/contestStore";
 import { writeAuditLog } from "./services/auditStore";
 import { DEFAULT_PLATFORM_STATE, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
@@ -874,13 +874,20 @@ export default function App() {
     setAdminBusy(true);
     setStatusMessage("");
     try {
-      const saved = await saveContest({
-        ...contest,
-        status: nextStatus,
-        // 封存時記住原階段，解封存才能回到原處；解封存後清掉。
-        ...(nextStatus === "archived" ? { archivedFromStatus: contest.status } : {}),
-        ...(contest.status === "archived" ? { archivedFromStatus: undefined } : {}),
-      });
+      // 封存／解封存走 Worker：一併停用／恢復該場競賽帳號，並記住原階段。
+      if (nextStatus === "archived") {
+        const result = await archiveContest(contest.id);
+        await refreshContestList(contest.id);
+        setStatusMessage(`已封存「${contest.title}」，停用 ${result.disabledAccounts} 個競賽帳號。`);
+        return;
+      }
+      if (contest.status === "archived") {
+        const result = await unarchiveContest(contest.id, nextStatus);
+        await refreshContestList(contest.id);
+        setStatusMessage(`已解封存「${contest.title}」回到「${getContestStatusLabel(nextStatus)}」，恢復 ${result.enabledAccounts} 個競賽帳號。`);
+        return;
+      }
+      const saved = await saveContest({ ...contest, status: nextStatus });
       await writeAuditLog(
         { action: "contest.status", targetType: "contest", targetId: contest.id, summary: `「${contest.title}」${getContestStatusLabel(contest.status)} → ${getContestStatusLabel(nextStatus)}` },
         user,
@@ -889,6 +896,36 @@ export default function App() {
       setStatusMessage(`賽事狀態已切換為「${getContestStatusLabel(nextStatus)}」。`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "賽事狀態切換失敗。");
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function handleReleaseContest(contest: ContestEvent) {
+    if (!superAdmin) {
+      setStatusMessage("只有超級管理者可以釋出題庫。");
+      return;
+    }
+    if (
+      !window.confirm(
+        `把「${contest.title}」的 ${contest.problemCount ?? 0} 題競賽題目（含隱藏測資）複製到練習題庫？會以「草稿」狀態新增，練習題庫已有相同題目 ID 的會略過；之後到「題目管理」改成 published 才會開放。`,
+      )
+    ) {
+      return;
+    }
+    setAdminBusy(true);
+    setStatusMessage("");
+    try {
+      const result = await releaseContestToPractice(contest.id);
+      await Promise.all([refreshContestList(contest.id), loadAdminData()]);
+      setStatusMessage(
+        `已釋出「${contest.title}」：新增 ${result.created} 題草稿` +
+          (result.skipped.length > 0 ? `，略過已存在 ${result.skipped.length} 題（${result.skipped.join("、")}）` : "") +
+          (result.missingCases.length > 0 ? `；${result.missingCases.length} 題沒有測資` : "") +
+          "。",
+      );
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "釋出題庫失敗。");
     } finally {
       setAdminBusy(false);
     }
@@ -1682,6 +1719,7 @@ export default function App() {
                 onSaveEditedContest={handleSaveEditedContest}
                 onMoveContestStatus={handleMoveContestStatus}
                 onResetContest={handleResetContest}
+                onReleaseContest={handleReleaseContest}
                 onDeleteContest={handleDeleteContest}
                 onCreateSchool={handleCreateSchoolDraft}
                 onSelectSchoolForEdit={handleSelectSchoolForEdit}
