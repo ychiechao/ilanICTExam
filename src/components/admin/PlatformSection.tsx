@@ -64,6 +64,12 @@ export function PlatformSection({
   const rehearsalContests = platform.rehearsalContestIds
     .map((id) => contests.find((contest) => contest.id === id))
     .filter((contest): contest is ContestEvent => Boolean(contest));
+  // 比賽控制列出：競賽模式的啟用賽事、演練賽事，以及任何仍在進行中／暫停的賽事（避免取消勾選後沒地方按結束）。
+  const controlContests = [
+    ...(platform.mode === "contest" ? activeContests : []),
+    ...rehearsalContests,
+    ...contests.filter((contest) => contest.status === "active" || contest.status === "paused"),
+  ].filter((contest, index, list) => list.findIndex((item) => item.id === contest.id) === index);
   const blockers = [
     ...(mode === "contest" ? validateContestActivation(contests, selectedContestIds) : []),
     ...(rehearsalIds.length > 0 ? validateContestActivation(contests, rehearsalIds).map((item) => `演練：${item}`) : []),
@@ -257,9 +263,10 @@ export function PlatformSection({
         )}
       </div>
 
-      {((platform.mode === "contest" && activeContests.length > 0) || rehearsalContests.length > 0) && (
+      {controlContests.length > 0 && (
         <ContestControlPanel
-          contests={[...(platform.mode === "contest" ? activeContests : []), ...rehearsalContests.filter((item) => !activeContests.includes(item))]}
+          contests={controlContests}
+          openContestIds={[...(platform.mode === "contest" ? platform.activeContestIds : []), ...platform.rehearsalContestIds]}
           currentUser={currentUser}
           busy={busy}
           onStatus={onStatus}

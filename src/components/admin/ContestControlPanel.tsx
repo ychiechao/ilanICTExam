@@ -14,6 +14,8 @@ import { formatContestDateTime } from "../../utils/format";
 
 interface ContestControlPanelProps {
   contests: ContestEvent[];
+  /** 目前對參賽者開放的賽事 ID（競賽模式啟用或演練勾選）；進行中卻不在裡面的會提示。 */
+  openContestIds?: string[];
   currentUser: AppUser | null;
   busy: boolean;
   onStatus: (message: string) => void;
@@ -31,7 +33,7 @@ const PHASE_LABEL = {
  * 競賽模式下每一場的即時控制：開始、暫停、繼續、結束。
  * 時間以 Worker 校正後的伺服器時間為準，參賽者畫面會同步倒數。
  */
-export function ContestControlPanel({ contests, currentUser, busy, onStatus, onChanged }: ContestControlPanelProps) {
+export function ContestControlPanel({ contests, openContestIds, currentUser, busy, onStatus, onChanged }: ContestControlPanelProps) {
   const now = useServerNow();
   const [working, setWorking] = useState("");
 
@@ -95,6 +97,9 @@ export function ContestControlPanel({ contests, currentUser, busy, onStatus, onC
               {phase === "waiting" && <span className="muted">長度 {contest.durationMinutes ?? 120} 分鐘</span>}
               {(phase === "paused" || phase === "ended") && contest.endAt && (
                 <span className="muted">結束時間 {formatContestDateTime(contest.endAt)}</span>
+              )}
+              {openContestIds && !openContestIds.includes(contest.id) && (phase === "running" || phase === "paused") && (
+                <span className="warning-text">計時中，但目前沒有對參賽者開放（未勾選演練、也不在競賽模式），請結束或重新勾選</span>
               )}
             </div>
             <div className="contest-control-actions">
