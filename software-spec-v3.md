@@ -1,17 +1,18 @@
-# 宜蘭縣資訊科技創意實作競賽平台系統規格書 v3.0（規劃版）
+# 宜蘭縣資訊科技創意實作競賽平台系統規格書 v3.0
 
 ## 1. 文件資訊
 
 | 項目 | 內容 |
 | --- | --- |
 | 文件名稱 | 宜蘭縣資訊科技創意實作競賽平台系統規格書 |
-| 文件版本 | v3.0，規劃版（尚未實作） |
+| 文件版本 | v3.0（2026-09-19 實作版；第 1–16 章為 2026-09-15 規劃內容，實作差異見第 17 章） |
 | 基礎版本 | v2.0（2026-09-15，目前實作版） |
 | 撰寫日期 | 2026-09-15 |
 | 線上網站 | https://ilanictexam.pages.dev |
 | 前端技術 | React、TypeScript、Vite、自訂 CSS |
-| 後端與資料 | Firebase Authentication、Cloud Firestore、Cloudflare Worker + KV（規劃） |
-| 部署平台 | Cloudflare Pages + Cloudflare Workers |
+| 後端與資料 | Firebase Authentication、Cloud Firestore、Cloudflare Worker `ilanictexam-grader` + KV |
+| 部署平台 | Cloudflare Pages（正式 main／預覽 v3-dev）+ Cloudflare Workers |
+| 程式碼 | https://github.com/ychiechao/ilanICTExam |
 
 本文件在 v2.0 的基礎上，加入「平台雙模式」設計：平時為練習模式，由教師開班帶學生練習；賽事期間由主辦單位（超級管理者）切換為競賽模式，教師與學生帳號全部失效，只有主辦單位匯入的競賽帳號可以登入作答。
 
@@ -768,3 +769,89 @@ flowchart LR
 - 學生可切換班級 / 校 / 縣排行，排序正確。
 - 教師進度表正確顯示每位學生每題狀態並可匯出。
 - 回填工具可補建功能上線前的 `classSubmissionViews` 與 `userStats`。
+
+## 17. 實作結果與差異（2026-09-19 更新）
+
+本章記錄 v3.0 實作完成後與上述規劃的差異與補充；有衝突時以本章為準。程式碼在 GitHub `ychiechao/ilanICTExam` 的 `main` 分支，正式站 https://ilanictexam.pages.dev，預覽站 https://v3-dev.ilanictexam.pages.dev。
+
+### 17.1 完成狀態
+
+| 階段 | 狀態 | 備註 |
+| --- | --- | --- |
+| 第一階段：平台模式與 Worker 基礎 | 完成 | 練習／競賽／維護三種模式、公告、伺服器時間、稽核紀錄 |
+| 第二階段：競賽核心 | 完成 | 帳號匯入與帳號卡、題庫匯入、登入、Worker 評分、作答頁、比賽控制 |
+| 第三階段：儀表板、審核、稽核 | 完成 | 儀表板與投影畫面、成績審核與作廢、異常事件、釋出題庫、封存停用帳號 |
+| 第四階段：練習模式升級 | 部分完成 | 三層排行（4.1–4.4）、班級改名／封存與進度矩陣（4.7–4.8）、回填工具（4.9）完成；**教師批次登記學生（4.5–4.6）尚未實作** |
+| 補充：演練賽 | 完成 | 規劃時未列，見 17.4 |
+
+### 17.2 評分引擎與限制
+
+- Cloudflare Workers 禁止 `eval` 與 `new Function`，競賽評分改用 **JS-Interpreter**（npm `js-interpreter`）逐步執行 Blockly 產生的 JavaScript，`prompt`／`alert`／`console.log` 以原生函式注入。
+- 執行預算：每筆測資 20,000 步、每次提交合計 60,000 步、輸出最長 1,000 字；超出即判該筆測資錯誤。免費方案每次請求 CPU 10 ms，無窮迴圈會被步數上限攔下。
+- 每題提交上限預設 10，可在賽事設定調整（1–50）；同一帳號兩次提交至少間隔 5 秒。
+- **成績以每題「最後一次未作廢的提交」為準**（規劃原為最佳成績），排行榜、儀表板、作答頁一致。
+- 儀表板快照最多每 3 秒重算一次；作廢／恢復時強制重算。
+
+### 17.3 競賽帳號與題庫
+
+- 匯入名單格式為「學校,姓名」（可含第三欄備註），系統產生帳號（組別前綴＋三位流水號，如 E-001）、隨機密碼與各校序號 `schoolSeq`；學校名稱會自動對應，「學校管理」沒有的學校會自動新增。
+- 密碼只在匯入當下可下載（CSV 欄位：學校序號、學校、姓名、帳號、密碼）或列印 A4 帳號卡（QR 只含帳號）；之後只能重設。
+- 題庫匯入為整份取代；公開欄位存 `contestProblems/{contestId}_{problemId}`，完整測資存 KV `cases:{contestId}:{problemId}`。賽事進行中或暫停時拒絕重新匯入。
+- 賽事以「組別」（E 國小組／J 國中組）區分帳號前綴；國小、國中各建一場賽事，比賽當天同時啟用。
+
+### 17.4 賽事生命週期與演練賽
+
+- 階段：草稿 → 報名／名單匯入 → 等候開始 → 競賽中（可暫停）→ 結束 → 成績審核 → 正式公布 → 封存。開始前與結束後的階段可用「上一階段」退回；報名 → 等候開始需已匯入帳號、題庫並設定比賽長度。開始／暫停／繼續／結束只在「平台狀態 → 比賽控制」操作。
+- 封存（Worker `/archive`）會停用該場全部競賽帳號並記住原階段；解封存（`/unarchive`）回到原階段並恢復帳號。沒有任何資料的草稿／報名賽事可直接封存或刪除。
+- 重置（`/reset`）清掉該場帳號、題庫、作答、排行榜、事件、快照與 KV，保留設定並退回草稿；用於演練後或測試。
+- **演練賽**：`settings/platform.rehearsalContestIds` 列出的賽事在練習模式下也開放其競賽帳號登入作答（首頁「模擬賽登入」入口），教師與學生不受影響。Worker 與 Rules 的放行條件為「競賽模式的啟用賽事 ∪ 演練賽事」。比賽長度可設到 14 天，倒數顯示天數。
+- 比賽控制永遠列出所有進行中／暫停的賽事，未對參賽者開放時會提示，避免取消勾選後無法結束。
+- 切回練習模式時，仍在「競賽中」的賽事自動結束。
+
+### 17.5 成績審核、異常事件與賽後
+
+- 參賽者端「全螢幕軟鎖」：進行中需按「進入考試」進全螢幕；離開全螢幕、切分頁、視窗失焦、貼上都寫 `contestEvents`，並同步「是否在考試畫面」與離開次數到線上心跳；Worker 在登入時寫 `fingerprint_changed`。網頁無法真正阻止切出，目的為記錄與嚇阻。
+- 成績審核頁依參賽者彙總並標記：同題 `codeHash` 相同、結束前 60 秒提交、離開考試畫面 ≥ 3 次、貼上、登入裝置變更；可看程式碼、作廢／恢復單筆（Worker `/void`，重算該人排行與快照、寫稽核）；匯出成績總表與提交明細 CSV。
+- 賽後「釋出到練習題庫」（`/release`）把該場題目連同隱藏測資複製成練習題庫草稿（`status: draft`、`source: contest`），已存在的題目 ID 略過。
+- 儀表板顯示：帳號數、目前線上（心跳每 5 分鐘、6 分鐘內視為線上）、登入過、離開考試畫面中、離開次數合計、已提交、提交次數、平均總分、即時排行、各題完成、各校統計、最近提交；對外顯示三段（只有主辦單位／開放給參賽者／開放給所有登入者）與投影畫面連結。
+
+### 17.6 練習模式
+
+- 三層排行改為每人一份 `userStats/{uid}`（總分、完成題數、答題率、學校、`classIds`），提交後本人更新、加入班級時同步；排行榜依範圍查詢（全縣／學校 `schoolId ==`／班級 `classIds array-contains`），Firestore 以 passRate、completedCount、totalScore 排序（三組複合索引）。舊的 `leaderboards/global` 與每題 `leaderboards/{problemId}` 不再寫入。
+- 後台「使用者解題資料」提供「重建排行榜彙總」：以 `userProblemStats`、使用者學校與班級成員回填全部 `userStats`（使用者沒有學校時採班級的學校）。
+- 學生可在尚未加入班級時自選學校；加入班級後學校以班級為準且不可再自選。教師帳號需超管設定任教學校後才啟用；未設定學校的帳號只能線上測驗，成績不記錄。
+- 班級管理：改名、封存（同步到 `classMembers.className`／`classArchived`，封存班級不出現在排行榜選項）、開放／關閉加入、學生名單、答題儀表板、進度矩陣（學生×題目，可篩年度／分類、只列有人作答題目、點格看提交）、匯出 CSV。
+- Scratch／Blockly 模式切換時積木詞彙互相轉換（綠旗事件、詢問／說出 ↔ 要求輸入／輸出）。
+
+### 17.7 Worker 路由總表
+
+| 方法與路徑 | 用途 | 權限 |
+| --- | --- | --- |
+| GET `/time` | 伺服器時間 | 公開 |
+| POST `/login`、`/refresh` | 競賽帳號登入／換發自訂 token | 競賽帳號 |
+| POST `/grade` | 競賽提交評分 | 競賽帳號（該場開放中） |
+| POST `/contest-accounts/{id}`、`/reset-password`、`/status` | 匯入帳號、重設密碼、停用／啟用 | 超管 |
+| POST `/contest-problems/{id}` | 匯入題庫 | 超管 |
+| GET `/board/{id}?token=` | 投影畫面（HTML／JSON） | 持 token |
+| POST `/contests/{id}/reset`、DELETE `/contests/{id}` | 重置、刪除草稿 | 超管 |
+| POST `/contests/{id}/archive`、`/unarchive` | 封存、解封存 | 超管 |
+| POST `/contests/{id}/release` | 釋出題庫到練習題庫 | 超管 |
+| POST `/contests/{id}/void` | 作廢／恢復單筆提交 | 超管 |
+
+### 17.8 集合總表（實作）
+
+`users`、`admins`、`schools`、`settings/platform`、`problems`、`submissions`、`userProblemStats`、`userStats`、`classes`、`classMembers`、`classSubmissionViews`、`contests`、`contestAccounts`、`contestProblems`、`contestSubmissions`、`contestLeaderboards`（`{contestId}_{username}`）、`contestDashboards/{contestId}`、`contestPresence`、`contestEvents`、`auditLogs`。v2 遺留的 `leaderboards`、`contestRoster`、`schoolAccounts` 已不再使用，Rules 只留超管清理權限。
+
+### 17.9 待決事項更新
+
+- 15.2 A3：練習排行由前端寫入 `userStats`（本人可寫自己的），未走 Worker；縣賽成績不受影響。
+- 15.3 第 3 點：儀表板預設「只有主辦單位」，可切換為參賽者或所有登入者。
+- 15.3 第 4 點：學生多班時，排行榜班級分頁提供下拉切換，預設第一個班級。
+- 15.3 第 1、2、5 點仍待主辦單位決定；第 5 點與教師批次登記（4.5–4.6）一併實作。
+- Google Classroom 匯入名單：待確認 GCP 專案可設「內部」OAuth 與縣網開放 Classroom API 後再做。
+
+### 17.10 操作環境備註
+
+- 前端：`npm run dev`（Vite 5173）；Worker：`worker/` 下 `npx wrangler dev`，本機密鑰放 `worker/.dev.vars`（`ALLOWED_ORIGINS`、`FIREBASE_SERVICE_ACCOUNT_B64`），`.env.local` 的 `VITE_GRADER_URL` 指向本機 Worker。
+- 部署：`npx wrangler deploy --config worker/wrangler.jsonc`（Worker）、`npx vite build` 後 `npx wrangler pages deploy dist --project-name ilanictexam --branch main`（正式）或 `--branch v3-dev`（預覽）、`npx firebase deploy --only firestore`（Rules 與索引）。Windows PowerShell 5.1 需用 `npx.cmd`。
+- 兩個站共用同一個 Firebase 專案，Rules 與索引一經部署即同時影響正式站與預覽站。

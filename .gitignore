@@ -37,3 +37,4 @@ worker/worker-configuration.d.ts
 worker/.wrangler/
 .claude/settings.local.json
 solution-ebook/
+ilan_115_test_problems.json

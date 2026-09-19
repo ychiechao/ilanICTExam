@@ -240,15 +240,6 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // 過渡期：正式站仍是 v2.0，刪除使用者時會查這兩個舊集合；升級後移除。
-    match /contestRoster/{entryId} {
-      allow read, write: if isSuperAdmin();
-    }
-
-    match /schoolAccounts/{accountId} {
-      allow read, write: if isSuperAdmin();
-    }
-
     match /problems/{problemId} {
       allow read: if isSuperAdmin() || (practiceOpen() && (true));
       allow create, update, delete: if isSuperAdmin();
@@ -337,10 +328,9 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // v2 遺留的整份排行榜文件：已由 userStats 取代，只留超管清理用。
     match /leaderboards/{problemId} {
-      allow read: if isSuperAdmin() || (practiceOpen() && (true));
-      allow create, update: if isSuperAdmin() || (practiceOpen() && hasSchool() && (isSuperAdmin() || accountEnabled()));
-      allow delete: if isSuperAdmin();
+      allow read, write: if isSuperAdmin();
     }
   }
 }
