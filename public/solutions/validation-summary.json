@@ -1,0 +1,1022 @@
+[
+  {
+    "id": 1,
+    "title": "臨時屋",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 2,
+    "title": "超商收銀結帳",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 3,
+    "title": "電影院找座位",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 4,
+    "title": "大富翁",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 5,
+    "title": "可口便當",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 6,
+    "title": "短片欣賞",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 7,
+    "title": "最大公因數",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 8,
+    "title": "傳球遊戲",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 9,
+    "title": "找零錢計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 10,
+    "title": "班服投票",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 11,
+    "title": "棒球場的座位",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 12,
+    "title": "挑選喜歡的午餐區間",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 13,
+    "title": "綠能任務挑戰",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 14,
+    "title": "購買紀念品",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": "本解以「件數最多」為第一目標。原文另有「盡量花完」一語，但未明確定義兩目標的先後。"
+  },
+  {
+    "id": 15,
+    "title": "攻擊防禦力平衡",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": "本解以道具數最少為優先，同數量取枚舉中先遇到的組合；初始已平衡輸出 0。原題未完整說明這兩種邊界情況。"
+  },
+  {
+    "id": 16,
+    "title": "檢查碼",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 17,
+    "title": "校園販賣機自動補貨",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 18,
+    "title": "偶數和 (Even Sum)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 19,
+    "title": "三角形 (Triangle)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 20,
+    "title": "刮刮樂 (Scratch Card)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 21,
+    "title": "遊樂場 (Amusement Park)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 22,
+    "title": "歌唱比賽 (Singing Contest)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 23,
+    "title": "質數和 (Prime Sum)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 24,
+    "title": "奇緣蛋糕特賣",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 25,
+    "title": "健康小管家",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 26,
+    "title": "鋼琴音樂小才子計分挑戰",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 27,
+    "title": "幸運號碼大樂透",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "原題範例與附帶測資的中文字間空白不同；下載的 XML 使用附帶測資格式。"
+  },
+  {
+    "id": 28,
+    "title": "魔法公車車票計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": "「12 歲以下」依通常文字解讀採含 12 歲；原題括號只列 11 歲以下例子，未有 12 歲測資可確認。"
+  },
+  {
+    "id": 29,
+    "title": "幸運數字彩虹樂透",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 30,
+    "title": "我的健康小管家",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "原題只寫「取整數」，此版採無條件捨去；第 42 題則明確要求四捨五入。"
+  },
+  {
+    "id": 31,
+    "title": "東台線上 3C 購物平台",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 32,
+    "title": "程式設計師阿倫",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 33,
+    "title": "超市採購即時通",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 34,
+    "title": "金門小三通春運調度",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 35,
+    "title": "數位能量方塊實驗",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": ""
+  },
+  {
+    "id": 36,
+    "title": "糖尿病血糖趨勢與預警分析",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "零變化沒有反向，此版將它視為延續原趨勢；原題未明訂零變化是否中斷。"
+  },
+  {
+    "id": 37,
+    "title": "健康小管家",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 38,
+    "title": "鋼琴小天才計分挑戰",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 39,
+    "title": "幸運號碼大樂透",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "範例與測資的標點、空格不完全相同，XML 依附帶測資輸出「猜中 2 個號碼獎金 500 元」形式。"
+  },
+  {
+    "id": 40,
+    "title": "小隊長的奇數號碼",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 41,
+    "title": "航運費用計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 42,
+    "title": "我的健康小管家",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 43,
+    "title": "智慧倉儲",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": "原題部分不等號互相矛盾，30 公分的範例確認可用小櫃；本解採最大邊≤30 小、≤80 中、其餘大。"
+  },
+  {
+    "id": 44,
+    "title": "王牌教練",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 45,
+    "title": "圓柱體積計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 46,
+    "title": "身體質量指數計算與健康判斷",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 47,
+    "title": "房間磁磚的購買計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 48,
+    "title": "美味餐車三明治多重折扣與利潤計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "損益為零時本解輸出「無利潤 賠 0 元」；題目未給定此邊界的固定文字。"
+  },
+  {
+    "id": 49,
+    "title": "雲端資料備份硬碟統計",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 50,
+    "title": "綠色節能競賽:電價分段計費與成本分析",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "相同電費時保留較早輸入的戶號；原題沒有明訂平手規則。"
+  },
+  {
+    "id": 51,
+    "title": "射箭比賽成績計算",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 52,
+    "title": "猜數字",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 53,
+    "title": "寶可夢訓練師",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 54,
+    "title": "機器人行走軌跡",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 55,
+    "title": "學校運動會",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 56,
+    "title": "機器人跳樓梯",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 57,
+    "title": "資訊競賽獎勵統計",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 58,
+    "title": "台灣星鏈 (T-Starlink) 衛星佈署計畫",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 4,
+      "passed": 4
+    },
+    "warning": "非整除路段依範例先捨去不足一間隔的長度，再套模式公式；這與「終點必須部署」的字面有出入。"
+  },
+  {
+    "id": 59,
+    "title": "「一杯心情」飲料調製",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 60,
+    "title": "猜數字小幫手",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 61,
+    "title": "風獅爺排排隊",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 62,
+    "title": "金門坑道參觀系統",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 63,
+    "title": "金門粥糜採購任務",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 64,
+    "title": "資訊競賽獎勵統計",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 65,
+    "title": "台灣星鏈 (T-Starlink) 衛星佈署計畫",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 66,
+    "title": "「一杯心情」飲料調製",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 67,
+    "title": "猜數字小幫手",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 68,
+    "title": "風獅爺排排隊",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "文字說只輸入四個高度，但所有現有範例與測資前方都有筆數 4。XML 依現有測資先讀 N，再讀 N 個高度。"
+  },
+  {
+    "id": 69,
+    "title": "金門坑道開關管理",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 70,
+    "title": "貨物重量計費",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 71,
+    "title": "想去遊樂園",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "兩園同價時本解選大人國；原題未提供平手時的輸出規則。"
+  },
+  {
+    "id": 72,
+    "title": "我是神箭手",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 73,
+    "title": "會員入場統計",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 74,
+    "title": "買五送一",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 75,
+    "title": "歡樂抽獎",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 76,
+    "title": "考試座位安排",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 77,
+    "title": "智慧氣候監測系統 —— 氣溫變動分析",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 78,
+    "title": "快遞物流中心分類系統",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 79,
+    "title": "寶可夢聯盟大挑戰",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 80,
+    "title": "省電大作戰",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 81,
+    "title": "數位顯示器",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 82,
+    "title": "零用錢是否足夠",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 83,
+    "title": "機器人戰鬥力比對",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 84,
+    "title": "字串內的秘密數字",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 85,
+    "title": "最佳派對地點",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 86,
+    "title": "公車時刻表",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 87,
+    "title": "連續成績進步分析",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 88,
+    "title": "卡住的鍵盤",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 0
+    },
+    "warning": "原題與範例要求「字母 空白 次數」，附帶測資卻寫成 R3、A1。主要 XML 遵守題意，另提供「測資格式版」移除空白；兩者算法相同。"
+  },
+  {
+    "id": 89,
+    "title": "外送員的接單策略",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 90,
+    "title": "小島越野賽(國小)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 91,
+    "title": "基地台訊號覆蓋(國中)",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 92,
+    "title": "考試獎勵",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  },
+  {
+    "id": 93,
+    "title": "簽唱會門票",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": "採高積分優先的連續門檻：某分數群放不下便停止。原題沒有明確說能否跳過該群再邀低分者。"
+  },
+  {
+    "id": 94,
+    "title": "闖關遊戲",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 95,
+    "title": "火星探測車",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 3,
+      "passed": 3
+    },
+    "warning": ""
+  },
+  {
+    "id": 96,
+    "title": "熱浪區間",
+    "kind": "教學假設版",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": "題意未能唯一確定：第 1 例選第 2、5、8 天也嚴格遞增，跨度為 7，但範例輸出 5。本 XML 採最大遞增筆數、最早起點、最早終點的教學假設；符合已知範例，不代表已確認官方規則。無合法兩天時暫定輸出 0 0。"
+  },
+  {
+    "id": 97,
+    "title": "訊息傳遞",
+    "kind": "推理題・答案展示",
+    "checks": {
+      "total": 0,
+      "passed": 0
+    },
+    "warning": ""
+  },
+  {
+    "id": 98,
+    "title": "神奇表格",
+    "kind": "推理題・答案展示",
+    "checks": {
+      "total": 0,
+      "passed": 0
+    },
+    "warning": ""
+  },
+  {
+    "id": 99,
+    "title": "動物樂園",
+    "kind": "推理題・答案展示",
+    "checks": {
+      "total": 0,
+      "passed": 0
+    },
+    "warning": "原公布答案第2小題是12，但現有題圖中猴子排在四個5人家族之後，依不插隊規則需等36分鐘。本站以36作為圖文推導解，保留原答案12供核對；不可宣稱二者一致。"
+  },
+  {
+    "id": 100,
+    "title": "冰晶王國冬季仙境圖案",
+    "kind": "推理題・答案展示",
+    "checks": {
+      "total": 0,
+      "passed": 0
+    },
+    "warning": ""
+  },
+  {
+    "id": 101,
+    "title": "澆花問題",
+    "kind": "推理題・答案展示",
+    "checks": {
+      "total": 0,
+      "passed": 0
+    },
+    "warning": "兩張原題積木圖的常數不同：Scratch「最多未澆水天數」是 3，Blockly 圖是 0。本解析及原公布答案依 3 天版本。原答案列第 2 小題為 c；按圖中條件 e 亦可成立（昨日澆水後最低濕度為 60），因此保留原答案並標示疑義。"
+  },
+  {
+    "id": 102,
+    "title": "運動會",
+    "kind": "程式參考解",
+    "checks": {
+      "total": 2,
+      "passed": 2
+    },
+    "warning": ""
+  }
+]

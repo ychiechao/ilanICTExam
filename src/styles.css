@@ -563,6 +563,14 @@ button {
   margin-bottom: 14px;
 }
 
+.panel-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .panel-heading.compact-heading {
   margin: 6px 0 0;
   padding-top: 10px;

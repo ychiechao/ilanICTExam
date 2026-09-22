@@ -52,5 +52,6 @@ src/components/admin/          後台：平台狀態、儀表板、成績審核�
 src/components/contest/        參賽者：登入、作答區、全螢幕軟鎖、演練賽入口
 src/components/panels/         練習模式：題目說明、測試、評分、紀錄、排行榜、帳號、我的班級
 src/services/                  Firestore／Worker 存取層
+public/solutions/              114 程式解題手冊（靜態網頁，部署後在 /solutions/index.html，教師「我的班級」提供連結）
 worker/src/routes/             Worker 路由（login、grade、contestAccounts、contestProblems、contestAdmin、contestReview、board）
 ```
