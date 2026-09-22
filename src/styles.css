@@ -503,6 +503,9 @@ button {
   flex-direction: column;
   border-right: 1px solid var(--line);
   background: linear-gradient(180deg, #f8feff 0%, #e9fbff 100%);
+  /* 分頁多於側欄高度時可捲動，不再把最後幾個分頁裁掉。 */
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .vertical-tabs button {
@@ -516,7 +519,9 @@ button {
   border-bottom: 1px solid #cdebf0;
   background: transparent;
   color: #3d6370;
-  min-height: 112px;
+  /* 有空間時平分高度，空間不足時縮到 76px 為止，再不夠才捲動。 */
+  flex: 1 1 0;
+  min-height: 76px;
   padding: 10px 0;
   font-size: 15px;
   font-weight: 900;

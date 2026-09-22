@@ -38,9 +38,10 @@ export const tabs: Array<{ key: TabKey; label: string; icon: typeof Play }> = [
   { key: "test", label: "自行測試", icon: Play },
   { key: "score", label: "評分", icon: CheckCircle2 },
   { key: "history", label: "評分紀錄", icon: History },
-  { key: "leaderboard", label: "排行榜", icon: Trophy },
-  { key: "account", label: "我的帳號", icon: UserCircle },
+  // 我的班級／我的帳號放在解題流程之後、排行榜之前，避免老師在分頁列最下方找不到。
   { key: "classes", label: "我的班級", icon: Users },
+  { key: "account", label: "我的帳號", icon: UserCircle },
+  { key: "leaderboard", label: "排行榜", icon: Trophy },
   { key: "admin", label: "管理", icon: Upload },
 ];
 
