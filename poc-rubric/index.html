@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>積木作品檢核點 PoC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root { --bg:#f6f7fb; --card:#fff; --line:#e3e6ee; --ink:#1f2430; --muted:#6b7280; --ok:#16a34a; --bad:#dc2626; --accent:#2563eb; --accent-bg:#eaf1ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .card h2 { font-size:17px; margin:0 0 12px; display:flex; align-items:center; gap:10px; }
+  .step { display:inline-flex; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; align-items:center; justify-content:center; font-size:14px; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px; }
+  button { font:inherit; padding:7px 14px; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button:disabled { opacity:.5; cursor:default; }
+  input[type=file] { font:inherit; }
+  input[type=number] { width:64px; font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:6px; }
+  .hint { color:var(--muted); font-size:13px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:13px; }
+  tr.off td { color:#9ca3af; }
+  .grp { display:inline-block; font-size:12px; padding:1px 8px; border-radius:99px; background:var(--accent-bg); color:var(--accent); white-space:nowrap; }
+  pre { background:#0f172a; color:#e2e8f0; padding:12px 14px; border-radius:8px; overflow:auto; font-size:13px; line-height:1.5; margin:8px 0 0; }
+  details summary { cursor:pointer; color:var(--accent); }
+  .student { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px; }
+  .student header { display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; margin-bottom:6px; }
+  .score { font-size:26px; font-weight:700; }
+  .score.good { color:var(--ok); } .score.mid { color:#d97706; } .score.low { color:var(--bad); }
+  .pass { color:var(--ok); font-weight:700; } .fail { color:var(--bad); font-weight:700; }
+  .err { color:var(--bad); }
+  .cols { display:grid; grid-template-columns:1fr; gap:12px; }
+  .cols > div, #cpArea { min-width:0; overflow-x:auto; }
+  @media (min-width:900px) { .cols { grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>積木作品檢核點 PoC</h1>
+  <p class="sub">上傳範例檔（.aia / .sb3）→ 系統列出可勾選的檢核點 → 上傳學生作品逐條比對。元件名稱、尺寸、顏色、座標都不計分。</p>
+
+  <section class="card">
+    <h2><span class="step">1</span>範例檔 → 檢核點</h2>
+    <div class="row">
+      <input type="file" id="refFile" accept=".aia,.sb3">
+      <span class="hint">或載入內建範例：</span>
+      <button id="demoAi2">App Inventor（1..N 總和）</button>
+      <button id="demoSb3">Scratch（清單加總）</button>
+    </div>
+    <div id="refInfo" class="hint">尚未載入範例檔。</div>
+    <div id="refTree"></div>
+    <div style="margin-top:12px">
+      <b>題目說明</b> <span class="hint">一行一條要求；以「【」或「（」開頭的行是標題／備註，不算條目。每個檢核點可對應到其中一條，學生結果會依條目分組。</span>
+      <textarea id="descText" rows="9" style="width:100%;margin-top:6px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px" placeholder="例：&#10;【介面規畫】&#10;一個文字輸入框，讓使用者輸入 N&#10;一個按鈕&#10;【邏輯規畫】&#10;用 for 計數迴圈從 1 跑到 N"></textarea>
+      <div id="descInfo" class="hint"></div>
+    </div>
+    <div id="cpArea"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span>學生作品 → 評分</h2>
+    <div class="row">
+      <input type="file" id="stuFiles" accept=".aia,.sb3" multiple disabled>
+      <button id="clearStu" disabled>清除</button>
+    </div>
+    <p class="hint">內建範例會同時載入三份學生作品：A 邏輯相同但命名／版面不同、B 用不同寫法、C 幾乎沒做。</p>
+    <div id="results"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ================= 解析 =================
+  function newModel(kind, name) { return { kind, name, components: [], variables: [], scripts: [], sprites: 0, warnings: [] }; }
+  function newScript(hatKey, hatLabel, owner) { return { hatKey, hatLabel, owner, nodes: [], sigs: new Set(), literals: new Set(), edges: new Set() }; }
+  function addNode(s, sig, depth, parentSig) { s.nodes.push({ sig, depth }); s.sigs.add(sig); s.edges.add(parentSig + ' > ' + sig); }
+
+  async function parseFile(name, buf) {
+    const zip = await JSZip.loadAsync(buf);
+    const names = Object.keys(zip.files);
+    if (names.some((n) => n.endsWith('project.json'))) return parseSb3(name, zip);
+    if (names.some((n) => n.endsWith('.bky') || n.endsWith('.scm'))) return parseAia(name, zip);
+    throw new Error('無法辨識：不是 .sb3 也不是 .aia');
+  }
+
+  // ---------- App Inventor ----------
+  const fieldOf = (b, name) => { for (const c of b.children) if (c.localName === 'field' && c.getAttribute('name') === name) return c.textContent; return ''; };
+  function mutationOf(b) {
+    const o = { _args: 0 };
+    for (const c of b.children) if (c.localName === 'mutation') {
+      for (const a of c.attributes) o[a.name] = a.value;
+      o._args = Array.from(c.children).filter((x) => x.localName === 'arg').length;
+    }
+    return o;
+  }
+  function aiLiteral(b, type) {
+    if (type === 'math_number') return fieldOf(b, 'NUM');
+    if (type === 'text') return JSON.stringify(fieldOf(b, 'TEXT'));
+    if (type === 'logic_boolean' || type === 'logic_false') return fieldOf(b, 'BOOL') || 'FALSE';
+    return null;
+  }
+  const AI_SIG = {
+    controls_forRange: 'for 計數迴圈', controls_forEach: 'for each 迴圈', controls_while: 'while 迴圈', controls_choose: 'if 選擇值',
+    controls_openAnotherScreen: '開啟畫面', controls_closeScreen: '關閉畫面',
+    lexical_variable_set: '設定變數', lexical_variable_get: '讀取變數', local_declaration_statement: '區域變數', local_declaration_expression: '區域變數',
+    math_add: '加法', math_subtract: '減法', math_multiply: '乘法', math_division: '除法', math_power: '次方', math_random_int: '隨機整數', math_random_float: '隨機小數',
+    logic_negate: 'not', text_join: '文字接合', text_length: '文字長度', text_isEmpty: '文字是否空白', lists_create_with: '建立清單',
+  };
+  function aiSig(b, type) {
+    const mu = mutationOf(b);
+    switch (type) {
+      case 'component_set_get': return (mu.set_or_get === 'set' ? '設定 ' : '讀取 ') + mu.component_type + '.' + mu.property_name;
+      case 'component_method': return '呼叫 ' + mu.component_type + '.' + mu.method_name;
+      case 'component_component_block': return '元件 ' + mu.component_type;
+      case 'controls_if': return mu.else ? 'if/else 判斷' : 'if 判斷';
+      case 'procedures_callnoreturn': case 'procedures_callreturn': return '呼叫程序 ' + fieldOf(b, 'PROCNAME');
+      case 'math_compare': return '比較 ' + fieldOf(b, 'OP');
+      case 'logic_compare': return '邏輯比較 ' + fieldOf(b, 'OP');
+      case 'logic_operation': return '邏輯 ' + fieldOf(b, 'OP');
+      case 'math_single': case 'math_trig': case 'math_on_list': case 'math_divide': return '數學函數 ' + fieldOf(b, 'OP');
+    }
+    if (AI_SIG[type]) return AI_SIG[type];
+    const prefix = { math_: '數學 ', text_: '文字 ', lists_: '清單 ', dictionaries_: '字典 ', controls_: '控制 ', color_: '顏色 ', logic_: '邏輯 ' };
+    for (const [p, zh] of Object.entries(prefix)) if (type.startsWith(p)) return zh + type.slice(p.length);
+    return type;
+  }
+  function walkAiBlock(b, s, depth, parentSig) {
+    const type = b.getAttribute('type');
+    const lit = aiLiteral(b, type);
+    let mySig = parentSig;
+    if (lit !== null) s.literals.add(lit);
+    else { mySig = aiSig(b, type); addNode(s, mySig, depth, parentSig); }
+    for (const c of b.children) {
+      if (c.localName === 'value' || c.localName === 'statement') {
+        for (const cb of c.children) if (cb.localName === 'block') walkAiBlock(cb, s, depth + 1, mySig);
+      } else if (c.localName === 'next') {
+        for (const cb of c.children) if (cb.localName === 'block') walkAiBlock(cb, s, depth, parentSig);
+      }
+    }
+  }
+  async function parseAia(name, zip) {
+    const m = newModel('aia', name);
+    for (const p of Object.keys(zip.files).filter((n) => n.endsWith('.scm'))) {
+      const txt = await zip.file(p).async('string');
+      let form;
+      try { form = JSON.parse(txt.replace(/^\s*#\|\s*\$JSON\s*/, '').replace(/\|#\s*$/, '')).Properties; }
+      catch (e) { m.warnings.push(p + ' 解析失敗'); continue; }
+      const screen = form.$Name;
+      (function walk(c, parentType) {
+        for (const ch of c.$Components || []) { m.components.push({ type: ch.$Type, name: ch.$Name, parentType, screen }); walk(ch, ch.$Type); }
+      })(form, 'Form');
+    }
+    for (const p of Object.keys(zip.files).filter((n) => n.endsWith('.bky'))) {
+      const txt = await zip.file(p).async('string');
+      const screen = p.replace(/^.*\//, '').replace(/\.bky$/, '');
+      const doc = new DOMParser().parseFromString(txt, 'text/xml');
+      for (const b of Array.from(doc.documentElement.children)) {
+        if (b.localName !== 'block') continue;
+        const type = b.getAttribute('type');
+        if (type === 'global_declaration') { m.variables.push({ name: fieldOf(b, 'NAME'), scope: screen, isList: false }); continue; }
+        let hat;
+        const mu = mutationOf(b);
+        if (type === 'component_event') hat = { key: mu.component_type + '.' + mu.event_name, label: mu.component_type + '.' + mu.event_name + ' 事件' };
+        else if (type === 'procedures_defnoreturn' || type === 'procedures_defreturn') { const n = fieldOf(b, 'NAME'); hat = { key: '程序 ' + n, label: '程序 ' + n + '（' + mu._args + ' 個參數）' }; }
+        else hat = { key: '(散落積木)', label: '散落積木' };
+        const s = newScript(hat.key, hat.label, screen);
+        if (hat.key === '(散落積木)') walkAiBlock(b, s, 1, hat.key);
+        else for (const c of b.children) if (c.localName === 'value' || c.localName === 'statement') for (const cb of c.children) if (cb.localName === 'block') walkAiBlock(cb, s, 1, hat.key);
+        m.scripts.push(s);
+      }
+    }
+    return m;
+  }
+
+  // ---------- Scratch 3 ----------
+  const SB_SIG = {
+    control_repeat: '重複 N 次', control_forever: '重複無限次', control_repeat_until: '重複直到', control_if: '如果', control_if_else: '如果…否則',
+    control_wait: '等待', control_wait_until: '等待直到', control_stop: '停止', control_create_clone_of: '建立分身', control_delete_this_clone: '刪除分身',
+    looks_say: '說', looks_sayforsecs: '說（秒）', looks_think: '想', looks_thinkforsecs: '想（秒）', looks_switchcostumeto: '切換造型', looks_nextcostume: '下一個造型',
+    looks_switchbackdropto: '切換背景', looks_show: '顯示', looks_hide: '隱藏',
+    sensing_askandwait: '詢問並等待', sensing_answer: '詢問的答案', sensing_touchingobject: '碰到', sensing_keypressed: '按下鍵', sensing_timer: '計時器', sensing_resettimer: '重設計時器',
+    operator_add: '運算 +', operator_subtract: '運算 −', operator_multiply: '運算 ×', operator_divide: '運算 ÷', operator_mod: '餘數', operator_round: '四捨五入',
+    operator_gt: '比較 >', operator_lt: '比較 <', operator_equals: '比較 =', operator_and: '且', operator_or: '或', operator_not: '不成立', operator_random: '隨機取數',
+    operator_join: '字串接合', operator_letter_of: '第 n 個字', operator_length: '字串長度', operator_contains: '包含',
+    event_broadcast: '廣播', event_broadcastandwait: '廣播並等待',
+    motion_movesteps: '移動', motion_turnright: '右轉', motion_turnleft: '左轉', motion_gotoxy: '定位到 x,y', motion_goto: '定位到', motion_changexby: 'x 改變', motion_changeyby: 'y 改變',
+    motion_setx: '設定 x', motion_sety: '設定 y', motion_ifonedgebounce: '碰到邊緣反彈', motion_pointindirection: '面朝方向',
+  };
+  const SB_LIST_OP = { data_addtolist: '加入', data_deleteoflist: '刪除第 n 項', data_deletealloflist: '清空', data_insertatlist: '插入', data_replaceitemoflist: '取代',
+    data_itemoflist: '第 n 項', data_itemnumoflist: '項目位置', data_lengthoflist: '長度', data_listcontainsitem: '包含', data_showlist: '顯示', data_hidelist: '隱藏', data_listcontents: '內容' };
+  function scratchSig(b, blocks) {
+    const op = b.opcode;
+    const f = (k) => (b.fields && b.fields[k]) ? b.fields[k][0] : '';
+    if (op === 'data_setvariableto') return '設定變數 ' + f('VARIABLE');
+    if (op === 'data_changevariableby') return '變數 ' + f('VARIABLE') + ' 改變';
+    if (op === 'data_variable') return '讀取變數 ' + f('VARIABLE');
+    if (op === 'data_showvariable' || op === 'data_hidevariable') return (op === 'data_showvariable' ? '顯示' : '隱藏') + '變數 ' + f('VARIABLE');
+    if (SB_LIST_OP[op]) return '清單 ' + f('LIST') + ' ' + SB_LIST_OP[op];
+    if (op === 'operator_mathop') return '數學函數 ' + f('OPERATOR');
+    if (op === 'procedures_call') return '呼叫積木 ' + (b.mutation ? b.mutation.proccode : '');
+    if (op.startsWith('argument_reporter')) return '參數 ' + f('VALUE');
+    if (op === 'event_broadcast' || op === 'event_broadcastandwait') {
+      const inp = b.inputs && b.inputs.BROADCAST_INPUT; let msg = '';
+      if (inp) { const v = inp[1]; if (Array.isArray(v)) msg = v[1]; else if (blocks[v] && blocks[v].fields) msg = blocks[v].fields.BROADCAST_OPTION[0]; }
+      return SB_SIG[op] + ' ' + msg;
+    }
+    if (SB_SIG[op]) return SB_SIG[op];
+    const prefix = { motion_: '動作 ', looks_: '外觀 ', sound_: '音效 ', pen_: '畫筆 ', sensing_: '偵測 ', control_: '控制 ', operator_: '運算 ', event_: '事件 ', data_: '資料 ' };
+    for (const [p, zh] of Object.entries(prefix)) if (op.startsWith(p)) return zh + op.slice(p.length);
+    return op;
+  }
+  function scratchHat(b, blocks) {
+    const f = (k) => (b.fields && b.fields[k]) ? b.fields[k][0] : '';
+    switch (b.opcode) {
+      case 'event_whenflagclicked': return { key: '當綠旗被點擊', label: '當綠旗被點擊' };
+      case 'event_whenkeypressed': return { key: '當 ' + f('KEY_OPTION') + ' 鍵被按下', label: '當 ' + f('KEY_OPTION') + ' 鍵被按下' };
+      case 'event_whenthisspriteclicked': return { key: '當角色被點擊', label: '當角色被點擊' };
+      case 'event_whenstageclicked': return { key: '當舞台被點擊', label: '當舞台被點擊' };
+      case 'event_whenbroadcastreceived': return { key: '當收到廣播 ' + f('BROADCAST_OPTION'), label: '當收到廣播 ' + f('BROADCAST_OPTION') };
+      case 'event_whenbackdropswitchesto': return { key: '當背景切換', label: '當背景切換' };
+      case 'event_whengreaterthan': return { key: '當數值大於', label: '當 ' + f('WHENGREATERTHANMENU') + ' 大於' };
+      case 'control_start_as_clone': return { key: '當分身產生', label: '當分身產生' };
+      case 'procedures_definition': {
+        const proto = b.inputs && b.inputs.custom_block && blocks[b.inputs.custom_block[1]];
+        const code = proto && proto.mutation ? proto.mutation.proccode : '?';
+        return { key: '定義積木 ' + code, label: '定義積木 ' + code };
+      }
+    }
+    return null;
+  }
+  function walkSbBlock(b, blocks, s, depth, parentSig) {
+    const sig = scratchSig(b, blocks);
+    addNode(s, sig, depth, parentSig);
+    walkSbInputs(b, blocks, s, depth + 1, sig);
+  }
+  function walkSbInputs(b, blocks, s, depth, parentSig) {
+    for (const [k, inp] of Object.entries(b.inputs || {})) {
+      const v = inp[1];
+      if (typeof v === 'string') {
+        const cb = blocks[v];
+        if (!cb || cb.shadow) continue;
+        if (k.startsWith('SUBSTACK')) { let cur = cb; while (cur) { walkSbBlock(cur, blocks, s, depth, parentSig); cur = cur.next ? blocks[cur.next] : null; } }
+        else walkSbBlock(cb, blocks, s, depth, parentSig);
+      } else if (Array.isArray(v)) {
+        const t = v[0];
+        if (t >= 4 && t <= 8) s.literals.add(String(v[1]));
+        else if (t === 10) { if (String(v[1]) !== '') s.literals.add(JSON.stringify(String(v[1]))); }
+        else if (t === 12) addNode(s, '讀取變數 ' + v[1], depth, parentSig);
+        else if (t === 13) addNode(s, '清單 ' + v[1] + ' 內容', depth, parentSig);
+      }
+    }
+  }
+  async function parseSb3(name, zip) {
+    const m = newModel('sb3', name);
+    const pj = JSON.parse(await zip.file(Object.keys(zip.files).find((n) => n.endsWith('project.json'))).async('string'));
+    for (const t of pj.targets) {
+      const scope = t.isStage ? '舞台' : t.name;
+      if (!t.isStage) m.sprites++;
+      for (const v of Object.values(t.variables || {})) m.variables.push({ name: v[0], scope, isList: false });
+      for (const v of Object.values(t.lists || {})) m.variables.push({ name: v[0], scope, isList: true });
+      const blocks = t.blocks || {};
+      for (const b of Object.values(blocks)) {
+        if (Array.isArray(b) || !b.topLevel || b.shadow) continue;
+        const hat = scratchHat(b, blocks);
+        const s = newScript(hat ? hat.key : '(散落積木)', hat ? hat.label : '散落積木', scope);
+        if (hat) walkSbInputs(b, blocks, s, 1, s.hatKey); else walkSbBlock(b, blocks, s, 1, s.hatKey);
+        let nxt = b.next; while (nxt && blocks[nxt]) { walkSbBlock(blocks[nxt], blocks, s, 1, s.hatKey); nxt = blocks[nxt].next; }
+        m.scripts.push(s);
+      }
+    }
+    return m;
+  }
+
+  // ================= 檢核點 =================
+  function orderedUnion(scripts, pick) {
+    const seen = new Set(), out = [];
+    for (const s of scripts) for (const x of pick(s)) if (!seen.has(x)) { seen.add(x); out.push(x); }
+    return out;
+  }
+  function buildCheckpoints(ref) {
+    const cps = [];
+    const add = (o) => cps.push(Object.assign({ enabled: true, weight: 1, item: -1 }, o));
+    if (ref.kind === 'aia') {
+      const counts = {};
+      for (const c of ref.components) counts[c.type] = (counts[c.type] || 0) + 1;
+      for (const [type, n] of Object.entries(counts)) add({
+        id: 'comp:' + type, group: '元件', label: '有 ' + type + ' 元件' + (n > 1 ? '（至少 ' + n + ' 個）' : ''),
+        test: (m) => { const k = m.components.filter((c) => c.type === type).length; return { pass: k >= n, detail: '找到 ' + k + ' 個' }; },
+      });
+      if (ref.variables.length) { const n = ref.variables.length; add({
+        id: 'var:global', group: '變數', label: '宣告全域變數（至少 ' + n + ' 個，名稱不計）',
+        test: (m) => ({ pass: m.variables.length >= n, detail: '找到 ' + m.variables.length + ' 個：' + (m.variables.map((v) => v.name).join(', ') || '—') }),
+      }); }
+    } else {
+      add({ id: 'sprites', group: '角色', label: '至少 ' + ref.sprites + ' 個角色', test: (m) => ({ pass: m.sprites >= ref.sprites, detail: '找到 ' + m.sprites + ' 個' }) });
+      const seen = new Set();
+      for (const v of ref.variables) {
+        const k = (v.isList ? 'L:' : 'V:') + v.name; if (seen.has(k)) continue; seen.add(k);
+        add({ id: 'var:' + k, group: '變數', label: (v.isList ? '清單' : '變數') + '「' + v.name + '」存在',
+          test: (m) => { const ok = m.variables.some((x) => x.name === v.name && x.isList === v.isList); return { pass: ok, detail: ok ? '' : '未找到（名稱需一致）' }; } });
+      }
+    }
+    const groups = new Map();
+    for (const s of ref.scripts) { if (!groups.has(s.hatKey)) groups.set(s.hatKey, []); groups.get(s.hatKey).push(s); }
+    for (const [key, list] of groups) {
+      const label = list[0].hatLabel, n = list.length;
+      add({ id: 'script:' + key, group: '腳本', label: '有「' + label + '」' + (n > 1 ? '（至少 ' + n + ' 個）' : ''),
+        test: (m) => { const k = m.scripts.filter((s) => s.hatKey === key).length; return { pass: k >= n, detail: '找到 ' + k + ' 個' }; } });
+      for (const sig of orderedUnion(list, (s) => s.nodes.map((x) => x.sig))) add({
+        id: 'in:' + key + ':' + sig, group: '腳本內容', label: '「' + label + '」內使用：' + sig,
+        test: (m) => { const ss = m.scripts.filter((s) => s.hatKey === key); if (!ss.length) return { pass: false, detail: '沒有這個腳本' }; const ok = ss.some((s) => s.sigs.has(sig)); return { pass: ok, detail: ok ? '' : '腳本中沒有這種積木' }; },
+      });
+      for (const lit of orderedUnion(list, (s) => [...s.literals])) add({
+        id: 'lit:' + key + ':' + lit, group: '常數', enabled: false, label: '「' + label + '」內使用常數 ' + lit,
+        test: (m) => { const ss = m.scripts.filter((s) => s.hatKey === key); const ok = ss.some((s) => s.literals.has(lit)); return { pass: ok, detail: ok ? '' : '未使用此常數' }; },
+      });
+    }
+    return cps;
+  }
+  function bag(m) {
+    const s = new Set();
+    for (const c of m.components) s.add('comp:' + c.type);
+    for (const sc of m.scripts) { s.add('hat:' + sc.hatKey); for (const g of sc.sigs) s.add(sc.hatKey + '|' + g); for (const e of sc.edges) s.add(sc.hatKey + '|' + e); }
+    return s;
+  }
+  function jaccard(a, b) { let i = 0; for (const x of a) if (b.has(x)) i++; const u = a.size + b.size - i; return u ? i / u : 1; }
+  function grade(m, cps) {
+    const on = cps.filter((c) => c.enabled);
+    let tot = 0, got = 0;
+    const rows = on.map((c) => { const r = c.test(m); const w = Number(c.weight) || 0; tot += w; if (r.pass) got += w; return { cp: c, pass: r.pass, detail: r.detail }; });
+    return { score: tot ? Math.round(got / tot * 100) : 0, rows };
+  }
+  function treeText(m) {
+    const L = [];
+    if (m.kind === 'aia') {
+      L.push('【元件】'); for (const c of m.components) L.push('  ' + c.type + '  (' + c.name + (c.parentType !== 'Form' ? '，在 ' + c.parentType + ' 內' : '') + ')');
+      L.push('【全域變數】' + (m.variables.map((v) => v.name).join(', ') || '—'));
+    } else {
+      L.push('【角色】' + m.sprites + ' 個');
+      L.push('【變數／清單】' + (m.variables.map((v) => (v.isList ? '清單 ' : '') + v.name + '@' + v.scope).join(', ') || '—'));
+    }
+    for (const s of m.scripts) {
+      L.push(''); L.push('▶ ' + s.hatLabel + '  [' + s.owner + ']');
+      for (const n of s.nodes) L.push('  '.repeat(n.depth) + n.sig);
+      if (s.literals.size) L.push('  常數：' + [...s.literals].join(', '));
+    }
+    if (m.warnings.length) L.push('', '⚠ ' + m.warnings.join('；'));
+    return L.join('\n');
+  }
+
+  // ================= UI =================
+  const state = { ref: null, cps: [], students: [], desc: [] };
+
+  // 題目說明：一行一條，「【」「（」開頭的是標題／備註；去掉行首編號
+  function parseDesc(text) {
+    return text.split('\n').map((l) => l.trim()).filter((l) => l && !/^[【（(]/.test(l)).map((l) => l.replace(/^\d+[.、)）]\s*/, ''));
+  }
+  function setDesc(text) {
+    state.desc = parseDesc(text);
+    for (const c of state.cps) if (c.item >= state.desc.length) c.item = -1;
+    $('#descInfo').textContent = state.desc.length ? '共 ' + state.desc.length + ' 條：' + state.desc.map((d, i) => (i + 1) + '. ' + d).join('　') : '';
+  }
+  // 內建範例的說明與對應（真實情境由老師在表格裡選）
+  const DEMO = {
+    ai2: {
+      desc: '【目標】按下按鈕後，計算 1 到 N 的總和並顯示\n【介面規畫】\n1. 一個文字輸入框，讓使用者輸入 N\n2. 一個按鈕，按下後開始計算\n3. 一個標籤顯示結果\n（排版、大小、顏色、元件名稱自訂，不計分）\n【邏輯規畫】\n4. 宣告一個全域變數存放總和，按鈕按下時先歸零\n5. 用 for 計數迴圈從 1 跑到 N（N 讀自文字輸入框）\n6. 迴圈內把計數值累加到總和\n7. 迴圈結束後把總和顯示到標籤',
+      map: [[/^comp:TextBox/, 0], [/^comp:Button/, 1], [/^script:/, 1], [/^comp:Label/, 2], [/^var:global/, 3], [/設定變數$/, 3], [/for 計數迴圈$/, 4], [/讀取 TextBox\.Text$/, 4], [/加法$/, 5], [/讀取變數$/, 5], [/設定 Label\.Text$/, 6]],
+    },
+    sb3: {
+      desc: '【目標】把清單「輸入」的所有數字加總，用「說」顯示答案\n【名稱約定】\n1. 輸入資料放在清單「輸入」，答案必須寫進變數「答案」（計數變數名稱自訂）\n【邏輯規畫】\n2. 綠旗被點擊時開始\n3. 先把「答案」歸零\n4. 用「重複 N 次」走訪清單，次數為清單長度\n5. 每一輪把清單的第 i 項加到「答案」\n6. 最後用「說」顯示「答案」',
+      map: [[/^var:L:輸入/, 0], [/^var:V:答案/, 0], [/^script:/, 1], [/設定變數 答案$/, 2], [/重複 N 次$/, 3], [/清單 輸入 長度$/, 3], [/變數 答案 改變$/, 4], [/清單 輸入 第 n 項$/, 4], [/:說$/, 5], [/讀取變數 答案$/, 5]],
+    },
+  };
+  function applyDemoMapping(kind) {
+    const d = DEMO[kind];
+    $('#descText').value = d.desc; setDesc(d.desc);
+    for (const c of state.cps) { c.item = -1; for (const [re, i] of d.map) if (re.test(c.id)) { c.item = i; break; } c.enabled = c.item >= 0; }
+  }
+
+  function renderRef() {
+    const m = state.ref;
+    $('#refInfo').innerHTML = '已載入 <b>' + esc(m.name) + '</b>（' + (m.kind === 'aia' ? 'App Inventor' : 'Scratch 3') + '）：' +
+      (m.kind === 'aia' ? m.components.length + ' 個元件、' : m.sprites + ' 個角色、') + m.variables.length + ' 個變數／清單、' + m.scripts.length + ' 個腳本';
+    $('#refTree').innerHTML = '<details><summary>正規化後的結構（去掉名稱、尺寸、座標後系統看到的東西）</summary><pre>' + esc(treeText(m)) + '</pre></details>';
+    renderCps();
+  }
+  function renderCps() {
+    const opts = (sel) => '<option value="-1">—</option>' + state.desc.map((d, i) => '<option value="' + i + '"' + (sel === i ? ' selected' : '') + '>' + (i + 1) + '. ' + esc(d.length > 18 ? d.slice(0, 18) + '…' : d) + '</option>').join('');
+    const rows = state.cps.map((c, i) => '<tr class="' + (c.enabled ? '' : 'off') + '">' +
+      '<td><input type="checkbox" data-i="' + i + '" ' + (c.enabled ? 'checked' : '') + '></td>' +
+      '<td><span class="grp">' + esc(c.group) + '</span></td><td>' + esc(c.label) + '</td>' +
+      '<td><input type="number" min="0" step="1" value="' + c.weight + '" data-w="' + i + '"></td>' +
+      '<td><select data-m="' + i + '" style="font:inherit;max-width:260px">' + opts(c.item) + '</select></td></tr>').join('');
+    const tot = state.cps.filter((c) => c.enabled).reduce((a, c) => a + (Number(c.weight) || 0), 0);
+    $('#cpArea').innerHTML = '<div class="row" style="margin-top:12px"><b>檢核點候選（' + state.cps.length + ' 項）</b>' +
+      '<button id="allOn">全選</button><button id="allOff">全不選</button><button id="mappedOn">只勾有對應說明的</button><button id="exportBtn">匯出評分標準 JSON</button>' +
+      '<span class="hint">分數 = 通過項目權重 ÷ 已勾選權重總和（目前 ' + tot + '）× 100。常數項預設不勾。</span></div>' +
+      '<table><thead><tr><th></th><th>類別</th><th>檢核點</th><th>權重</th><th>對應說明</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    $('#cpArea').querySelectorAll('input[type=checkbox]').forEach((el) => el.addEventListener('change', () => { state.cps[el.dataset.i].enabled = el.checked; renderCps(); renderStudents(); }));
+    $('#cpArea').querySelectorAll('input[type=number]').forEach((el) => el.addEventListener('input', () => { state.cps[el.dataset.w].weight = Number(el.value) || 0; renderStudents(); }));
+    $('#cpArea').querySelectorAll('select').forEach((el) => el.addEventListener('change', () => { state.cps[el.dataset.m].item = Number(el.value); renderStudents(); }));
+    $('#allOn').onclick = () => { state.cps.forEach((c) => c.enabled = true); renderCps(); renderStudents(); };
+    $('#allOff').onclick = () => { state.cps.forEach((c) => c.enabled = false); renderCps(); renderStudents(); };
+    $('#mappedOn').onclick = () => { state.cps.forEach((c) => c.enabled = c.item >= 0); renderCps(); renderStudents(); };
+    $('#exportBtn').onclick = () => {
+      const data = { source: state.ref.name, kind: state.ref.kind, description: state.desc,
+        checkpoints: state.cps.map(({ id, group, label, weight, enabled, item }) => ({ id, group, label, weight, enabled, item: item >= 0 ? item + 1 : null })) };
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); a.download = 'rubric.json'; a.click();
+    };
+    $('#stuFiles').disabled = false; $('#clearStu').disabled = false;
+  }
+  function renderStudents() {
+    if (!state.ref) return;
+    const refBag = bag(state.ref);
+    $('#results').innerHTML = state.students.map((st) => {
+      if (st.error) return '<div class="student"><header><b>' + esc(st.name) + '</b><span class="err">' + esc(st.error) + '</span></header></div>';
+      const g = grade(st.model, state.cps);
+      const sim = Math.round(jaccard(refBag, bag(st.model)) * 100);
+      const cls = g.score >= 80 ? 'good' : g.score >= 50 ? 'mid' : 'low';
+      const row = (r) => '<tr><td class="' + (r.pass ? 'pass' : 'fail') + '">' + (r.pass ? '✓' : '✗') + '</td><td><span class="grp">' + esc(r.cp.group) + '</span></td><td>' + esc(r.cp.label) + '</td><td class="hint">' + esc(r.detail || '') + '</td></tr>';
+      let body = '', achieved = 0, counted = 0;
+      if (state.desc.length) {
+        state.desc.forEach((d, i) => {
+          const rs = g.rows.filter((r) => r.cp.item === i);
+          if (!rs.length) { body += '<tr><td colspan="4"><b>' + (i + 1) + '. ' + esc(d) + '</b> <span class="hint">（無對應檢核點）</span></td></tr>'; return; }
+          counted++;
+          const np = rs.filter((r) => r.pass).length;
+          const st = np === rs.length ? '<span class="pass">✓ 達成</span>' : np ? '<span style="color:#d97706;font-weight:700">△ 部分（' + np + '/' + rs.length + '）</span>' : '<span class="fail">✗ 未達成</span>';
+          if (np === rs.length) achieved++;
+          body += '<tr><td colspan="4" style="background:#f8fafc"><b>' + (i + 1) + '. ' + esc(d) + '</b>　' + st + '</td></tr>' + rs.map(row).join('');
+        });
+        const rest = g.rows.filter((r) => r.cp.item < 0);
+        if (rest.length) body += '<tr><td colspan="4" style="background:#f8fafc"><b>其他檢核點（未對應說明）</b></td></tr>' + rest.map(row).join('');
+      } else body = g.rows.map(row).join('');
+      const summary = state.desc.length ? '<span class="hint">說明條目達成 ' + achieved + ' / ' + counted + '</span>' : '';
+      return '<div class="student"><header><b>' + esc(st.name) + '</b><span class="score ' + cls + '">' + g.score + ' 分</span>' + summary +
+        '<span class="hint">結構相似度 ' + sim + '%（僅供參考，不計分）</span></header>' +
+        '<div class="cols"><div><table><tbody>' + body + '</tbody></table></div>' +
+        '<div><details><summary>學生作品正規化結構</summary><pre>' + esc(treeText(st.model)) + '</pre></details></div></div></div>';
+    }).join('') || '<p class="hint">尚未載入學生作品。</p>';
+  }
+
+  async function loadRef(name, buf, demoKind) {
+    try {
+      state.ref = await parseFile(name, buf); state.cps = buildCheckpoints(state.ref);
+      if (demoKind) applyDemoMapping(demoKind); else setDesc($('#descText').value);
+      renderRef(); renderStudents();
+    }
+    catch (e) { $('#refInfo').innerHTML = '<span class="err">讀取失敗：' + esc(e.message) + '</span>'; }
+  }
+  async function addStudent(name, buf) {
+    try { state.students.push({ name, model: await parseFile(name, buf) }); }
+    catch (e) { state.students.push({ name, error: e.message }); }
+    renderStudents();
+  }
+  const fetchBuf = (p) => fetch(p).then((r) => { if (!r.ok) throw new Error(p + ' ' + r.status); return r.arrayBuffer(); });
+  async function loadDemo(prefix, ext) {
+    state.students = [];
+    await loadRef(prefix + '-ref' + ext, await fetchBuf('samples/' + prefix + '-ref' + ext), prefix);
+    for (const s of ['A', 'B', 'C']) await addStudent(prefix + '-student-' + s + ext, await fetchBuf('samples/' + prefix + '-student-' + s + ext));
+  }
+
+  $('#descText').addEventListener('input', () => { setDesc($('#descText').value); if (state.ref) { renderCps(); renderStudents(); } });
+  $('#refFile').addEventListener('change', async (e) => { const f = e.target.files[0]; if (f) { state.students = []; await loadRef(f.name, await f.arrayBuffer()); } });
+  $('#stuFiles').addEventListener('change', async (e) => { for (const f of e.target.files) await addStudent(f.name, await f.arrayBuffer()); e.target.value = ''; });
+  $('#clearStu').onclick = () => { state.students = []; renderStudents(); };
+  $('#demoAi2').onclick = () => loadDemo('ai2', '.aia');
+  $('#demoSb3').onclick = () => loadDemo('sb3', '.sb3');
+})();
+</script>
+</body>
+</html>
