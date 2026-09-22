@@ -818,6 +818,7 @@ flowchart LR
 ### 17.6 練習模式
 
 - 三層排行改為每人一份 `userStats/{uid}`（總分、完成題數、答題率、學校、`classIds`），提交後本人更新、加入班級時同步；排行榜依範圍查詢（全縣／學校 `schoolId ==`／班級 `classIds array-contains`），Firestore 以 passRate、completedCount、totalScore 排序（三組複合索引）。舊的 `leaderboards/global` 與每題 `leaderboards/{problemId}` 不再寫入。
+- **排行榜只列學生**（7.3）：`userStats` 加 `role` 欄位，教師與超管提交時不寫彙總並刪除自己既有的彙總（Rules 允許本人刪自己的）；讀取時也過濾掉 `role` 為 `teacher`／`super` 的資料，沒有 `role` 的舊資料視為學生。既有的教師彙總要由超管執行一次「重建排行榜彙總」清除。
 - 後台「使用者解題資料」提供「重建排行榜彙總」：以 `userProblemStats`、使用者學校與班級成員回填全部 `userStats`（使用者沒有學校時採班級的學校）。
 - 學生可在尚未加入班級時自選學校；加入班級後學校以班級為準且不可再自選。教師帳號需超管設定任教學校後才啟用；未設定學校的帳號只能線上測驗，成績不記錄。
 - 班級管理：改名、封存（同步到 `classMembers.className`／`classArchived`，封存班級不出現在排行榜選項）、開放／關閉加入、學生名單、答題儀表板、進度矩陣（學生×題目，可篩年度／分類、只列有人作答題目、點格看提交）、匯出 CSV。

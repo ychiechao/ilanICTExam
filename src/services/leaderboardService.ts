@@ -1,6 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, where, writeBatch } from "firebase/firestore";
 import { db } from "../firebase";
-import type { AppUser, LeaderboardEntry, LeaderboardScope, ManagedUser, Problem, SubmissionRecord, UserProblemStat } from "../types";
+import type { AdminProfile, AppUser, LeaderboardEntry, LeaderboardScope, ManagedUser, Problem, SubmissionRecord, UserProblemStat, UserRole } from "../types";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
 
@@ -11,6 +11,9 @@ import { readJson, writeJson } from "./storage";
  * 提交後由本人更新；排行榜依範圍查詢：全縣（全部）、學校（schoolId ==）、班級（classIds array-contains），
  * 三種都用 Firestore 排序 passRate → completedCount → totalScore（索引見 firestore.indexes.json）。
  * 舊的 leaderboards/global 單一文件不再寫入。
+ *
+ * 只有學生列入排行榜（規格 7.3：校排行／縣排行都是「所有學生」）。教師與超管解題時
+ * 仍會保留個人紀錄與每題統計，但不寫 userStats；已存在的彙總會在下次提交時刪除。
  */
 
 const LOCAL_STATS_KEY = "yilan-practice-user-stats";
@@ -22,11 +25,17 @@ interface MembershipInfo {
   classIds: string[];
 }
 
+/** 教師與超管不列入排行榜；沒有 role 的舊資料視為學生。 */
+export function isRankedRole(role?: UserRole) {
+  return role !== "teacher" && role !== "super";
+}
+
 export function computeUserStats(
   user: { uid: string; displayName: string },
   problems: Problem[],
   submissions: SubmissionRecord[],
   membership: MembershipInfo,
+  role: UserRole = "student",
 ): LeaderboardEntry {
   const publishedProblems = problems.filter((problem) => problem.status === "published");
   const userSubmissions = submissions.filter((record) => (record.uid || "guest") === user.uid);
@@ -39,7 +48,7 @@ export function computeUserStats(
     .filter((record): record is SubmissionRecord => Boolean(record));
   const completedRecords = bestRecords.filter(isFullScoreSubmission);
   const submittedTimes = userSubmissions.map((record) => record.createdAt).sort();
-  return buildEntry(user, membership, {
+  return buildEntry(user, membership, role, {
     totalScore: bestRecords.reduce((sum, record) => sum + record.score, 0),
     totalMaxScore: publishedProblems.reduce((sum, problem) => sum + getProblemMaxScore(problem), 0),
     completedCount: completedRecords.length,
@@ -55,8 +64,15 @@ export function computeUserStats(
   });
 }
 
-/** 提交後更新自己的彙總；回傳寫入的 entry。 */
+/**
+ * 提交後更新自己的彙總；回傳寫入的 entry。
+ * 教師／超管不列入排行榜：不寫入，並把先前可能留下的彙總刪掉。
+ */
 export async function saveUserStats(entry: LeaderboardEntry) {
+  if (!isRankedRole(entry.role)) {
+    await removeOwnUserStats(entry.uid);
+    return entry;
+  }
   if (db) {
     await withRemoteTimeout(setDoc(doc(db, "userStats", entry.uid), stripUndefined(entry)), "Firestore 排行榜彙總更新");
   } else {
@@ -64,6 +80,24 @@ export async function saveUserStats(entry: LeaderboardEntry) {
     writeJson(LOCAL_STATS_KEY, { ...all, [entry.uid]: entry });
   }
   return entry;
+}
+
+/** 身分不該列入排行榜時，刪掉自己的彙總（Rules 允許本人刪自己的）。 */
+export async function removeOwnUserStats(uid: string) {
+  if (!db) {
+    const all = readJson<Record<string, LeaderboardEntry>>(LOCAL_STATS_KEY, {});
+    if (!(uid in all)) return;
+    delete all[uid];
+    writeJson(LOCAL_STATS_KEY, all);
+    return;
+  }
+  try {
+    const snapshot = await getDoc(doc(db, "userStats", uid));
+    if (!snapshot.exists()) return;
+    await withRemoteTimeout(deleteDoc(doc(db, "userStats", uid)), "Firestore 排行榜彙總刪除");
+  } catch (error) {
+    console.info("排行榜彙總刪除失敗", error);
+  }
 }
 
 /** 加入班級／改學校後同步到彙總（沒有彙總就不建，等下次提交）。 */
@@ -94,7 +128,8 @@ export async function loadLeaderboardScope(scope: LeaderboardScope): Promise<Lea
           : query(base, where("classIds", "array-contains", scope.classId), ...order);
     try {
       const snapshot = await withRemoteTimeout(getDocs(built), "Firestore 排行榜讀取");
-      return sortEntries(snapshot.docs.map((item) => item.data() as LeaderboardEntry));
+      // 保險：即使有殘留的教師／超管彙總也不顯示（沒有 role 的舊資料視為學生）。
+      return sortEntries(snapshot.docs.map((item) => item.data() as LeaderboardEntry).filter((entry) => isRankedRole(entry.role)));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/requires an index|index is currently building/i.test(message)) {
@@ -108,8 +143,10 @@ export async function loadLeaderboardScope(scope: LeaderboardScope): Promise<Lea
   }
   const all = Object.values(readJson<Record<string, LeaderboardEntry>>(LOCAL_STATS_KEY, {}));
   return sortEntries(
-    all.filter((entry) =>
-      scope.kind === "county" ? true : scope.kind === "school" ? entry.schoolId === scope.schoolId : (entry.classIds ?? []).includes(scope.classId),
+    all.filter(
+      (entry) =>
+        isRankedRole(entry.role) &&
+        (scope.kind === "county" ? true : scope.kind === "school" ? entry.schoolId === scope.schoolId : (entry.classIds ?? []).includes(scope.classId)),
     ),
   ).slice(0, SCOPE_LIMIT);
 }
@@ -138,9 +175,11 @@ export async function removeUserFromLeaderboards(uid: string) {
 /**
  * 超管回填（計畫 4.9）：用 userProblemStats + users + classMembers 重建所有人的 userStats。
  * 已存在的整份覆寫；沒有任何題目統計的使用者不建。
+ * 教師與超管（admins 文件）不建，且會刪掉他們先前殘留的彙總。
  */
 export async function backfillUserStats(input: {
   users: ManagedUser[];
+  admins: AdminProfile[];
   stats: UserProblemStat[];
   problems: Problem[];
   classMembers: Array<{ studentUid: string; classId: string; status: string; schoolId?: string; schoolName?: string }>;
@@ -169,11 +208,22 @@ export async function backfillUserStats(input: {
     }
   }
   const userByUid = new Map(input.users.map((user) => [user.uid, user]));
+  // 教師身分只看 admins 文件（與 getEffectiveRole 一致）：有學校的啟用教師、以及超管都不列入排行榜。
+  const unrankedUids = new Set(
+    input.admins
+      .filter(
+        (admin) =>
+          admin.role === "super" ||
+          (admin.role === "teacher" && admin.status !== "disabled" && (Boolean(admin.schoolId) || (admin.schoolIds?.length ?? 0) > 0)),
+      )
+      .map((admin) => admin.uid),
+  );
 
   const entries: LeaderboardEntry[] = [];
   for (const [uid, stats] of statsByUid) {
     const profile = userByUid.get(uid);
     if (profile?.disabled) continue;
+    if (unrankedUids.has(uid)) continue;
     const completed = stats.filter((stat) => stat.isCompleted);
     const updatedTimes = stats.map((stat) => stat.updatedAt ?? "").filter(Boolean).sort();
     entries.push(
@@ -184,6 +234,7 @@ export async function backfillUserStats(input: {
           schoolName: profile?.schoolName || classSchoolByUid.get(uid)?.schoolName,
           classIds: classIdsByUid.get(uid) ?? [],
         },
+        "student",
         {
           totalScore: stats.reduce((sum, stat) => sum + stat.bestScore, 0),
           totalMaxScore: [...maxByProblem.values()].reduce((sum, value) => sum + value, 0),
@@ -206,12 +257,24 @@ export async function backfillUserStats(input: {
     }
     await withRemoteTimeout(batch.commit(), "Firestore 排行榜彙總回填", 60000);
   }
-  return entries.length;
+
+  // 清掉教師／超管先前留下的彙總（規格 7.3：排行榜只有學生）。
+  const existing = await withRemoteTimeout(getDocs(collection(db, "userStats")), "Firestore 排行榜彙總讀取", 60000);
+  const staleUids = existing.docs.map((item) => item.id).filter((uid) => unrankedUids.has(uid));
+  for (let index = 0; index < staleUids.length; index += 400) {
+    const batch = writeBatch(db);
+    for (const uid of staleUids.slice(index, index + 400)) {
+      batch.delete(doc(db, "userStats", uid));
+    }
+    await withRemoteTimeout(batch.commit(), "Firestore 排行榜彙總清理", 60000);
+  }
+  return { written: entries.length, removed: staleUids.length };
 }
 
 function buildEntry(
   user: { uid: string; displayName: string },
   membership: MembershipInfo,
+  role: UserRole,
   totals: {
     totalScore: number;
     totalMaxScore: number;
@@ -228,6 +291,7 @@ function buildEntry(
   return {
     uid: user.uid,
     displayName: user.displayName,
+    role,
     schoolId: membership.schoolId ?? "",
     schoolName: membership.schoolName ?? "",
     classIds: membership.classIds,

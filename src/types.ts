@@ -118,6 +118,8 @@ export type LeaderboardScope = { kind: "county" } | { kind: "school"; schoolId: 
 export interface LeaderboardEntry {
   uid: string;
   displayName: string;
+  /** 只有學生列入排行榜（規格 7.3）；舊資料沒有這個欄位時一律視為學生。 */
+  role?: UserRole;
   schoolId?: string;
   schoolName?: string;
   /** 已加入的班級（array-contains 查班級排行）。 */

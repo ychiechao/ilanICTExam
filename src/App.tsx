@@ -634,7 +634,8 @@ export default function App() {
       setSubmissions((current) => mergeSubmissionRecord(current, record));
       setPracticeSubmissions(nextPracticeSubmissions);
       if (user) {
-        await saveUserStats(computeUserStats(user, problems, nextPracticeSubmissions, currentMembership()));
+        // 只有學生列入排行榜（規格 7.3）；教師／超管解題仍留個人紀錄，但不寫彙總。
+        await saveUserStats(computeUserStats(user, problems, nextPracticeSubmissions, currentMembership(), effectiveRole));
         setLeaderboardRefreshKey((current) => current + 1);
       }
       setStatusMessage(
@@ -917,14 +918,24 @@ export default function App() {
   /** 重建所有人的 userStats（升級到三層排行榜後跑一次；之後每次提交會自行更新）。 */
   async function handleRebuildLeaderboard() {
     if (!superAdmin) return;
-    if (!window.confirm("用每人每題統計（userProblemStats）、使用者學校與班級成員重建全部排行榜彙總？已存在的會整份覆寫。")) return;
+    if (!window.confirm("用每人每題統計（userProblemStats）、使用者學校與班級成員重建全部排行榜彙總？已存在的會整份覆寫，教師與超管的彙總會被移除。")) return;
     setAdminBusy(true);
     setStatusMessage("");
     try {
-      const [allUsers, stats, allProblems, members] = await Promise.all([loadManagedUsers(), loadAllUserProblemStats(), loadAllProblemsForAdmin(), loadAllClassMembers()]);
-      const count = await backfillUserStats({ users: allUsers, stats, problems: allProblems, classMembers: members });
+      const [allUsers, admins, stats, allProblems, members] = await Promise.all([
+        loadManagedUsers(),
+        loadAdminProfiles(),
+        loadAllUserProblemStats(),
+        loadAllProblemsForAdmin(),
+        loadAllClassMembers(),
+      ]);
+      const result = await backfillUserStats({ users: allUsers, admins, stats, problems: allProblems, classMembers: members });
       setLeaderboardRefreshKey((current) => current + 1);
-      setStatusMessage(`已重建 ${count} 位使用者的排行榜彙總。`);
+      setStatusMessage(
+        result.removed > 0
+          ? `已重建 ${result.written} 位學生的排行榜彙總，並移除 ${result.removed} 筆教師／超管彙總。`
+          : `已重建 ${result.written} 位學生的排行榜彙總。`,
+      );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "重建排行榜失敗。");
     } finally {

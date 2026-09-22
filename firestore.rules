@@ -325,7 +325,8 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || (practiceOpen() && signedIn());
       allow create, update: if isSuperAdmin() ||
         (practiceOpen() && hasSchool() && accountEnabled() && isOwner(uid) && request.resource.data.uid == uid);
-      allow delete: if isSuperAdmin();
+      // 本人可刪自己的彙總：教師／超管解題時用來清掉先前留下的排行榜紀錄（規格 7.3）。
+      allow delete: if isSuperAdmin() || isOwner(uid);
     }
 
     // v2 遺留的整份排行榜文件：已由 userStats 取代，只留超管清理用。
