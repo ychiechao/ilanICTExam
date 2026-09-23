@@ -351,6 +351,9 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                     <strong>輸出格式</strong>
                     <p>{selected.outputFormat}</p>
                   </div>
+                  <p className="muted input-model-hint">
+                    每個「要求輸入」積木會依序取得一個數值，空白與換行都算分隔。要讀多個數值請用迴圈，不需要自己切割字串。
+                  </p>
                   {selected.examples.map((example, index) => (
                     <div className="example-box" key={index}>
                       <strong>{example.title || `範例 ${index + 1}`}</strong>

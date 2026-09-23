@@ -18,6 +18,10 @@ export function StatementPanel({
       </div>
       <p className="statement-text">{problem.description}</p>
       <InfoBlock title="輸入格式" body={problem.inputFormat} />
+      <p className="muted input-model-hint">
+        每個「要求輸入」積木會依序取得一個數值，空白與換行都算分隔（例如「3」「300」「450」「420」共四次輸入）。
+        要讀多個數值請用迴圈，不需要自己切割字串。
+      </p>
       <InfoBlock title="輸出格式" body={problem.outputFormat} />
       <div className="metric-grid">
         <Metric label="年份" value={problem.year ? `${problem.year} 年度` : "未設定"} />

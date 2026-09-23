@@ -1,3 +1,4 @@
+import { splitInputs } from "../../shared/grading";
 import type { PracticeStats, PracticeStatus } from "../app/constants";
 import type { ProblemImportResult } from "../services/problemStore";
 import type { Problem, SubmissionRecord, WorkspaceMode } from "../types";
@@ -20,7 +21,23 @@ export async function runInteractiveProgram(
   const consoleProxy = {
     log: (...values: unknown[]) => output.push(values.map(String).join(" ")),
   };
-  const promptSync = (message = "") => askInput(String(message || "請輸入資料"));
+  // 與評分相同的輸入模型：每個「要求輸入」積木取得一個值。
+  // 使用者在對話框一次輸入多個值（例如「100 200」）時，第一個當場使用，其餘排隊給後面的輸入積木，
+  // 這樣在「執行程式」會過的程式，用測試資料執行與正式評分也會過。
+  const queue: string[] = [];
+  const promptSync = (message = "") => {
+    const queued = queue.shift();
+    if (queued !== undefined) {
+      return queued;
+    }
+    const answer = askInput(String(message || "請輸入資料"));
+    const parts = splitInputs(answer);
+    if (parts.length <= 1) {
+      return answer.trim();
+    }
+    queue.push(...parts.slice(1));
+    return parts[0];
+  };
   const windowProxy = {
     alert: alertOutput,
     prompt: promptSync,

@@ -2771,3 +2771,9 @@ pre {
   opacity: 0.85;
   background: #f4f7f9;
 }
+
+.input-model-hint {
+  margin: -4px 0 4px;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
