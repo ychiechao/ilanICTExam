@@ -278,8 +278,9 @@ export function AdminPanel({
       setUserSchoolFilterId("all");
       return;
     }
-    if (!assignableSchools.some((school) => school.id === schoolAdminSchoolId)) {
-      setSchoolAdminSchoolId(assignableSchools[0].id);
+    // 不預選第一間學校：預選會讓「設為教師」在超管還沒挑學校時就套用清單第一間。
+    if (schoolAdminSchoolId && !assignableSchools.some((school) => school.id === schoolAdminSchoolId)) {
+      setSchoolAdminSchoolId("");
     }
     if (userSchoolFilterId !== "all" && !assignableSchools.some((school) => school.id === userSchoolFilterId)) {
       setUserSchoolFilterId("all");
@@ -846,7 +847,7 @@ export function AdminPanel({
             <div className="section-title-row">
               <div>
                     <h3>使用者權限</h3>
-                <p>每一列的學校下拉可直接改該使用者的學校（教師會同步更新任教學校）。「設為教師」會用上方選的學校。</p>
+                <p>每一列的學校下拉可直接改該使用者的學校（教師會同步更新任教學校）。「設為教師」會用上方「指派教師學校」選的學校，未選學校時無法按。</p>
               </div>
               <div className="admin-file-actions">
                 <label className="inline-admin-select">
@@ -856,7 +857,7 @@ export function AdminPanel({
                     onChange={(event) => setSchoolAdminSchoolId(event.target.value)}
                     disabled={assignableSchools.length === 0}
                   >
-                    {assignableSchools.length === 0 && <option value="">尚無學校</option>}
+                    <option value="">{assignableSchools.length === 0 ? "尚無學校" : "請先選擇學校"}</option>
                     {assignableSchools.map((school) => (
                       <option key={school.id} value={school.id}>
                         {school.name}
