@@ -68,11 +68,29 @@ export default function BlocklyWorkspace({
     const listener = () => emitWorkspace(workspace, onChange, storageKey);
     workspace.addChangeListener(listener);
 
-    const resize = () => Blockly.svgResize(workspace);
+    let resizeFrame = 0;
+    const resize = () => {
+      if (resizeFrame) {
+        window.cancelAnimationFrame(resizeFrame);
+      }
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = 0;
+        Blockly.svgResize(workspace);
+      });
+    };
     window.addEventListener("resize", resize);
+    const resizeObserver =
+      "ResizeObserver" in window && containerRef.current
+        ? new ResizeObserver(resize)
+        : null;
+    resizeObserver?.observe(containerRef.current);
     window.setTimeout(resize, 0);
 
     return () => {
+      if (resizeFrame) {
+        window.cancelAnimationFrame(resizeFrame);
+      }
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", resize);
       workspace.removeChangeListener(listener);
       workspace.dispose();
