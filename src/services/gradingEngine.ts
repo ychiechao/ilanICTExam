@@ -1,4 +1,4 @@
-import { normalizeOutput, splitInputs } from "../../shared/grading";
+import { normalizeOutput, outputMatches, splitInputs } from "../../shared/grading";
 import type { CaseResult, GradeResult, Problem, ProblemCase } from "../types";
 
 interface WorkerResponse {
@@ -88,7 +88,7 @@ function getGradeConfigurationMessage(problem: Problem) {
       !examples.some(
         (example) =>
           normalizeOutput(example.input) === normalizeOutput(testCase.input) &&
-          normalizeOutput(example.output) === normalizeOutput(testCase.output),
+          outputMatches(example.output, testCase.output),
       ),
   );
 
@@ -102,7 +102,7 @@ function getGradeConfigurationMessage(problem: Problem) {
 async function gradeCase(code: string, testCase: ProblemCase): Promise<CaseResult> {
   try {
     const response = await runWorker(code, testCase.input, 3000);
-    const passed = normalizeOutput(response.output) === normalizeOutput(testCase.output);
+    const passed = outputMatches(response.output, testCase.output);
     const result: CaseResult = {
       caseTitle: testCase.caseTitle,
       groupTitle: testCase.groupTitle,

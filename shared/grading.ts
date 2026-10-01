@@ -46,8 +46,51 @@ export function normalizeOutput(output: string) {
     .join(" ");
 }
 
+/**
+ * 評分比對：
+ * - 仍以空白切成一格一格，格數必須一致。
+ * - 文字格維持完全比對。
+ * - 若兩格都是一般十進位數字，忽略不影響數值的前導 0 與小數尾端 0。
+ *
+ * 例如：1.90 = 1.9 = 1.900，但 1.9045 不等於 1.90。
+ */
+export function outputMatches(actual: string, expected: string) {
+  const actualTokens = getOutputTokens(actual);
+  const expectedTokens = getOutputTokens(expected);
+  if (actualTokens.length !== expectedTokens.length) return false;
+  return expectedTokens.every((expectedToken, index) => outputTokenMatches(actualTokens[index], expectedToken));
+}
+
+function getOutputTokens(output: string) {
+  return output
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function outputTokenMatches(actual: string, expected: string) {
+  if (actual === expected) return true;
+
+  const actualNumber = normalizeDecimalToken(actual);
+  const expectedNumber = normalizeDecimalToken(expected);
+  return actualNumber !== null && expectedNumber !== null && actualNumber === expectedNumber;
+}
+
+function normalizeDecimalToken(token: string) {
+  const value = token.trim();
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)) return null;
+
+  const sign = value.startsWith("-") ? "-" : "";
+  const unsigned = value.replace(/^[+-]/, "");
+  const [rawInteger, rawFraction = ""] = unsigned.split(".");
+  const integer = (rawInteger || "0").replace(/^0+(?=\d)/, "") || "0";
+  const fraction = rawFraction.replace(/0+$/, "");
+  const normalized = fraction ? `${integer}.${fraction}` : integer;
+  return normalized === "0" ? "0" : `${sign}${normalized}`;
+}
+
 export function scoreCase(testCase: GradeCase, run: RunResult): CaseOutcome {
-  const passed = !run.error && normalizeOutput(run.output) === normalizeOutput(testCase.output);
+  const passed = !run.error && outputMatches(run.output, testCase.output);
   return {
     caseTitle: testCase.caseTitle,
     groupTitle: testCase.groupTitle,
