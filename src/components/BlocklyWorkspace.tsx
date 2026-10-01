@@ -10,6 +10,10 @@ const zhHantMessages = Object.fromEntries(
 ) as Record<string, string>;
 
 Blockly.setLocale(zhHantMessages);
+Blockly.Msg.VARIABLES_SET = "將 %1 設為 %2";
+Blockly.Msg.VARIABLES_GET_CREATE_SET = "建立「將 %1 設為」";
+Blockly.Msg.MATH_CHANGE_TITLE = "將 %1 的值加 %2";
+Blockly.Msg.MATH_CHANGE_TOOLTIP = "將數字加到變數「%1」。";
 
 interface BlocklyWorkspaceProps {
   mode: WorkspaceMode;
