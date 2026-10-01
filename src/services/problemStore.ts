@@ -107,6 +107,8 @@ export function exportProblemsToCsv(problems: Problem[]) {
     "outputFormat",
     "examplesJson",
     "casesJson",
+    "imageSourcesJson",
+    "statementTablesJson",
     "status",
   ];
 
@@ -124,6 +126,8 @@ export function exportProblemsToCsv(problems: Problem[]) {
         problem.outputFormat,
         JSON.stringify(problem.examples),
         JSON.stringify(problem.cases),
+        JSON.stringify(problem.imageSources || []),
+        JSON.stringify(problem.statementTables || []),
         problem.status,
       ]),
     ),
@@ -274,6 +278,8 @@ function csvRowToProblem(headers: string[], row: string[]) {
     outputFormat: record.outputFormat,
     examples: parseJsonCell(record.examplesJson, []),
     cases: parseJsonCell(record.casesJson, []),
+    imageSources: parseJsonCell(record.imageSourcesJson || "", []),
+    statementTables: parseJsonCell(record.statementTablesJson || "", []),
     status: record.status || "published",
   };
 }

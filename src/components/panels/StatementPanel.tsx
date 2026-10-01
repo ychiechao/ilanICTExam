@@ -1,4 +1,5 @@
 import type { Problem } from "../../types";
+import { ProblemStatementContent } from "../ProblemStatementContent";
 import { InfoBlock, Metric } from "../ui";
 
 export function StatementPanel({
@@ -16,7 +17,7 @@ export function StatementPanel({
         <h2>{problem.title}</h2>
         <span>{problem.difficulty}</span>
       </div>
-      <p className="statement-text">{problem.description}</p>
+      <ProblemStatementContent problem={problem} />
       <InfoBlock title="輸入格式" body={problem.inputFormat} />
       <p className="muted input-model-hint">
         每個「要求輸入」積木會依序取得一個數值，空白與換行都算分隔（例如「3」「300」「450」「420」共四次輸入）。

@@ -10,6 +10,7 @@ import type { AppUser, WorkspaceMode } from "../../types";
 import { formatContestDateTime } from "../../utils/format";
 import { runInteractiveProgram } from "../../utils/practice";
 import BlocklyWorkspace from "../BlocklyWorkspace";
+import { ProblemStatementContent } from "../ProblemStatementContent";
 import { Metric } from "../ui";
 
 interface ContestPanelProps {
@@ -342,7 +343,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                     <h2>{selected.title}</h2>
                     <span>{selected.category}</span>
                   </div>
-                  <p className="statement-text">{selected.description}</p>
+                  <ProblemStatementContent problem={selected} />
                   <div className="info-block">
                     <strong>輸入格式</strong>
                     <p>{selected.inputFormat}</p>

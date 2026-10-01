@@ -2,6 +2,14 @@
  * 題目匯入的純轉換邏輯：bDesigner JSON / 一般 JSON → 平台題目結構。
  * 前端（練習題庫匯入）與 Worker（競賽題庫匯入）共用，不可依賴瀏覽器或 Firebase。
  */
+import {
+  getKnownStatementTables,
+  mergeStatementTables,
+  normalizeProblemImageSources,
+  normalizeStatementTables,
+  type ProblemStatementTable,
+} from "./problemRichContent";
+
 export type ProblemVisibility = "public" | "hidden";
 export type ProblemStatus = "published" | "draft" | "archived";
 
@@ -38,6 +46,7 @@ export interface Problem {
   sourceId?: string;
   sourceUrls?: Record<string, string>;
   imageSources?: string[];
+  statementTables?: ProblemStatementTable[];
   toolboxConfig?: unknown;
   createdAt?: string;
   updatedAt?: string;
@@ -75,6 +84,8 @@ export function normalizeProblem(value: unknown, bundleYear = ""): Problem {
 
   const id = input.id || slugify(input.title);
   const categories = normalizeStringArray(input.categories);
+  const imageSources = normalizeProblemImageSources(input.imageSources);
+  const statementTables = normalizeStatementTables((input as Partial<Problem> & { tables?: unknown }).statementTables ?? (input as { tables?: unknown }).tables);
 
   const problem: Problem = {
     id,
@@ -102,8 +113,11 @@ export function normalizeProblem(value: unknown, bundleYear = ""): Problem {
   if (input.sourceUrls && Object.keys(input.sourceUrls).length > 0) {
     problem.sourceUrls = input.sourceUrls;
   }
-  if (input.imageSources && input.imageSources.length > 0) {
-    problem.imageSources = input.imageSources;
+  if (imageSources.length > 0) {
+    problem.imageSources = imageSources;
+  }
+  if (statementTables.length > 0) {
+    problem.statementTables = statementTables;
   }
   if (input.toolboxConfig !== undefined) {
     problem.toolboxConfig = input.toolboxConfig;
@@ -124,7 +138,12 @@ function normalizeBDesignerProblem(value: Record<string, unknown>, bundleYear = 
   const statement = readText(value.problem_statement, description);
   const sourceId = readText(value.id, slugify(title));
   const sourceUrls = normalizeStringRecord(value.urls);
-  const imageSources = normalizeStringArray(value.image_sources);
+  const imageSources = normalizeProblemImageSources(value.image_sources, value.local_images);
+  const statementTables = mergeStatementTables(
+    normalizeStatementTables(value.statementTables),
+    normalizeStatementTables(value.tables),
+    getKnownStatementTables({ id: `bdesigner-${year || "unknown"}-${sourceId}`, sourceId, title, description }),
+  );
 
   const problem: Problem = {
     id: `bdesigner-${year || "unknown"}-${sourceId}`,
@@ -149,6 +168,7 @@ function normalizeBDesignerProblem(value: Record<string, unknown>, bundleYear = 
     sourceId,
     ...(Object.keys(sourceUrls).length > 0 ? { sourceUrls } : {}),
     ...(imageSources.length > 0 ? { imageSources } : {}),
+    ...(statementTables.length > 0 ? { statementTables } : {}),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

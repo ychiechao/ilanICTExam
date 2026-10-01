@@ -26,6 +26,9 @@ export interface ContestProblemPublic {
   description: string;
   inputFormat: string;
   outputFormat: string;
+  sourceId?: string;
+  imageSources?: string[];
+  statementTables?: Problem["statementTables"];
   difficulty: string;
   category: string;
   examples: Problem["examples"];
@@ -92,6 +95,9 @@ export async function handleImportContestProblems(request: Request, ctx: Request
       description: problem.description,
       inputFormat: problem.inputFormat,
       outputFormat: problem.outputFormat,
+      ...(problem.sourceId ? { sourceId: problem.sourceId } : {}),
+      ...(problem.imageSources && problem.imageSources.length > 0 ? { imageSources: problem.imageSources } : {}),
+      ...(problem.statementTables && problem.statementTables.length > 0 ? { statementTables: problem.statementTables } : {}),
       difficulty: problem.difficulty,
       category: problem.category,
       examples: problem.examples,

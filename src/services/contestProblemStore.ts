@@ -1,6 +1,7 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
-import type { ExampleCase } from "../types";
+import type { ExampleCase, ProblemStatementTable } from "../types";
+import { normalizeStatementTables } from "../../shared/problemRichContent";
 import { graderRequest } from "./grader";
 import { withRemoteTimeout } from "./remote";
 
@@ -14,6 +15,9 @@ export interface ContestProblem {
   description: string;
   inputFormat: string;
   outputFormat: string;
+  sourceId?: string;
+  imageSources?: string[];
+  statementTables?: ProblemStatementTable[];
   difficulty: string;
   category: string;
   examples: ExampleCase[];
@@ -64,6 +68,9 @@ function normalize(id: string, data: Record<string, unknown>): ContestProblem {
     description: text(data.description),
     inputFormat: text(data.inputFormat),
     outputFormat: text(data.outputFormat),
+    sourceId: text(data.sourceId) || undefined,
+    imageSources: Array.isArray(data.imageSources) ? data.imageSources.map(text).filter(Boolean) : [],
+    statementTables: normalizeStatementTables(data.statementTables),
     difficulty: text(data.difficulty) || "easy",
     category: text(data.category),
     examples: Array.isArray(data.examples) ? (data.examples as ExampleCase[]) : [],

@@ -223,6 +223,8 @@ interface PracticeProblemDoc {
   source: string;
   sourceId: string;
   sourceContestId: string;
+  imageSources?: string[];
+  statementTables?: ContestProblemPublic["statementTables"];
   createdAt: string;
   updatedAt: string;
 }
@@ -270,6 +272,8 @@ export async function handleReleaseContest(request: Request, ctx: RequestContext
         source: "contest",
         sourceId: contestId,
         sourceContestId: contestId,
+        ...(problem.imageSources && problem.imageSources.length > 0 ? { imageSources: problem.imageSources } : {}),
+        ...(problem.statementTables && problem.statementTables.length > 0 ? { statementTables: problem.statementTables } : {}),
         createdAt: now,
         updatedAt: now,
       },

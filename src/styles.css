@@ -603,6 +603,116 @@ button {
 .statement-text {
   color: #2c4650;
   line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.statement-rich-content {
+  display: grid;
+  gap: 14px;
+}
+
+.statement-rich-text {
+  color: #2c4650;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.statement-addenda {
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #7c2d12;
+  padding: 12px 14px;
+  line-height: 1.65;
+}
+
+.statement-addenda p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.statement-table-list {
+  display: grid;
+  gap: 12px;
+}
+
+.statement-table-card {
+  border: 1px solid #cfe9ef;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 92, 110, 0.08);
+  overflow: hidden;
+}
+
+.statement-table-card > strong {
+  display: block;
+  padding: 12px 14px;
+  color: var(--teal-deep);
+  background: linear-gradient(135deg, #f0fdff 0%, #ffffff 100%);
+  border-bottom: 1px solid #d8eef3;
+}
+
+.statement-table-scroll {
+  overflow-x: auto;
+}
+
+.statement-table {
+  width: 100%;
+  min-width: 360px;
+  border-collapse: collapse;
+  color: #203b47;
+}
+
+.statement-table th,
+.statement-table td {
+  border: 1px solid #d8eef3;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.statement-table th {
+  background: #eefaff;
+  color: var(--teal-deep);
+  font-weight: 900;
+}
+
+.statement-table td {
+  background: #ffffff;
+}
+
+.statement-table-card > .muted {
+  margin: 0;
+  padding: 10px 14px 12px;
+}
+
+.statement-image-list {
+  display: grid;
+  gap: 12px;
+}
+
+.statement-image-list > strong {
+  color: var(--teal-deep);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.statement-image-frame {
+  margin: 0;
+  border: 1px solid #cfe9ef;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(15, 92, 110, 0.08);
+}
+
+.statement-image-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 640px;
+  object-fit: contain;
+  background: #ffffff;
 }
 
 .info-block {
@@ -622,6 +732,7 @@ button {
   margin: 7px 0 0;
   color: #2c4650;
   line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .metric-grid {

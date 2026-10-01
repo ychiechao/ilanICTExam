@@ -212,6 +212,9 @@ export function sanitizeProblemDraft(problem: Problem): Problem {
   if (problem.imageSources && problem.imageSources.length > 0) {
     output.imageSources = problem.imageSources;
   }
+  if (problem.statementTables && problem.statementTables.length > 0) {
+    output.statementTables = problem.statementTables;
+  }
   if (problem.toolboxConfig !== undefined) {
     output.toolboxConfig = problem.toolboxConfig;
   }

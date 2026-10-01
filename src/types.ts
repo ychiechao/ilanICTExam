@@ -34,6 +34,13 @@ export interface ProblemCase {
   visibility: ProblemVisibility;
 }
 
+export interface ProblemStatementTable {
+  title?: string;
+  columns: string[];
+  rows: string[][];
+  note?: string;
+}
+
 export interface Problem {
   id: string;
   year?: string;
@@ -51,6 +58,7 @@ export interface Problem {
   sourceId?: string;
   sourceUrls?: Record<string, string>;
   imageSources?: string[];
+  statementTables?: ProblemStatementTable[];
   toolboxConfig?: unknown;
   createdAt?: string;
   updatedAt?: string;
