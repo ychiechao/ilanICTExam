@@ -273,6 +273,14 @@ button {
   padding: 12px 28px 22px;
 }
 
+.workspace-layout.side-collapsed {
+  grid-template-columns: 190px minmax(620px, 1fr);
+}
+
+.workspace-layout.side-collapsed .side-panel {
+  display: none;
+}
+
 .workspace-layout.admin-maximized {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -477,6 +485,12 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.panel-toggle-button[aria-pressed="true"] {
+  background: #e7fffa;
+  color: var(--teal-deep);
+  border-color: #9fdbe3;
 }
 
 .hidden-file-input {

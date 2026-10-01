@@ -1,4 +1,4 @@
-import { Download, LogIn, LogOut, Play, RefreshCw, Upload } from "lucide-react";
+import { Download, LogIn, LogOut, PanelRightClose, PanelRightOpen, Play, RefreshCw, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { APP_TITLE, defaultImportJson, tabs } from "./app/constants";
 import type { TabKey } from "./app/constants";
@@ -91,6 +91,7 @@ export default function App() {
   const [classBusy, setClassBusy] = useState(false);
   const [yearFilter, setYearFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sidePanelCollapsed, setSidePanelCollapsed] = useState(false);
   const xmlFileInputRef = useRef<HTMLInputElement | null>(null);
   const problemJsonFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -1539,6 +1540,11 @@ export default function App() {
 
   const totalScore = selectedProblem.cases.reduce((sum, item) => sum + item.score, 0);
   const publicCases = selectedProblem.cases.filter((item) => item.visibility === "public").length;
+  const workspaceLayoutClassName = [
+    "workspace-layout",
+    managementMaximized ? "admin-maximized" : "",
+    sidePanelCollapsed && !managementMaximized ? "side-collapsed" : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <div className="app-shell">
@@ -1577,7 +1583,7 @@ export default function App() {
 
       {platform.announcement && <div className="platform-banner">{platform.announcement}</div>}
 
-      <main className={managementMaximized ? "workspace-layout admin-maximized" : "workspace-layout"}>
+      <main className={workspaceLayoutClassName}>
         <aside className="problem-rail">
           <button className="rail-title">題目列表</button>
           <div className="rail-filters">
@@ -1675,6 +1681,15 @@ export default function App() {
                 <RefreshCw size={16} />
                 重設
               </button>
+              <button
+                className="ghost-button panel-toggle-button"
+                onClick={() => setSidePanelCollapsed((current) => !current)}
+                aria-pressed={sidePanelCollapsed}
+                title={sidePanelCollapsed ? "展開右側題目面板" : "隱藏右側題目面板"}
+              >
+                {sidePanelCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+                {sidePanelCollapsed ? "展開題目" : "隱藏題目"}
+              </button>
             </div>
           </div>
           <BlocklyWorkspace
@@ -1686,6 +1701,7 @@ export default function App() {
           />
         </section>
 
+        {(!sidePanelCollapsed || managementMaximized) && (
         <section className="side-panel">
           <div className="vertical-tabs">
             {availableTabs.map((tab) => {
@@ -1852,6 +1868,7 @@ export default function App() {
             )}
           </div>
         </section>
+        )}
       </main>
 
       {statusMessage && <div className="toast">{statusMessage}</div>}

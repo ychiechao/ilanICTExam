@@ -1,4 +1,4 @@
-import { CheckCircle2, FileJson, History, Play, Send, Trophy } from "lucide-react";
+import { CheckCircle2, FileJson, History, PanelRightClose, PanelRightOpen, Play, Send, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -61,6 +61,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
   const [selectedId, setSelectedId] = useState("");
   const [mode, setMode] = useState<WorkspaceMode>("Scratch");
   const [tab, setTab] = useState<SideTab>("statement");
+  const [sidePanelCollapsed, setSidePanelCollapsed] = useState(false);
   const [generatedCode, setGeneratedCode] = useState("");
   const [blocklyXml, setBlocklyXml] = useState("");
   /** 從評分紀錄「載入」時塞回工作區的 XML；換題時清空。 */
@@ -258,7 +259,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
   ];
 
   return (
-    <main className="workspace-layout">
+    <main className={sidePanelCollapsed ? "workspace-layout side-collapsed" : "workspace-layout"}>
       <aside className="problem-rail">
         <button className="rail-title">題目列表</button>
         <div className="rail-filters">
@@ -314,6 +315,15 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
                   <Send size={16} />
                   提交評分
                 </button>
+                <button
+                  className="ghost-button panel-toggle-button"
+                  onClick={() => setSidePanelCollapsed((current) => !current)}
+                  aria-pressed={sidePanelCollapsed}
+                  title={sidePanelCollapsed ? "展開右側題目面板" : "隱藏右側題目面板"}
+                >
+                  {sidePanelCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+                  {sidePanelCollapsed ? "展開題目" : "隱藏題目"}
+                </button>
               </div>
             </div>
             <BlocklyWorkspace
@@ -324,6 +334,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
             />
           </section>
 
+          {!sidePanelCollapsed && (
           <section className="side-panel">
             <div className="vertical-tabs">
               {tabs.map((item) => {
@@ -526,6 +537,7 @@ export function ContestPanel({ user, maxSubmissions, dashboardVisibility }: Cont
               )}
             </div>
           </section>
+          )}
         </>
       )}
     </main>
