@@ -67,6 +67,9 @@ jobs:
       - name: Install Worker dependencies
         run: npm ci
 
+      - name: Generate Worker types
+        run: npx wrangler types
+
       - name: Check Worker types
         run: npm run check
 
