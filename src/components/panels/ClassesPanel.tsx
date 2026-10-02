@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ClassMember, ClassSubmissionView, LearningClass, Problem } from "../../types";
-import { SOLUTION_EBOOK_URL } from "../../app/constants";
+import { SOLUTION_EBOOKS } from "../../app/constants";
 import { csvDateStamp, downloadCsv } from "../../utils/csv";
 import { formatContestDateTime } from "../../utils/format";
 import { Metric } from "../ui";
@@ -211,9 +211,11 @@ export function ClassesPanel({
       <div className="panel-heading">
         <h2>我的班級</h2>
         <div className="panel-heading-actions">
-          <a className="ghost-button compact" href={SOLUTION_EBOOK_URL} target="_blank" rel="noreferrer" title="102 題逐題解說與 Blockly XML 參考解答，供教學使用">
-            📖 114 解題手冊
-          </a>
+          {SOLUTION_EBOOKS.map((book) => (
+            <a key={book.url} className="ghost-button compact" href={book.url} target="_blank" rel="noreferrer" title={book.title}>
+              {book.label}
+            </a>
+          ))}
           <span>
             {classes.length} 個班級 · {activeMemberCount} 位學生 · {submissionViews.length} 筆答題紀錄
           </span>

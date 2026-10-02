@@ -38,3 +38,8 @@ worker/.wrangler/
 .claude/settings.local.json
 solution-ebook/
 ilan_115_test_problems.json
+
+# 115 解題手冊：原始碼進版控，產出在 public/solutions-115
+solution-ebook-115/dist/
+solution-ebook-115/problems.json
+solution-ebook-115/validation.json

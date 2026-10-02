@@ -2,8 +2,11 @@ import { CheckCircle2, FileJson, History, Play, Trophy, Upload, UserCircle, User
 import type { ContestStatus, WorkspaceMode } from "../types";
 
 export const APP_TITLE = "宜蘭縣資訊科技創意實作競賽";
-/** 114 程式解題手冊（public/solutions，隨網站一起部署），只在教師班級後台提供連結。 */
-export const SOLUTION_EBOOK_URL = "/solutions/index.html";
+/** 解題手冊（public/solutions*，隨網站一起部署），只在教師班級後台提供連結。 */
+export const SOLUTION_EBOOKS: Array<{ label: string; url: string; title: string }> = [
+  { label: "📖 115 解題手冊", url: "/solutions-115/index.html", title: "115 年宜蘭縣與全國賽共 70 題，逐題解說與 Blockly XML 參考解答" },
+  { label: "📖 114 解題手冊", url: "/solutions/index.html", title: "114 年題庫 102 題，逐題解說與 Blockly XML 參考解答" },
+];
 
 export type TabKey = "statement" | "test" | "score" | "history" | "leaderboard" | "account" | "classes" | "admin";
 export type PracticeStatus = "completed" | "in-progress" | "not-started";
