@@ -1,6 +1,7 @@
 import { Save } from "lucide-react";
 import { parseDomainText } from "../../services/schoolStore";
 import type { School } from "../../types";
+import { getDivisionLabel, inferSchoolDivision } from "../../utils/leaderboard";
 
 export function SchoolEditorForm({
   school,
@@ -29,6 +30,18 @@ export function SchoolEditorForm({
         <label className="problem-form-field">
           學校名稱
           <input value={school.name} onChange={(event) => updateSchool("name", event.target.value)} />
+        </label>
+        <label className="problem-form-field">
+          排行榜組別
+          <select
+            value={school.division ?? ""}
+            onChange={(event) => updateSchool("division", (event.target.value || undefined) as School["division"])}
+          >
+            <option value="">依校名自動辨識（{getDivisionLabel(inferSchoolDivision(school.name))}）</option>
+            <option value="J">國中組</option>
+            <option value="E">國小組</option>
+            <option value="unclassified">未分類／其他學制</option>
+          </select>
         </label>
         <label className="problem-form-field">
           狀態

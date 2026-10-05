@@ -25,7 +25,8 @@ import { archiveContest, createContestDraft, deleteContest, loadContests, releas
 import { writeAuditLog } from "./services/auditStore";
 import { DEFAULT_PLATFORM_STATE, isContestOpen, subscribePlatform } from "./services/platformStore";
 import { gradeProblem, runCustomTest } from "./services/gradingEngine";
-import { backfillUserStats, computeUserStats, removeUserFromLeaderboards, saveUserStats, syncUserStatsMembership } from "./services/leaderboardService";
+import { backfillUserStats, computeUserStats, pruneUnrankedUserStats, removeOwnUserStats, removeUserFromLeaderboards, saveUserStats, syncUserStatsMembership } from "./services/leaderboardService";
+import { isRankedAccount } from "./utils/leaderboard";
 import { deleteProblemIfUnused, exportProblemsToCsv, getProblemCsvTemplate, importProblemsFromCsv, importProblemsFromJson, loadAllProblemsForAdmin, loadProblems, saveProblem } from "./services/problemStore";
 import type { ProblemImportMode } from "./services/problemStore";
 import { createSchoolDraft, loadSchools, loadSchoolsByIds, saveSchool } from "./services/schoolStore";
@@ -245,6 +246,9 @@ export default function App() {
         setAdminProfile(nextAdminProfile);
         setAdmin(nextSuperAdmin);
         setSuperAdmin(nextSuperAdmin);
+        if (!isRankedAccount(nextUser, nextAdminProfile?.role)) {
+          void removeOwnUserStats(nextUser.uid).then(() => setLeaderboardRefreshKey((current) => current + 1));
+        }
         return;
       }
       const demoAdmin = isDemoAdmin();
@@ -263,6 +267,20 @@ export default function App() {
       );
     });
   }, []);
+
+  useEffect(() => {
+    if (!superAdmin || !user?.uid || user.accountType === "contest") return;
+    let active = true;
+    Promise.all([loadManagedUsers(), loadAdminProfiles()])
+      .then(([users, admins]) => active ? pruneUnrankedUserStats(users, admins) : { removed: 0 })
+      .then(({ removed }) => {
+        if (active && removed > 0) setLeaderboardRefreshKey((current) => current + 1);
+      })
+      .catch((error) => {
+        if (active) setStatusMessage(`舊排行榜身分清理未完成：${error instanceof Error ? error.message : "請稍後重新登入超管帳號。"}`);
+      });
+    return () => { active = false; };
+  }, [superAdmin, user?.uid, user?.accountType]);
 
   useEffect(() => {
     let active = true;
@@ -635,7 +653,7 @@ export default function App() {
       setPracticeSubmissions(nextPracticeSubmissions);
       if (user) {
         // 只有學生列入排行榜（規格 7.3）；教師／超管解題仍留個人紀錄，但不寫彙總。
-        await saveUserStats(computeUserStats(user, problems, nextPracticeSubmissions, currentMembership(), effectiveRole));
+        await saveUserStats(computeUserStats(user, problems, nextPracticeSubmissions, currentMembership(), adminProfile?.role || accountProfile?.role || effectiveRole));
         setLeaderboardRefreshKey((current) => current + 1);
       }
       setStatusMessage(
@@ -1187,7 +1205,9 @@ export default function App() {
         await setManagedUserTeacherSchool(target, school, user);
       } else {
         await setManagedUserSchool(target, school, user);
+        await syncUserStatsMembership(target.uid, { schoolId: school.id, schoolName: school.name });
       }
+      setLeaderboardRefreshKey((current) => current + 1);
       await loadAdminData();
       setStatusMessage(`已將 ${target.displayName || target.email || target.uid} 的學校改為「${school.name}」。`);
     } catch (error) {
@@ -1261,6 +1281,8 @@ export default function App() {
       ]);
       setAccountProfile(nextProfile);
       setAdminProfile(nextAdminProfile);
+      await syncUserStatsMembership(user.uid, { schoolId: school.id, schoolName: school.name });
+      setLeaderboardRefreshKey((current) => current + 1);
       setStatusMessage("已儲存學校，管理者仍可在後台調整。");
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "學校儲存失敗。");
@@ -1745,6 +1767,8 @@ export default function App() {
             {activeTab === "leaderboard" && (
               <LeaderboardPanel
                 user={user}
+                rankedUser={Boolean(user && isRankedAccount(user, adminProfile?.role || accountProfile?.role || effectiveRole))}
+                schools={schools}
                 schoolId={membershipSchoolId}
                 schoolName={membershipSchoolName}
                 classOptions={leaderboardClassOptions}

@@ -1541,7 +1541,7 @@ pre {
 
 .school-form-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(240px, 1.2fr) 130px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
 }
 
@@ -2756,11 +2756,21 @@ pre {
   gap: 8px;
 }
 
-.leaderboard-scope select {
+.leaderboard-scope select,
+.leaderboard-division select {
   padding: 6px 10px;
   border: 1px solid #cfe0e6;
   border-radius: 8px;
   font: inherit;
+}
+
+.leaderboard-division {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #5b7480;
 }
 
 .leaderboard-my-rank {

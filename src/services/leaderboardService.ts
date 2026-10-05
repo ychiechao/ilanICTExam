@@ -1,6 +1,7 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, where, writeBatch } from "firebase/firestore";
+import { collection, deleteDoc, doc, documentId, getDoc, getDocs, limit, orderBy, query, setDoc, startAfter, where, writeBatch, type DocumentData, type QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import type { AdminProfile, AppUser, LeaderboardEntry, LeaderboardScope, ManagedUser, Problem, SubmissionRecord, UserProblemStat, UserRole } from "../types";
+import type { AdminProfile, LeaderboardDivisionFilter, LeaderboardEntry, LeaderboardScope, ManagedUser, Problem, School, SubmissionRecord, UserProblemStat, UserRole } from "../types";
+import { collectLeaderboardPages, getUnrankedUserIds, isRankedAccount, isRankedRole, matchesLeaderboardEntry, sortEntries } from "../utils/leaderboard";
 import { withRemoteTimeout } from "./remote";
 import { readJson, writeJson } from "./storage";
 
@@ -25,13 +26,10 @@ interface MembershipInfo {
   classIds: string[];
 }
 
-/** 教師與超管不列入排行榜；沒有 role 的舊資料視為學生。 */
-export function isRankedRole(role?: UserRole) {
-  return role !== "teacher" && role !== "super";
-}
+export { isRankedRole, sortEntries } from "../utils/leaderboard";
 
 export function computeUserStats(
-  user: { uid: string; displayName: string },
+  user: { uid: string; displayName: string; email?: string | null },
   problems: Problem[],
   submissions: SubmissionRecord[],
   membership: MembershipInfo,
@@ -48,7 +46,8 @@ export function computeUserStats(
     .filter((record): record is SubmissionRecord => Boolean(record));
   const completedRecords = bestRecords.filter(isFullScoreSubmission);
   const submittedTimes = userSubmissions.map((record) => record.createdAt).sort();
-  return buildEntry(user, membership, role, {
+  const rankingRole = isRankedAccount(user, role) ? "student" : role === "super" ? "super" : "teacher";
+  return buildEntry(user, membership, rankingRole, {
     totalScore: bestRecords.reduce((sum, record) => sum + record.score, 0),
     totalMaxScore: publishedProblems.reduce((sum, problem) => sum + getProblemMaxScore(problem), 0),
     completedCount: completedRecords.length,
@@ -100,15 +99,50 @@ export async function removeOwnUserStats(uid: string) {
   }
 }
 
+/** 超管登入後修正舊彙總；只移除排行，不更動提交或每題成績。 */
+export async function pruneUnrankedUserStats(users: ManagedUser[], admins: AdminProfile[]) {
+  const uids = [...getUnrankedUserIds(users, admins)];
+  if (!db) {
+    const all = readJson<Record<string, LeaderboardEntry>>(LOCAL_STATS_KEY, {});
+    let removed = 0;
+    for (const uid of uids) {
+      if (all[uid]) {
+        delete all[uid];
+        removed++;
+      }
+    }
+    if (removed > 0) writeJson(LOCAL_STATS_KEY, all);
+    return { removed };
+  }
+  let removed = 0;
+  for (let index = 0; index < uids.length; index += 30) {
+    const snapshot = await withRemoteTimeout(
+      getDocs(query(collection(db, "userStats"), where(documentId(), "in", uids.slice(index, index + 30)))),
+      "Firestore 舊排行身分確認",
+    );
+    if (snapshot.empty) continue;
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((item) => batch.delete(item.ref));
+    await withRemoteTimeout(batch.commit(), "Firestore 舊排行清理");
+    removed += snapshot.size;
+  }
+  return { removed };
+}
+
 /** 加入班級／改學校後同步到彙總（沒有彙總就不建，等下次提交）。 */
-export async function syncUserStatsMembership(uid: string, membership: MembershipInfo) {
-  if (!db) return;
+export async function syncUserStatsMembership(uid: string, membership: Partial<MembershipInfo>) {
+  const patch = stripUndefined({ schoolId: membership.schoolId, schoolName: membership.schoolName, classIds: membership.classIds });
+  if (!db) {
+    const all = readJson<Record<string, LeaderboardEntry>>(LOCAL_STATS_KEY, {});
+    if (all[uid]) writeJson(LOCAL_STATS_KEY, { ...all, [uid]: { ...all[uid], ...patch } });
+    return;
+  }
   try {
     const snapshot = await getDoc(doc(db, "userStats", uid));
     if (!snapshot.exists()) return;
     await setDoc(
       doc(db, "userStats", uid),
-      stripUndefined({ schoolId: membership.schoolId ?? "", schoolName: membership.schoolName ?? "", classIds: membership.classIds }),
+      patch,
       { merge: true },
     );
   } catch (error) {
@@ -116,20 +150,26 @@ export async function syncUserStatsMembership(uid: string, membership: Membershi
   }
 }
 
-export async function loadLeaderboardScope(scope: LeaderboardScope): Promise<LeaderboardEntry[]> {
+export async function loadLeaderboardScope(scope: LeaderboardScope, division: LeaderboardDivisionFilter = "all", schools: School[] = []): Promise<LeaderboardEntry[]> {
+  const schoolMap = new Map(schools.map((school) => [school.id, school]));
+  const matches = (entry: LeaderboardEntry) => matchesLeaderboardEntry(entry, scope, division, schoolMap);
   if (db) {
     const base = collection(db, "userStats");
-    const order = [orderBy("passRate", "desc"), orderBy("completedCount", "desc"), orderBy("totalScore", "desc"), limit(SCOPE_LIMIT)];
-    const built =
-      scope.kind === "county"
-        ? query(base, ...order)
-        : scope.kind === "school"
-          ? query(base, where("schoolId", "==", scope.schoolId), ...order)
-          : query(base, where("classIds", "array-contains", scope.classId), ...order);
+    const order = [orderBy("passRate", "desc"), orderBy("completedCount", "desc"), orderBy("totalScore", "desc")];
+    const filters = scope.kind === "county" ? [] : scope.kind === "school" ? [where("schoolId", "==", scope.schoolId)] : [where("classIds", "array-contains", scope.classId)];
     try {
-      const snapshot = await withRemoteTimeout(getDocs(built), "Firestore 排行榜讀取");
-      // 保險：即使有殘留的教師／超管彙總也不顯示（沒有 role 的舊資料視為學生）。
-      return sortEntries(snapshot.docs.map((item) => item.data() as LeaderboardEntry).filter((entry) => isRankedRole(entry.role)));
+      return await collectLeaderboardPages<QueryDocumentSnapshot<DocumentData>>(
+        async (cursor) => {
+          const built = query(base, ...filters, ...order, ...(cursor ? [startAfter(cursor)] : []), limit(SCOPE_LIMIT));
+          const snapshot = await withRemoteTimeout(getDocs(built), "Firestore 排行榜讀取");
+          return {
+            entries: snapshot.docs.map((item) => ({ ...item.data(), uid: item.id }) as LeaderboardEntry),
+            nextCursor: snapshot.size === SCOPE_LIMIT ? snapshot.docs[snapshot.size - 1] : undefined,
+          };
+        },
+        matches,
+        SCOPE_LIMIT,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/requires an index|index is currently building/i.test(message)) {
@@ -142,13 +182,7 @@ export async function loadLeaderboardScope(scope: LeaderboardScope): Promise<Lea
     }
   }
   const all = Object.values(readJson<Record<string, LeaderboardEntry>>(LOCAL_STATS_KEY, {}));
-  return sortEntries(
-    all.filter(
-      (entry) =>
-        isRankedRole(entry.role) &&
-        (scope.kind === "county" ? true : scope.kind === "school" ? entry.schoolId === scope.schoolId : (entry.classIds ?? []).includes(scope.classId)),
-    ),
-  ).slice(0, SCOPE_LIMIT);
+  return sortEntries(all.filter(matches)).slice(0, SCOPE_LIMIT);
 }
 
 /** 刪除使用者時一併移除彙總與舊版 leaderboards 文件中的紀錄。 */
@@ -208,16 +242,8 @@ export async function backfillUserStats(input: {
     }
   }
   const userByUid = new Map(input.users.map((user) => [user.uid, user]));
-  // 教師身分只看 admins 文件（與 getEffectiveRole 一致）：有學校的啟用教師、以及超管都不列入排行榜。
-  const unrankedUids = new Set(
-    input.admins
-      .filter(
-        (admin) =>
-          admin.role === "super" ||
-          (admin.role === "teacher" && admin.status !== "disabled" && (Boolean(admin.schoolId) || (admin.schoolIds?.length ?? 0) > 0)),
-      )
-      .map((admin) => admin.uid),
-  );
+  // 教師（含未啟用／停用）與超管都不列入排行榜，舊資料依 admins／users／教師網域辨識。
+  const unrankedUids = getUnrankedUserIds(input.users, input.admins);
 
   const entries: LeaderboardEntry[] = [];
   for (const [uid, stats] of statsByUid) {
@@ -312,21 +338,6 @@ function buildEntry(
 
 function stripUndefined<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
-}
-
-export function sortEntries(entries: LeaderboardEntry[]) {
-  return [...entries].sort(compareEntries);
-}
-
-function compareEntries(a: LeaderboardEntry, b: LeaderboardEntry) {
-  if (b.passRate !== a.passRate) return b.passRate - a.passRate;
-  if ((b.completedCount || 0) !== (a.completedCount || 0)) return (b.completedCount || 0) - (a.completedCount || 0);
-  if ((b.totalScore ?? b.score) !== (a.totalScore ?? a.score)) return (b.totalScore ?? b.score) - (a.totalScore ?? a.score);
-  const aCompletedAt = a.completedAt || "9999-12-31T23:59:59.999Z";
-  const bCompletedAt = b.completedAt || "9999-12-31T23:59:59.999Z";
-  if (aCompletedAt !== bCompletedAt) return aCompletedAt.localeCompare(bCompletedAt);
-  if (a.submitCount !== b.submitCount) return a.submitCount - b.submitCount;
-  return a.displayName.localeCompare(b.displayName, "zh-Hant", { numeric: true });
 }
 
 function betterSubmission(current: SubmissionRecord | undefined, incoming: SubmissionRecord) {
