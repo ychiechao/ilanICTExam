@@ -88,7 +88,7 @@ export default function BlocklyWorkspace({
         ? new ResizeObserver(resize)
         : null;
     resizeObserver?.observe(containerRef.current);
-    window.setTimeout(resize, 0);
+    resize();
 
     return () => {
       if (resizeFrame) {

@@ -93,6 +93,7 @@ function normalizeSchool(input: unknown): School {
   return {
     id: readText(record.id, `school-${Date.now()}`),
     name: readText(record.name, "未命名學校"),
+    ...(record.division === "E" || record.division === "J" || record.division === "unclassified" ? { division: record.division } : {}),
     domains: Array.from(new Set(domains)),
     enabled: record.enabled !== false,
     createdAt: readText(record.createdAt, now),

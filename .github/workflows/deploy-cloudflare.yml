@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check leaderboard rules
+        run: npm run test:leaderboard
+
       - name: Build frontend
         run: npm run build
         env:

@@ -121,6 +121,8 @@ export interface UserProblemStat {
 
 /** 排行榜範圍：全縣、學校、班級（計畫 4.2）。 */
 export type LeaderboardScope = { kind: "county" } | { kind: "school"; schoolId: string } | { kind: "class"; classId: string };
+export type LeaderboardDivision = "E" | "J";
+export type LeaderboardDivisionFilter = "all" | LeaderboardDivision;
 
 /** userStats/{uid}：每位使用者的練習彙總，也是排行榜的一列。 */
 export interface LeaderboardEntry {
@@ -266,6 +268,8 @@ export interface ContestAccount {
 export interface School {
   id: string;
   name: string;
+  /** 未設定時依校名辨識；特殊校名可由超管指定，其他學制只列入不分組排行。 */
+  division?: LeaderboardDivision | "unclassified";
   domains: string[];
   enabled?: boolean;
   createdAt?: string;

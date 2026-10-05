@@ -161,22 +161,19 @@ export async function setManagedUserAdminRole(
     return;
   }
 
-  await withRemoteTimeout(
-    setDoc(
-      adminRef,
-      {
-        uid: target.uid,
-        displayName: target.displayName || target.email || "未命名使用者",
-        email: target.email || "",
-        role,
-        schoolIds: role === "teacher" ? schoolIds : [],
-        updatedAt: serverTimestamp(),
-        updatedBy: actor?.uid || "",
-      },
-      { merge: true },
-    ),
-    "Firestore 管理者權限儲存",
-  );
+  // 身分與排行同批更新，教師／超管即使不再提交也不會留在排行榜。
+  const batch = writeBatch(db);
+  batch.set(adminRef, {
+    uid: target.uid,
+    displayName: target.displayName || target.email || "未命名使用者",
+    email: target.email || "",
+    role,
+    schoolIds: role === "teacher" ? schoolIds : [],
+    updatedAt: serverTimestamp(),
+    updatedBy: actor?.uid || "",
+  }, { merge: true });
+  batch.delete(doc(db, "userStats", target.uid));
+  await withRemoteTimeout(batch.commit(), "Firestore 管理者權限儲存");
 }
 
 export async function setManagedUserDisabled(
