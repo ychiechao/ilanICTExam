@@ -2220,7 +2220,21 @@ pre {
 }
 
 .leader-item .leader-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 64px;
   border: 0;
+}
+
+.leader-item .leader-row > div {
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.leader-item .leader-row > strong {
+  justify-self: end;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .leader-row.clickable {
