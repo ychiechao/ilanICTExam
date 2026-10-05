@@ -1,3 +1,4 @@
+import { Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { loadLeaderboardScope } from "../../services/leaderboardService";
 import type { AppUser, LeaderboardDivisionFilter, LeaderboardEntry, LeaderboardScope, School } from "../../types";
@@ -14,12 +15,14 @@ interface LeaderboardPanelProps {
   classOptions: Array<{ id: string; name: string }>;
   /** 提交後遞增，讓排行榜重新讀取。 */
   refreshKey: number;
+  maximized: boolean;
+  onToggleMaximized: () => void;
 }
 
 type ScopeKind = LeaderboardScope["kind"];
 
 /** 三層排行榜（計畫 4.2）：班級／學校／全縣，各自從 userStats 查詢。 */
-export function LeaderboardPanel({ user, rankedUser, schools, schoolId, schoolName, classOptions, refreshKey }: LeaderboardPanelProps) {
+export function LeaderboardPanel({ user, rankedUser, schools, schoolId, schoolName, classOptions, refreshKey, maximized, onToggleMaximized }: LeaderboardPanelProps) {
   const [kind, setKind] = useState<ScopeKind>("county");
   const [division, setDivision] = useState<LeaderboardDivisionFilter>("all");
   const [classId, setClassId] = useState(classOptions[0]?.id ?? "");
@@ -76,10 +79,22 @@ export function LeaderboardPanel({ user, rankedUser, schools, schoolId, schoolNa
   const title = kind === "county" ? "全縣排行榜" : kind === "school" ? `${schoolName || "學校"}排行榜` : `${classOptions.find((item) => item.id === classId)?.name || "班級"}排行榜`;
 
   return (
-    <div className="panel-stack">
-      <div className="panel-heading">
+    <div className="panel-stack" id="leaderboard-panel">
+      <div className="panel-heading leaderboard-heading">
         <h2>{title}</h2>
-        <span>依答題率排名 · 點選可展開</span>
+        <div className="panel-heading-actions">
+          <span>依答題率排名 · 點選學生查看明細</span>
+          <button
+            type="button"
+            className="ghost-button"
+            aria-expanded={maximized}
+            aria-controls="leaderboard-panel"
+            onClick={onToggleMaximized}
+          >
+            {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            {maximized ? "收合畫面" : "展開畫面"}
+          </button>
+        </div>
       </div>
       <p className="muted">僅計入學生，教師與超級管理者不列入排名。組別依所屬學校判定，未分類學生只列入不分組排行榜。</p>
       <div className="leaderboard-scope">

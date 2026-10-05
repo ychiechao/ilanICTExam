@@ -41,6 +41,7 @@ export default function App() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblemId, setSelectedProblemId] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("statement");
+  const [leaderboardExpanded, setLeaderboardExpanded] = useState(false);
   const [mode, setMode] = useState<WorkspaceMode>("Scratch");
   const [generatedCode, setGeneratedCode] = useState("");
   const [blocklyXml, setBlocklyXml] = useState("");
@@ -183,6 +184,7 @@ export default function App() {
   const managementMaximized =
     (activeTab === "admin" && admin) ||
     (activeTab === "classes" && effectiveRole === "teacher");
+  const leaderboardMaximized = activeTab === "leaderboard" && leaderboardExpanded;
 
   const availableTabs = useMemo(
     () =>
@@ -1599,7 +1601,7 @@ export default function App() {
 
       {platform.announcement && <div className="platform-banner">{platform.announcement}</div>}
 
-      <main className={managementMaximized ? "workspace-layout admin-maximized" : "workspace-layout"}>
+      <main className={["workspace-layout", managementMaximized ? "admin-maximized" : "", leaderboardMaximized ? "leaderboard-maximized" : ""].filter(Boolean).join(" ")}>
         <aside className="problem-rail">
           <button className="rail-title">題目列表</button>
           <div className="rail-filters">
@@ -1716,7 +1718,13 @@ export default function App() {
                 <button
                   key={tab.key}
                   className={activeTab === tab.key ? "active" : ""}
-                  onClick={() => setActiveTab(tab.key)}
+                  aria-expanded={tab.key === "leaderboard" ? leaderboardMaximized : undefined}
+                  aria-controls={tab.key === "leaderboard" && activeTab === "leaderboard" ? "leaderboard-panel" : undefined}
+                  title={tab.key === "leaderboard" ? (leaderboardMaximized ? "收合排行榜畫面" : "展開排行榜畫面") : undefined}
+                  onClick={() => {
+                    setLeaderboardExpanded(tab.key === "leaderboard" && (activeTab !== "leaderboard" || !leaderboardExpanded));
+                    setActiveTab(tab.key);
+                  }}
                 >
                   <Icon size={16} />
                   {tab.label}
@@ -1773,6 +1781,8 @@ export default function App() {
                 schoolName={membershipSchoolName}
                 classOptions={leaderboardClassOptions}
                 refreshKey={leaderboardRefreshKey}
+                maximized={leaderboardMaximized}
+                onToggleMaximized={() => setLeaderboardExpanded((expanded) => !expanded)}
               />
             )}
             {activeTab === "account" && (

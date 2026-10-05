@@ -273,25 +273,25 @@ button {
   padding: 12px 28px 22px;
 }
 
-.workspace-layout.admin-maximized {
+.workspace-layout:is(.admin-maximized, .leaderboard-maximized) {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.workspace-layout.admin-maximized .problem-rail,
-.workspace-layout.admin-maximized .editor-panel {
+.workspace-layout:is(.admin-maximized, .leaderboard-maximized) .problem-rail,
+.workspace-layout:is(.admin-maximized, .leaderboard-maximized) .editor-panel {
   display: none;
 }
 
-.workspace-layout.admin-maximized .side-panel {
+.workspace-layout:is(.admin-maximized, .leaderboard-maximized) .side-panel {
   grid-template-columns: 64px minmax(0, 1fr);
   min-width: 0;
 }
 
-.workspace-layout.admin-maximized .tab-content {
+.workspace-layout:is(.admin-maximized, .leaderboard-maximized) .tab-content {
   background: #f8fafc;
 }
 
-.workspace-layout.admin-maximized .panel-stack {
+.workspace-layout:is(.admin-maximized, .leaderboard-maximized) .panel-stack {
   padding: 20px;
 }
 
@@ -2749,6 +2749,19 @@ pre {
 }
 
 /* ---- 三層排行榜 ---- */
+.leaderboard-heading {
+  flex-wrap: wrap;
+}
+
+.workspace-layout.leaderboard-maximized .leader-row {
+  padding: 16px;
+}
+
+.workspace-layout.leaderboard-maximized .leader-row small,
+.workspace-layout.leaderboard-maximized .leader-detail dt {
+  font-size: 14px;
+}
+
 .leaderboard-scope {
   display: flex;
   flex-wrap: wrap;
