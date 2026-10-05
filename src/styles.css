@@ -193,6 +193,29 @@ button {
   border-radius: 50%;
 }
 
+.online-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.online-count.is-online {
+  color: var(--teal-deep);
+}
+
+.online-count strong {
+  font-variant-numeric: tabular-nums;
+}
+
 .primary-button,
 .ghost-button,
 .icon-button {

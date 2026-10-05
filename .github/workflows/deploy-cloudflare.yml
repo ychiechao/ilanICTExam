@@ -34,6 +34,9 @@ jobs:
       - name: Check leaderboard rules
         run: npm run test:leaderboard
 
+      - name: Check presence client
+        run: npm run test:presence
+
       - name: Build frontend
         run: npm run build
         env:
@@ -82,6 +85,9 @@ jobs:
 
       - name: Check Worker types
         run: npm run check
+
+      - name: Test site presence
+        run: npm test
 
       - name: Deploy Cloudflare Worker
         uses: cloudflare/wrangler-action@v3

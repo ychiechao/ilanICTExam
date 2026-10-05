@@ -5,6 +5,8 @@ import type { TabKey } from "./app/constants";
 import BlocklyWorkspace from "./components/BlocklyWorkspace";
 import { AdminPanel } from "./components/admin/AdminPanel";
 import { AnnouncementScreen } from "./components/AnnouncementScreen";
+import { OnlineCountBadge } from "./components/OnlineCountBadge";
+import { useOnlinePresence } from "./hooks/useOnlinePresence";
 import { ContestLoginForm } from "./components/contest/ContestLoginForm";
 import { ContestShell } from "./components/contest/ContestShell";
 import { RehearsalLoginScreen } from "./components/contest/RehearsalLoginScreen";
@@ -47,6 +49,7 @@ export default function App() {
   const [blocklyXml, setBlocklyXml] = useState("");
   const [recordXml, setRecordXml] = useState("");
   const [user, setUser] = useState<AppUser | null>(null);
+  const onlinePresence = useOnlinePresence(user?.uid || null);
   const [admin, setAdmin] = useState(false);
   const [superAdmin, setSuperAdmin] = useState(false);
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
@@ -1528,7 +1531,7 @@ export default function App() {
   // 競賽帳號：該場開放中（競賽模式啟用，或演練賽）才有畫面；否則登出。
   if (user?.accountType === "contest") {
     if (isContestOpen(platform, user.contestId)) {
-      return <ContestShell platform={platform} user={user} onLogout={() => logout()} />;
+      return <ContestShell platform={platform} user={user} onlinePresence={onlinePresence} onLogout={() => logout()} />;
     }
     void logout();
   }
@@ -1547,6 +1550,7 @@ export default function App() {
         loginBusy={loginBusy}
         onGoogleLogin={handleLogin}
         onLogout={() => logout()}
+        onlinePresence={onlinePresence}
       >
         {!user && <ContestLoginForm />}
       </AnnouncementScreen>
@@ -1582,6 +1586,7 @@ export default function App() {
           </div>
         </div>
         <div className="header-actions">
+          {user && <OnlineCountBadge presence={onlinePresence} />}
           {user ? (
             <div className="user-chip">
               {user.photoURL && <img src={user.photoURL} alt="" />}

@@ -1,5 +1,7 @@
 import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { OnlinePresenceState } from "../../../shared/sitePresence";
+import { OnlineCountBadge } from "../OnlineCountBadge";
 import { doc, onSnapshot } from "firebase/firestore";
 import { APP_TITLE } from "../../app/constants";
 import { db } from "../../firebase";
@@ -16,6 +18,7 @@ interface ContestShellProps {
   platform: PlatformState;
   user: AppUser;
   onLogout: () => void;
+  onlinePresence: OnlinePresenceState;
 }
 
 interface LiveContest {
@@ -33,7 +36,7 @@ interface LiveContest {
  * 中央依賽事狀態顯示「等待開始 / 倒數 / 暫停 / 結束」。
  * 作答區（題目、積木、提交）在題庫匯入完成後放進來。
  */
-export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
+export function ContestShell({ platform, user, onLogout, onlinePresence }: ContestShellProps) {
   const [contest, setContest] = useState<LiveContest | null>(null);
   const now = useServerNow();
 
@@ -82,6 +85,7 @@ export function ContestShell({ platform, user, onLogout }: ContestShellProps) {
               <strong>{formatCountdown(remainingMs)}</strong>
             </div>
           )}
+          <OnlineCountBadge presence={onlinePresence} />
           <div className="user-chip">
             <span>
               {user.contestUsername} {user.displayName}

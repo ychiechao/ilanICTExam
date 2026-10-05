@@ -7,10 +7,13 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "types": "wrangler types",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.3.6",
     "typescript": "^7.0.2",
+    "vitest": "^4.1.0",
     "wrangler": "^4.131.2"
   },
   "dependencies": {

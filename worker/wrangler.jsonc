@@ -3,7 +3,11 @@
   "name": "ilanictexam-grader",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
-  "observability": { "enabled": true },
+  "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } },
+  "durable_objects": {
+    "bindings": [{ "name": "SITE_PRESENCE", "class_name": "SitePresence" }]
+  },
+  "migrations": [{ "tag": "site-presence-v1", "new_sqlite_classes": ["SitePresence"] }],
   "vars": {
     "FIREBASE_PROJECT_ID": "fileupload-d96f5",
     // 允許呼叫的前端來源；本機開發另在 .dev.vars 覆寫

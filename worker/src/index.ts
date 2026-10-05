@@ -12,6 +12,8 @@ import { handleBoard } from "./routes/board";
 import { handleGrade } from "./routes/grade";
 import { handleLogin, handleRefresh } from "./routes/login";
 import { handleTime } from "./routes/time";
+import { handleSitePresence } from "./routes/sitePresence";
+export { SitePresence } from "./presence/SitePresence";
 
 /**
  * ilanictexam-grader
@@ -36,6 +38,7 @@ export default {
       response = errorResponse(error);
     }
 
+    if (response.status === 101) return response;
     for (const [key, value] of Object.entries(cors)) {
       response.headers.set(key, value);
     }
@@ -49,6 +52,9 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
 
   if (method === "GET" && path === "/time") {
     return handleTime();
+  }
+  if (method === "GET" && path === "/presence") {
+    return handleSitePresence(request, env);
   }
 
   // 以下路由都需要 Firestore；RequestContext 建構時才解析服務帳號，/time 不需要 secret。

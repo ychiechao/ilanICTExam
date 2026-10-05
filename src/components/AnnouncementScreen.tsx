@@ -1,5 +1,7 @@
 import { LogIn, LogOut } from "lucide-react";
 import type { ReactNode } from "react";
+import type { OnlinePresenceState } from "../../shared/sitePresence";
+import { OnlineCountBadge } from "./OnlineCountBadge";
 import { APP_TITLE } from "../app/constants";
 import { PLATFORM_MODE_LABELS } from "../services/platformStore";
 import type { AppUser, PlatformState } from "../types";
@@ -11,6 +13,7 @@ interface AnnouncementScreenProps {
   loginBusy: boolean;
   onGoogleLogin: () => void;
   onLogout: () => void;
+  onlinePresence: OnlinePresenceState;
   /** 競賽模式時放競賽帳號登入表單（階段 1.5）。 */
   children?: ReactNode;
 }
@@ -25,6 +28,7 @@ export function AnnouncementScreen({
   loginBusy,
   onGoogleLogin,
   onLogout,
+  onlinePresence,
   children,
 }: AnnouncementScreenProps) {
   const isContest = platform.mode === "contest";
@@ -39,6 +43,7 @@ export function AnnouncementScreen({
           </div>
         </div>
         <div className="header-actions">
+          {user && <OnlineCountBadge presence={onlinePresence} />}
           {user ? (
             <div className="user-chip">
               {user.photoURL && <img src={user.photoURL} alt="" />}
